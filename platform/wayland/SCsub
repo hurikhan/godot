@@ -1,0 +1,9 @@
+Import('env')
+
+
+common_wayland=[\
+	"context_gl_wayland.cpp",\
+	"os_wayland.cpp",\
+]
+
+env.Program('#bin/godot',['godot_wayland.cpp']+common_wayland)
