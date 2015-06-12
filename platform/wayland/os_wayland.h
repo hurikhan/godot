@@ -31,6 +31,7 @@
 
 
 #include "os/input.h"
+#include "os/keyboard.h"
 #include "drivers/unix/os_unix.h"
 #include "context_gl_wayland.h"
 #include "servers/visual_server.h"
@@ -47,6 +48,7 @@
 #include "servers/physics_2d/physics_2d_server_sw.h"
 
 #include <wayland-client.h>
+#include <xkbcommon/xkbcommon.h>
 
 /*
 	@author Mario Schlack <m4r10.5ch14ck@gmail.com>
@@ -73,7 +75,6 @@ class OS_Wayland : public OS_Unix {
 	Point2i center;
 	
 	virtual void delete_main_loop();
-	IP_Unix *ip_unix;
 
 	AudioServerSW *audio_server;
 	SampleManagerMallocSW *sample_manager;
@@ -98,8 +99,8 @@ class OS_Wayland : public OS_Unix {
 #endif
 
 	int audio_driver_index;
-	unsigned int capture_idle;
-	bool maximized;
+
+	uint32_t event_id;
 
 	struct wl_display *display;
  	struct wl_compositor *compositor;
@@ -109,6 +110,7 @@ class OS_Wayland : public OS_Unix {
 	struct wl_registry *registry;
 	struct wl_seat *seat;
 	struct wl_pointer *pointer;
+	struct wl_keyboard *keyboard;
 
 	static const struct wl_registry_listener registry_listener; 	
 	static void registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version);
@@ -140,6 +142,24 @@ class OS_Wayland : public OS_Unix {
 		uint64_t last_click_time;		
 		int button_mask;
 	} pointer_data;
+
+	static const struct wl_keyboard_listener keyboard_listener;
+	static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size);
+	static void keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys);
+	static void keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface);
+	static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
+	static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
+	static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay);
+	static uint32_t get_keyboard_scancode( OS_Wayland *that, uint32_t key );
+	static uint32_t get_keyboard_unicode( OS_Wayland *that, uint32_t key );
+
+	struct {
+		struct xkb_context *context;
+		struct xkb_keymap *keymap;
+		struct xkb_state *state;
+		InputModifierState modifiers;
+	} keyboard_data;
+
 
 protected:
 

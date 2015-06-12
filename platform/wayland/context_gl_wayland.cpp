@@ -124,7 +124,7 @@ Error ContextGL_Wayland::initialize() {
 	// Create Window
 	egl_window = wl_egl_window_create(surface, video_mode.width, video_mode.height );
 	ERR_FAIL_COND_V( egl_window == EGL_NO_SURFACE, ERR_UNCONFIGURED );
-	print_line("EGL -- Window created" );
+	print_line(String("EGL -- Window created " + itos(video_mode.width) + "x" + itos(video_mode.height)));
 
 	egl_surface = eglCreateWindowSurface(egl_display, egl_config, egl_window, NULL);
 	ERR_FAIL_COND_V( egl_surface == EGL_NO_SURFACE, ERR_UNCONFIGURED );

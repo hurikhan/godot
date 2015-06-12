@@ -105,6 +105,7 @@ def configure(env):
 
 	env.ParseConfig('pkg-config egl --cflags --libs')
 	env.ParseConfig('pkg-config wayland-egl --cflags --libs')
+        env.ParseConfig('pkg-config xkbcommon --cflags --libs')
 
 
 	env.ParseConfig('pkg-config freetype2 --cflags --libs')

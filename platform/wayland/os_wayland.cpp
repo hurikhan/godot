@@ -37,6 +37,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -86,6 +87,7 @@ void OS_Wayland::shell_surface_ping(void *data, struct wl_shell_surface *shell_s
 }
 
 void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *shell_surface, uint32_t edges, int32_t width, int32_t height) {
+	print_line(String("Wayland -- Shell Surface -- " + itos(edges) + " " + itos(width) + " " + itos(height)));
 }
 
 void OS_Wayland::shell_surface_popup(void *data, struct wl_shell_surface *shell_surface) {
@@ -109,21 +111,25 @@ void OS_Wayland::seat_handle_capabilities(void *data, struct wl_seat *seat, uint
 		print_line("Wayland -- Seat -- Pointer found");
 		that->pointer = wl_seat_get_pointer(seat);
 		wl_pointer_add_listener(that->pointer, &pointer_listener, that);
-	} else if (caps & WL_SEAT_CAPABILITY_POINTER && that->pointer) {
+	} else if (!(caps & WL_SEAT_CAPABILITY_POINTER) && that->pointer) {
 		wl_pointer_destroy(that->pointer);
 		that->pointer = NULL;
 		print_line("Wayland -- Seat -- Pointer destroyed");
 	}
 
-	if (caps & WL_SEAT_CAPABILITY_KEYBOARD) {
+	if (caps & WL_SEAT_CAPABILITY_KEYBOARD && !that->keyboard) {
 		print_line("Wayland -- Seat -- Keyboard found");
+		that->keyboard = wl_seat_get_keyboard(seat);
+		wl_keyboard_add_listener(that->keyboard, &keyboard_listener, that);
+	} else if(!(caps & WL_SEAT_CAPABILITY_KEYBOARD) && that->keyboard) {
+		wl_keyboard_destroy(that->keyboard);
+		that->keyboard = NULL;
+		print_line("Wayland -- Seat -- Keyboard destroyed");
 	}
 
 	if (caps & WL_SEAT_CAPABILITY_TOUCH) {
 		print_line("Wayland -- Seat -- Touch found");
 	}
-
-			
 }
 
 void OS_Wayland::seat_handle_name(void *data, struct wl_seat *seat, const char *name) {
@@ -167,10 +173,10 @@ void OS_Wayland::pointer_handle_motion(void *data, struct wl_pointer *pointer, u
 	rel = pos - that->pointer_data.pos;
 
 	InputEvent event;
-	event.ID = serial;
+	event.ID = ++that->event_id;
 	event.type = InputEvent::MOUSE_MOTION;
 	event.device = 0;				// MSC: Check what that means!
-	event.mouse_motion.mod = InputModifierState();	// FIXME: create get_key_modifier method
+	event.mouse_motion.mod = that->keyboard_data.modifiers;
 	event.mouse_motion.button_mask = that->pointer_data.button_mask;
 	event.mouse_motion.x = pos.x;
 	event.mouse_motion.y = pos.y;
@@ -213,8 +219,6 @@ void OS_Wayland::pointer_handle_button(void *data, struct wl_pointer *pointer, u
 
 	bool double_click = false;
 	if( state && (_button == BUTTON_LEFT) ){
-		print_line( "Left Click" );
-
 		uint64_t click_time = that->get_ticks_usec() / 1000;
 		uint64_t diff = click_time - that->pointer_data.last_click_time;
 		Point2i pos1 = that->pointer_data.last_click_pos;
@@ -231,10 +235,10 @@ void OS_Wayland::pointer_handle_button(void *data, struct wl_pointer *pointer, u
 		
 
 	InputEvent event;
-        event.ID = serial;
-        event.type = InputEvent::MOUSE_BUTTON;
+	event.ID = ++that->event_id;
+	event.type = InputEvent::MOUSE_BUTTON;
 	event.device = 0;
-	event.mouse_button.mod = InputModifierState();		// FIXME
+	event.mouse_button.mod = that->keyboard_data.modifiers;
 	event.mouse_button.button_mask = button_mask;
 	event.mouse_button.x = that->pointer_data.pos.x;
 	event.mouse_button.y = that->pointer_data.pos.y;
@@ -261,10 +265,10 @@ void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uin
 	int _button = get_pointer_axis_direction( value );
 
 	InputEvent event;
-        event.ID = 0;
-        event.type = InputEvent::MOUSE_BUTTON;
+	event.ID = ++that->event_id;
+	event.type = InputEvent::MOUSE_BUTTON;
 	event.device = 0;
-	event.mouse_button.mod = InputModifierState();
+	event.mouse_button.mod = that->keyboard_data.modifiers;
 	event.mouse_button.button_mask = that->pointer_data.button_mask;
 	event.mouse_button.x = that->pointer_data.pos.x;
 	event.mouse_button.y = that->pointer_data.pos.y;
@@ -275,9 +279,8 @@ void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uin
 
 	that->input->parse_input_event( event );
 
-	event.ID = 1;
+	event.ID = ++that->event_id;
 	event.mouse_button.pressed = false;
-
 	that->input->parse_input_event( event );
 }
 
@@ -303,6 +306,187 @@ int OS_Wayland::get_pointer_axis_direction( wl_fixed_t value ) {
 	return 0;
 }
 
+//  _              _                         _   _ _     _                       
+// | | _____ _   _| |__   ___   __ _ _ __ __| | | (_)___| |_ ___ _ __   ___ _ __ 
+// | |/ / _ \ | | | '_ \ / _ \ / _` | '__/ _` | | | / __| __/ _ \ '_ \ / _ \ '__|
+// |   <  __/ |_| | |_) | (_) | (_| | | | (_| | | | \__ \ ||  __/ | | |  __/ |   
+// |_|\_\___|\__, |_.__/ \___/ \__,_|_|  \__,_| |_|_|___/\__\___|_| |_|\___|_|   
+//           |___/                                                               
+
+const struct wl_keyboard_listener OS_Wayland::keyboard_listener = {
+	keyboard_handle_keymap,
+	keyboard_handle_enter,
+	keyboard_handle_leave,
+	keyboard_handle_key,
+	keyboard_handle_modifiers,
+	keyboard_handle_repeat_info
+};
+
+void OS_Wayland::keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size) {
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	char* mapStr;
+
+	ERR_FAIL_COND( format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 )
+
+	mapStr = static_cast<char*> (mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0));
+	ERR_FAIL_COND( mapStr == MAP_FAILED )
+
+	that->keyboard_data.keymap = xkb_map_new_from_string( that->keyboard_data.context, mapStr, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS );
+	ERR_FAIL_COND( that->keyboard_data.keymap == NULL )
+
+	that->keyboard_data.state = xkb_state_new( that->keyboard_data.keymap );
+	ERR_FAIL_COND( that->keyboard_data.state )
+
+	print_line("Wayland -- Keyboard -- Keymap initialized");
+}
+
+void OS_Wayland::keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {
+	print_line("Wayland -- Keyboard -- enter");
+}
+
+void OS_Wayland::keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface) {
+	print_line("Wayland -- Keyboard -- leave");
+}
+
+void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	uint32_t scancode =  get_keyboard_scancode( that, key );
+
+	switch( scancode ) {
+		case KEY_SHIFT:		that->keyboard_data.modifiers.shift = state; break;
+		case KEY_CONTROL:	that->keyboard_data.modifiers.control = state; break;
+		case KEY_ALT:		that->keyboard_data.modifiers.alt = state; break;
+		case KEY_META:		that->keyboard_data.modifiers.meta = state; break;
+	}
+
+	InputEvent event;
+	event.ID = ++that->event_id;
+	event.type = InputEvent::KEY;
+	event.device = 0;
+	event.key.mod = that->keyboard_data.modifiers;
+	event.key.pressed = state;
+	event.key.scancode = scancode;
+	event.key.unicode = get_keyboard_unicode( that, key );
+
+	/*
+	print_line( String( "Key: " + itos(key) ) );
+	print_line( String( "Scancode: " + itos(event.key.scancode) ) );
+	print_line( String( "Unicode: " + itos(event.key.unicode) ) );
+
+	char buffer[64];
+	int i = xkb_keysym_get_name( xkb_state_key_get_one_sym( that->keyboard_data.state, key + 8), buffer, 64);
+	print_line( String( itos(i) + " " + buffer ) );
+	*/
+
+	that->input->parse_input_event( event );
+}
+
+void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+	xkb_state_update_mask(that->keyboard_data.state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
+}
+
+void OS_Wayland::keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
+	print_line("Wayland -- Keyboard -- repeat_info");
+}
+
+struct _TranslatePair {
+	xkb_keysym_t keysym;
+	uint32_t keycode;
+};
+
+static _TranslatePair _keysym_to_keycode[]={
+	{	XKB_KEY_Escape,				KEY_ESCAPE	},
+	{	XKB_KEY_Tab,				KEY_TAB },
+	{	XKB_KEY_ISO_Left_Tab,		KEY_BACKTAB },
+	{	XKB_KEY_BackSpace,			KEY_BACKSPACE },
+	{	XKB_KEY_Return,				KEY_RETURN },
+	{	XKB_KEY_Insert,				KEY_INSERT },
+	{	XKB_KEY_Delete,				KEY_DELETE },
+	{	XKB_KEY_Pause,				KEY_PAUSE },
+	{	XKB_KEY_Print,				KEY_PRINT },
+	{	XKB_KEY_Sys_Req,			KEY_SYSREQ },
+	{	XKB_KEY_Clear,				KEY_CLEAR },
+	{	XKB_KEY_Home,				KEY_HOME },
+	{	XKB_KEY_End,				KEY_END },
+	{	XKB_KEY_Left,				KEY_LEFT },
+	{	XKB_KEY_Up,					KEY_UP },
+	{	XKB_KEY_Right,				KEY_RIGHT },
+	{	XKB_KEY_Down,				KEY_DOWN },
+	{	XKB_KEY_Page_Up,			KEY_PAGEUP },
+	{	XKB_KEY_Page_Down,			KEY_PAGEDOWN },
+	{	XKB_KEY_Shift_L,			KEY_SHIFT },
+	{	XKB_KEY_Shift_R,			KEY_SHIFT },
+	{	XKB_KEY_Control_L,			KEY_CONTROL },
+	{	XKB_KEY_Control_R,			KEY_CONTROL },
+	{	XKB_KEY_Meta_L,				KEY_META },
+	{	XKB_KEY_Meta_R,				KEY_META },
+	{	XKB_KEY_Alt_L,				KEY_ALT },
+	{	XKB_KEY_Alt_R,				KEY_ALT },
+	{	XKB_KEY_Caps_Lock,			KEY_CAPSLOCK },
+	{	XKB_KEY_Num_Lock,			KEY_NUMLOCK },
+	{	XKB_KEY_Scroll_Lock,		KEY_SCROLLLOCK },
+	{	XKB_KEY_F1,					KEY_F1 },
+	{	XKB_KEY_F2,					KEY_F2 },
+	{	XKB_KEY_F3,					KEY_F3 },
+	{	XKB_KEY_F4,					KEY_F4 },
+	{	XKB_KEY_F5,					KEY_F5 },
+	{	XKB_KEY_F6,					KEY_F6 },
+	{	XKB_KEY_F7,					KEY_F7 },
+	{	XKB_KEY_F8,					KEY_F8 },
+	{	XKB_KEY_F9,					KEY_F9 },
+	{	XKB_KEY_F10,				KEY_F10 },
+	{	XKB_KEY_F11,				KEY_F11 },
+	{	XKB_KEY_F12,				KEY_F12 },
+	{	XKB_KEY_F13,				KEY_F13 },
+	{	XKB_KEY_F14,				KEY_F14 },
+	{	XKB_KEY_F15,				KEY_F15 },
+	{	XKB_KEY_F16,				KEY_F16 },
+	{	XKB_KEY_KP_Enter,			KEY_KP_ENTER },
+	{	XKB_KEY_KP_Multiply,		KEY_KP_MULTIPLY },
+	{	XKB_KEY_KP_Divide,			KEY_KP_DIVIDE },
+	{	XKB_KEY_KP_Subtract,		KEY_KP_SUBSTRACT },
+	{	XKB_KEY_KP_Add,				KEY_KP_ADD },
+	{	XKB_KEY_KP_Decimal,			KEY_KP_PERIOD },
+	{	XKB_KEY_KP_0,				KEY_KP_0 },
+	{	XKB_KEY_KP_1,				KEY_KP_1 },
+	{	XKB_KEY_KP_2,				KEY_KP_2 },
+	{	XKB_KEY_KP_3,				KEY_KP_3 },
+	{	XKB_KEY_KP_4,				KEY_KP_4 },
+	{	XKB_KEY_KP_5,				KEY_KP_5 },
+	{	XKB_KEY_KP_6,				KEY_KP_6 },
+	{	XKB_KEY_KP_7,				KEY_KP_7 },
+	{	XKB_KEY_KP_8,				KEY_KP_8 },
+	{	XKB_KEY_KP_9,				KEY_KP_9 },
+	{	XKB_KEY_Super_L,			KEY_SUPER_L },
+	{	XKB_KEY_Super_R,			KEY_SUPER_R },
+	{	XKB_KEY_Menu,				KEY_MENU },
+	{	XKB_KEY_Hyper_L,			KEY_HYPER_L },
+	{	XKB_KEY_Hyper_R,			KEY_HYPER_R },
+	{	XKB_KEY_Help,				KEY_HELP },
+	{	0,							0 }
+};
+
+uint32_t OS_Wayland::get_keyboard_scancode( OS_Wayland *that, uint32_t key ) {
+
+	uint32_t keysym = xkb_state_key_get_one_sym( that->keyboard_data.state, key + 8);
+
+	for( int index = 0; _keysym_to_keycode[index].keysym != 0; index++ ) {
+		if( _keysym_to_keycode[index].keysym == keysym) {
+			return _keysym_to_keycode[index].keycode;
+		}
+	}
+	return key + 8;
+}
+
+uint32_t OS_Wayland::get_keyboard_unicode( OS_Wayland *that, uint32_t key ) {
+	return xkb_state_key_get_utf32( that->keyboard_data.state, key + 8 );
+}
+
+
+
 // ============================================================================================================================================================================
 
 void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver) {
@@ -311,6 +495,10 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 		print_line("Not implemented...\n"); 	// FIXME
 		exit(1);
 	}
+
+	keyboard_data.context = xkb_context_new( XKB_CONTEXT_NO_FLAGS );
+	ERR_FAIL_COND( keyboard_data.context == NULL )
+	print_line("Wayland -- Keyboard Context created");
 
 	display = wl_display_connect( NULL );
 	ERR_FAIL_COND( display == NULL );
@@ -420,6 +608,10 @@ void OS_Wayland::finalize() {
 #endif
 
 	wl_display_disconnect(display);
+
+	xkb_state_unref( keyboard_data.state );
+	xkb_keymap_unref( keyboard_data.keymap );
+	xkb_context_unref( keyboard_data.context );
 }
 
 int OS_Wayland::get_video_driver_count() const {
@@ -724,6 +916,8 @@ OS_Wayland::OS_Wayland() {
 	minimized = false;
 	mouse_mode=MOUSE_MODE_VISIBLE;
 
+	event_id = 0;
+
 	display = NULL;
 	compositor = NULL;
 	surface = NULL;
@@ -733,6 +927,16 @@ OS_Wayland::OS_Wayland() {
 	seat = NULL;
 	pointer = NULL;
 	pointer_data.button_mask = 0;
+
+	keyboard = NULL;
+	keyboard_data.context = NULL;
+	keyboard_data.keymap = NULL;
+	keyboard_data.state = NULL;
+	keyboard_data.modifiers.alt = false;
+	keyboard_data.modifiers.command = false;
+	keyboard_data.modifiers.control = false;
+	keyboard_data.modifiers.meta = false;
+	keyboard_data.modifiers.shift = false;
 };
 
 void OS_Wayland::set_cursor_shape(OS::CursorShape) {
