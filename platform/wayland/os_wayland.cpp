@@ -56,14 +56,14 @@ const struct wl_registry_listener OS_Wayland::registry_listener = {
 void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 	
-	print_line(String("Wayland -- Registry Event -- ") + interface + " id " + itos( id ) );
+	print_line(String("Wayland -- Registry Event -- ") + interface + " ID: " + itos( id ) + " Version: " + itos( version ));
 
 	if (strcmp(interface, "wl_compositor") == 0) 
 		that->compositor =  static_cast<struct wl_compositor *> ( wl_registry_bind(registry, id, &wl_compositor_interface, 1) );
 	if (strcmp(interface, "wl_shell") == 0) 
 		that->shell = static_cast<wl_shell *> ( wl_registry_bind(registry, id, &wl_shell_interface, 1) );
 	if (strcmp(interface, "wl_seat") == 0) 
-		that->seat = static_cast<wl_seat *> ( wl_registry_bind(registry, id, &wl_seat_interface, 1) );
+		that->seat = static_cast<wl_seat *> ( wl_registry_bind(registry, id, &wl_seat_interface, 4) );
 }
 
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
@@ -133,6 +133,7 @@ void OS_Wayland::seat_handle_capabilities(void *data, struct wl_seat *seat, uint
 }
 
 void OS_Wayland::seat_handle_name(void *data, struct wl_seat *seat, const char *name) {
+	print_line(String("Wayland -- Seat -- Name: ") + name );
 }
 
 //             _       _              _ _     _                       
@@ -196,7 +197,7 @@ void OS_Wayland::pointer_handle_motion(void *data, struct wl_pointer *pointer, u
 void OS_Wayland::pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
-	int _button = get_pointer_button( button );
+	int _button = pointer_get_button( button );
 	if( _button == 0 ) {
 		print_line(String( "Wayland -- Pointer -- Button " + itos(button) + " is not supported"));
 		return;
@@ -262,7 +263,7 @@ void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uin
 		return;
 	}
 
-	int _button = get_pointer_axis_direction( value );
+	int _button = pointer_get_axis_direction( value );
 
 	InputEvent event;
 	event.ID = ++that->event_id;
@@ -284,7 +285,7 @@ void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uin
 	that->input->parse_input_event( event );
 }
 
-int OS_Wayland::get_pointer_button( uint32_t button ) {
+int OS_Wayland::pointer_get_button( uint32_t button ) {
 
 	switch(button) {
 		case WL_BUTTON_LEFT:	return BUTTON_LEFT;
@@ -295,7 +296,7 @@ int OS_Wayland::get_pointer_button( uint32_t button ) {
 	return 0;	
 }
 
-int OS_Wayland::get_pointer_axis_direction( wl_fixed_t value ) {
+int OS_Wayland::pointer_get_axis_direction( wl_fixed_t value ) {
 	int _value = wl_fixed_to_int( value );
 
 	if( _value > 0 )
@@ -336,7 +337,7 @@ void OS_Wayland::keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard
 	ERR_FAIL_COND( that->keyboard_data.keymap == NULL )
 
 	that->keyboard_data.state = xkb_state_new( that->keyboard_data.keymap );
-	ERR_FAIL_COND( that->keyboard_data.state )
+	ERR_FAIL_COND( that->keyboard_data.state == NULL )
 
 	print_line("Wayland -- Keyboard -- Keymap initialized");
 }
@@ -352,13 +353,16 @@ void OS_Wayland::keyboard_handle_leave(void *data, struct wl_keyboard *keyboard,
 void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
-	uint32_t scancode =  get_keyboard_scancode( that, key );
+	uint32_t scancode =  keyboard_get_scancode( that, key );
 
 	switch( scancode ) {
 		case KEY_SHIFT:		that->keyboard_data.modifiers.shift = state; break;
 		case KEY_CONTROL:	that->keyboard_data.modifiers.control = state; break;
 		case KEY_ALT:		that->keyboard_data.modifiers.alt = state; break;
 		case KEY_META:		that->keyboard_data.modifiers.meta = state; break;
+
+		default:			that->keyboard_data.repeat_key = key;
+							that->keyboard_data.repeat_time = that->get_ticks_usec() / 1000 + that->keyboard_data.repeat_delay;
 	}
 
 	InputEvent event;
@@ -367,8 +371,9 @@ void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, u
 	event.device = 0;
 	event.key.mod = that->keyboard_data.modifiers;
 	event.key.pressed = state;
+	event.key.echo = false;
 	event.key.scancode = scancode;
-	event.key.unicode = get_keyboard_unicode( that, key );
+	event.key.unicode = keyboard_get_unicode( that, key );
 
 	/*
 	print_line( String( "Key: " + itos(key) ) );
@@ -381,6 +386,13 @@ void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, u
 	*/
 
 	that->input->parse_input_event( event );
+
+	if(!state) {
+		that->keyboard_data.repeat_key = 0;
+		that->keyboard_data.repeat_time = 0;
+	}
+	print_line(itos(that->keyboard_data.repeat_key));
+	print_line(itos(that->keyboard_data.repeat_time));
 }
 
 void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
@@ -389,7 +401,11 @@ void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keybo
 }
 
 void OS_Wayland::keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
-	print_line("Wayland -- Keyboard -- repeat_info");
+	print_line(String("Wayland -- Keyboard -- repeat_info Rate: " + itos(rate) + " Delay: " + itos(delay)) );
+
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+	that->keyboard_data.repeat_rate = rate;
+	that->keyboard_data.repeat_delay = delay;
 }
 
 struct _TranslatePair {
@@ -469,7 +485,7 @@ static _TranslatePair _keysym_to_keycode[]={
 	{	0,							0 }
 };
 
-uint32_t OS_Wayland::get_keyboard_scancode( OS_Wayland *that, uint32_t key ) {
+uint32_t OS_Wayland::keyboard_get_scancode( OS_Wayland *that, uint32_t key ) {
 
 	uint32_t keysym = xkb_state_key_get_one_sym( that->keyboard_data.state, key + 8);
 
@@ -481,11 +497,32 @@ uint32_t OS_Wayland::get_keyboard_scancode( OS_Wayland *that, uint32_t key ) {
 	return key + 8;
 }
 
-uint32_t OS_Wayland::get_keyboard_unicode( OS_Wayland *that, uint32_t key ) {
+uint32_t OS_Wayland::keyboard_get_unicode( OS_Wayland *that, uint32_t key ) {
 	return xkb_state_key_get_utf32( that->keyboard_data.state, key + 8 );
 }
 
+void OS_Wayland::keyboard_repeat_key( OS_Wayland *that ) {
 
+	if( that->keyboard_data.repeat_key == 0)
+		return;
+
+	if( that->keyboard_data.repeat_time <= that->get_ticks_usec() / 1000 ) {
+
+		InputEvent event;
+		event.ID = ++that->event_id;
+		event.type = InputEvent::KEY;
+		event.device = 0;
+		event.key.mod = that->keyboard_data.modifiers;
+		event.key.pressed = true;
+		event.key.echo = true;
+		event.key.scancode = keyboard_get_scancode( that, that->keyboard_data.repeat_key );
+		event.key.unicode = keyboard_get_unicode( that, that->keyboard_data.repeat_key );
+
+		that->input->parse_input_event( event );
+
+		that->keyboard_data.repeat_time = (that->get_ticks_usec() / 1000) + (1000 / that->keyboard_data.repeat_rate);
+	}
+}
 
 // ============================================================================================================================================================================
 
@@ -890,7 +927,9 @@ void OS_Wayland::run() {
 		
 	while (!force_quit) {
 	
-		wl_display_dispatch(display);
+		wl_display_roundtrip( display );	// FIXME: Replace wl_display_roundtrip
+
+		keyboard_repeat_key( this );
 		
 		if (Main::iteration()==true)
 			break;
@@ -937,7 +976,11 @@ OS_Wayland::OS_Wayland() {
 	keyboard_data.modifiers.control = false;
 	keyboard_data.modifiers.meta = false;
 	keyboard_data.modifiers.shift = false;
-};
+	keyboard_data.repeat_rate = 0;
+	keyboard_data.repeat_delay = 0;
+	keyboard_data.repeat_key = 0;
+	keyboard_data.repeat_time = 0;
+}
 
 void OS_Wayland::set_cursor_shape(OS::CursorShape) {
 	;	// FIXME

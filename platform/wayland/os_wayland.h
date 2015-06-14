@@ -131,8 +131,8 @@ class OS_Wayland : public OS_Unix {
 	static void pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t serial, wl_fixed_t surface_x, wl_fixed_t surface_y);
 	static void pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
 	static void pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
-	static int get_pointer_button( uint32_t button );
-	static int get_pointer_axis_direction( wl_fixed_t value );
+	static int pointer_get_button( uint32_t button );
+	static int pointer_get_axis_direction( wl_fixed_t value );
 
 	struct {
 		Point2i pos;
@@ -150,14 +150,19 @@ class OS_Wayland : public OS_Unix {
 	static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
 	static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
 	static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay);
-	static uint32_t get_keyboard_scancode( OS_Wayland *that, uint32_t key );
-	static uint32_t get_keyboard_unicode( OS_Wayland *that, uint32_t key );
+	static uint32_t keyboard_get_scancode( OS_Wayland *that, uint32_t key );
+	static uint32_t keyboard_get_unicode( OS_Wayland *that, uint32_t key );
+	static void keyboard_repeat_key( OS_Wayland *that );
 
 	struct {
 		struct xkb_context *context;
 		struct xkb_keymap *keymap;
 		struct xkb_state *state;
 		InputModifierState modifiers;
+		int32_t repeat_rate;
+		int32_t repeat_delay;
+		int32_t repeat_key;
+		int32_t repeat_time;
 	} keyboard_data;
 
 
