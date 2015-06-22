@@ -104,26 +104,36 @@ class OS_Wayland : public OS_Unix {
 
 	struct wl_display *display;
  	struct wl_compositor *compositor;
-	struct wl_surface *surface;
-	struct wl_shell *shell;
-	struct wl_shell_surface *shell_surface;
+
+	// registry
 	struct wl_registry *registry;
-	struct wl_seat *seat;
-	struct wl_pointer *pointer;
-	struct wl_keyboard *keyboard;
 
 	static const struct wl_registry_listener registry_listener; 	
 	static void registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version);
 	static void registry_remover(void *data, struct wl_registry *registry, uint32_t id); 
+
+
+	// shell surface
+	struct wl_surface *surface;
+	struct wl_shell *shell;
+	struct wl_shell_surface *shell_surface;
 
 	static const struct wl_shell_surface_listener shell_surface_listener;
 	static void shell_surface_ping(void *data, struct wl_shell_surface *shell_surface, uint32_t serial);
 	static void shell_surface_configure(void *data, struct wl_shell_surface *shell_surface, uint32_t edges, int32_t width, int32_t height);
 	static void shell_surface_popup(void *data, struct wl_shell_surface *shell_surface);
 
+
+	// seat
+	struct wl_seat *seat;
+
 	static const struct wl_seat_listener seat_listener;
 	static void seat_handle_capabilities(void *data, struct wl_seat *seat, uint32_t caps);
 	static void seat_handle_name(void *data, struct wl_seat *seat, const char *name);
+
+
+	// pointer
+	struct wl_pointer *pointer;
 
 	static const struct wl_pointer_listener pointer_listener;
 	static void pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y);
@@ -131,6 +141,7 @@ class OS_Wayland : public OS_Unix {
 	static void pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t serial, wl_fixed_t surface_x, wl_fixed_t surface_y);
 	static void pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state);
 	static void pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+
 	static int pointer_get_button( uint32_t button );
 	static int pointer_get_axis_direction( wl_fixed_t value );
 
@@ -143,6 +154,10 @@ class OS_Wayland : public OS_Unix {
 		int button_mask;
 	} pointer_data;
 
+
+	// keyboard
+	struct wl_keyboard *keyboard;
+
 	static const struct wl_keyboard_listener keyboard_listener;
 	static void keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size);
 	static void keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys);
@@ -150,6 +165,7 @@ class OS_Wayland : public OS_Unix {
 	static void keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state);
 	static void keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
 	static void keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay);
+
 	static uint32_t keyboard_get_scancode( OS_Wayland *that, uint32_t key );
 	static uint32_t keyboard_get_unicode( OS_Wayland *that, uint32_t key );
 	static void keyboard_repeat_key( OS_Wayland *that );
@@ -164,6 +180,15 @@ class OS_Wayland : public OS_Unix {
 		int32_t repeat_key;
 		int32_t repeat_time;
 	} keyboard_data;
+
+
+	// output
+	Vector<struct wl_output *> output_vector;
+	static const struct wl_output_listener output_listener;
+	static void output_handle_geometry(void *data, struct wl_output *output, int32_t x, int32_t y, int32_t physical_width, int32_t physical_height, int32_t subpixel, const char *make, const char *model, int32_t transform);
+	static void output_handle_mode(void *data, struct wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh);
+	static void output_handle_done(void *data, struct wl_output *output);
+	static void output_handle_scale(void *data, struct wl_output *output, int32_t factor);
 
 
 protected:

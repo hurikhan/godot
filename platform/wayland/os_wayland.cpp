@@ -54,16 +54,22 @@ const struct wl_registry_listener OS_Wayland::registry_listener = {
 };
 
 void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 	
 	print_line(String("Wayland -- Registry Event -- ") + interface + " ID: " + itos( id ) + " Version: " + itos( version ));
 
 	if (strcmp(interface, "wl_compositor") == 0) 
 		that->compositor =  static_cast<struct wl_compositor *> ( wl_registry_bind(registry, id, &wl_compositor_interface, 1) );
+
 	if (strcmp(interface, "wl_shell") == 0) 
 		that->shell = static_cast<wl_shell *> ( wl_registry_bind(registry, id, &wl_shell_interface, 1) );
+
 	if (strcmp(interface, "wl_seat") == 0) 
 		that->seat = static_cast<wl_seat *> ( wl_registry_bind(registry, id, &wl_seat_interface, 4) );
+
+	if (strcmp(interface, "wl_output") == 0)
+		that->output_vector.push_back( static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) ) ); 		
 }
 
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
@@ -343,11 +349,9 @@ void OS_Wayland::keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard
 }
 
 void OS_Wayland::keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {
-	print_line("Wayland -- Keyboard -- enter");
 }
 
 void OS_Wayland::keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface) {
-	print_line("Wayland -- Keyboard -- leave");
 }
 
 void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
@@ -401,7 +405,7 @@ void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keybo
 }
 
 void OS_Wayland::keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
-	print_line(String("Wayland -- Keyboard -- repeat_info Rate: " + itos(rate) + " Delay: " + itos(delay)) );
+	print_line(String("Wayland -- Keyboard -- Key repeat info --> Rate: " + itos(rate) + " Delay: " + itos(delay)) );
 
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 	that->keyboard_data.repeat_rate = rate;
@@ -524,6 +528,42 @@ void OS_Wayland::keyboard_repeat_key( OS_Wayland *that ) {
 	}
 }
 
+//             _               _     _ _     _
+//  ___  _   _| |_ _ __  _   _| |_  | (_)___| |_ ___ _ __   ___ _ __
+// / _ \| | | | __| '_ \| | | | __| | | / __| __/ _ \ '_ \ / _ \ '__|
+// |(_) | |_| | |_| |_) | |_| | |_  | | \__ \ ||  __/ | | |  __/ |
+// \___/ \__,_|\__| .__/ \__,_|\__| |_|_|___/\__\___|_| |_|\___|_|
+//                |_|
+
+const struct wl_output_listener OS_Wayland::output_listener = {
+	output_handle_geometry,
+	output_handle_mode,
+	output_handle_done,
+	output_handle_scale
+};
+
+void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x, int32_t y, int32_t physical_width, int32_t physical_height, int32_t subpixel, const char *make, const char *model, int32_t transform) {
+	print_line(String("Wayland -- Output -- Geometry +- x: ") + itos(x) + " y: " + itos(y));
+	print_line(String("                              +- width: ") + itos(physical_width) + "mm height: " + itos(physical_height) + "mm");
+	print_line(String("                              +- subpixel: ") + itos(subpixel) );
+	print_line(String("                              +- make: ") + make);
+	print_line(String("                              +- model: ") + model);
+	print_line(String("                              +- transform: ") + itos(transform) );
+}
+
+void OS_Wayland::output_handle_mode(void *data, wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh) {
+	print_line(String("Wayland -- Output -- Mode -- ") + itos(width) + "*" + itos(height) + "@" + itos(refresh) + "mHz");
+}
+
+void OS_Wayland::output_handle_done(void *data, wl_output *output) {
+	print_line("Wayland -- Output -- Done");
+}
+
+void OS_Wayland::output_handle_scale(void *data, wl_output *output, int32_t factor) {
+	print_line(String("Wayland -- Output -- Scale -- scale: ") + itos(factor) );
+}
+
+
 // ============================================================================================================================================================================
 
 void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver) {
@@ -550,6 +590,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	ERR_FAIL_COND( compositor == NULL);
 	ERR_FAIL_COND( shell == NULL );
 	ERR_FAIL_COND( seat == NULL );
+	ERR_FAIL_COND( output_vector[0] == NULL );
 
 	surface = wl_compositor_create_surface( compositor );
 	ERR_FAIL_COND( surface == NULL );
@@ -562,6 +603,9 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	wl_shell_surface_set_toplevel(shell_surface);
 	wl_shell_surface_add_listener(shell_surface, &shell_surface_listener, this);
 	wl_seat_add_listener(seat, &seat_listener, this);
+	
+	for( int i = 0; i < output_vector.size(); i++ )
+		wl_output_add_listener( output_vector[i], &output_listener, this );
 
 	context_gl = memnew( ContextGL_Wayland( display, surface, current_videomode, false ) );
 	context_gl->initialize();
