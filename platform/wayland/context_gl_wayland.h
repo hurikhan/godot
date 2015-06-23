@@ -69,6 +69,7 @@ public:
 	virtual void release_current();	
 	virtual void make_current();	
 	virtual void swap_buffers();
+	virtual void resize( int32_t width, int32_t height );
 	virtual int get_window_width();
 	virtual int get_window_height();
 

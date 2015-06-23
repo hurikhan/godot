@@ -64,6 +64,14 @@ void ContextGL_Wayland::swap_buffers() {
 	eglSwapBuffers( egl_display, egl_surface );
 }
 
+void ContextGL_Wayland::resize( int32_t width, int32_t height ) {
+	video_mode.width = width;
+	video_mode.height = height;	
+
+	wl_egl_window_resize( egl_window, width, height, 0, 0 );
+}
+
+
 Error ContextGL_Wayland::initialize() {
 	// Create display
 	egl_display = eglGetDisplay( (EGLNativeDisplayType) display);

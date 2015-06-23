@@ -93,7 +93,17 @@ void OS_Wayland::shell_surface_ping(void *data, struct wl_shell_surface *shell_s
 }
 
 void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *shell_surface, uint32_t edges, int32_t width, int32_t height) {
-	print_line(String("Wayland -- Shell Surface -- " + itos(edges) + " " + itos(width) + " " + itos(height)));
+	//print_line(String("Wayland -- Shell Surface -- " + itos(edges) + " " + itos(width) + " " + itos(height)));
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	if( width <= 0 && height <= 0 )
+		return;
+
+	that->current_videomode.width = width;
+	that->current_videomode.height = height;
+
+	that->context_gl->resize( width, height );
+	that->context_gl->make_current();
 }
 
 void OS_Wayland::shell_surface_popup(void *data, struct wl_shell_surface *shell_surface) {
