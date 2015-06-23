@@ -103,7 +103,6 @@ void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *sh
 	that->current_videomode.height = height;
 
 	that->context_gl->resize( width, height );
-	that->context_gl->make_current();
 }
 
 void OS_Wayland::shell_surface_popup(void *data, struct wl_shell_surface *shell_surface) {
@@ -405,8 +404,9 @@ void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, u
 		that->keyboard_data.repeat_key = 0;
 		that->keyboard_data.repeat_time = 0;
 	}
-	print_line(itos(that->keyboard_data.repeat_key));
-	print_line(itos(that->keyboard_data.repeat_time));
+
+	//print_line(itos(that->keyboard_data.repeat_key));
+	//print_line(itos(that->keyboard_data.repeat_time));
 }
 
 void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
@@ -742,11 +742,11 @@ OS::MouseMode OS_Wayland::get_mouse_mode() const {
 }
 
 int OS_Wayland::get_mouse_button_state() const {
-	return 0;	// FIXME
+	return 0;	// FIXME -- deprecated?
 }
 
 Point2 OS_Wayland::get_mouse_pos() const {
-	return Point2i(0, 0);	// FIXME
+	return Point2i(0, 0);	// FIXME -- deprecated?
 }
 
 void OS_Wayland::set_window_title(const String& p_title) {
@@ -758,9 +758,9 @@ void OS_Wayland::set_video_mode(const VideoMode& p_video_mode,int p_screen) {
 }
 
 OS::VideoMode OS_Wayland::get_video_mode(int p_screen) const {
-
 	return current_videomode;
 }
+
 void OS_Wayland::get_fullscreen_mode_list(List<VideoMode> *p_list,int p_screen) const {
 	;	// FIXME -- deprecated?
 }
@@ -786,22 +786,22 @@ Size2 OS_Wayland::get_screen_size(int p_screen) const {
 	Size2i size = Point2i(0, 0);	// FIXME
 	return size;
 }
-	
 
 Point2 OS_Wayland::get_window_position() const {
-	return Point2i(0, 0);	// FIXME
+	WARN_PRINT("Window positioning is unknown for a Wayland client");
+	return Point2i(0, 0);
 }
 
 void OS_Wayland::set_window_position(const Point2& p_position) {
-	;	// FIXME
+	WARN_PRINT("Window positioning is unknown for a Wayland client");
 }
 
 Size2 OS_Wayland::get_window_size() const {
-	return Size2i(0, 0);	// FIXME
+	return Size2i(current_videomode.width, current_videomode.height);
 }
 
 void OS_Wayland::set_window_size(const Size2 p_size) {
-	;	// FIXME
+	shell_surface_configure(this, shell_surface, 0, p_size.width, p_size.height );
 }
 
 void OS_Wayland::set_window_fullscreen(bool p_enabled) {
