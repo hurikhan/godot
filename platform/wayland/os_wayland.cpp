@@ -68,8 +68,11 @@ void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint
 	if (strcmp(interface, "wl_seat") == 0) 
 		that->seat = static_cast<wl_seat *> ( wl_registry_bind(registry, id, &wl_seat_interface, 4) );
 
-	if (strcmp(interface, "wl_output") == 0)
-		that->output_vector.push_back( static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) ) ); 		
+	if (strcmp(interface, "wl_output") == 0) {
+		OS_Wayland::output_data_t output_data;
+		output_data.output = static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) );
+		that->output_data.push_back( output_data );
+	}
 }
 
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
@@ -97,6 +100,9 @@ void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *sh
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
 	if( width <= 0 && height <= 0 )
+		return;
+
+	if( that->current_videomode.resizable == false )
 		return;
 
 	that->current_videomode.width = width;
@@ -152,11 +158,11 @@ void OS_Wayland::seat_handle_name(void *data, struct wl_seat *seat, const char *
 }
 
 //             _       _              _ _     _                       
-// _ __   ___ (_)_ __ | |_ ___ _ __  | (_)___| |_ ___ _ __   ___ _ __ 
-//| '_ \ / _ \| | '_ \| __/ _ \ '__| | | / __| __/ _ \ '_ \ / _ \ '__|
-//| |_) | (_) | | | | | ||  __/ |    | | \__ \ ||  __/ | | |  __/ |   
-//| .__/ \___/|_|_| |_|\__\___|_|    |_|_|___/\__\___|_| |_|\___|_|   
-//|_|                                                                 
+//  _ __   ___ (_)_ __ | |_ ___ _ __  | (_)___| |_ ___ _ __   ___ _ __ 
+// | '_ \ / _ \| | '_ \| __/ _ \ '__| | | / __| __/ _ \ '_ \ / _ \ '__|
+// | |_) | (_) | | | | | ||  __/ |    | | \__ \ ||  __/ | | |  __/ |   
+// | .__/ \___/|_|_| |_|\__\___|_|    |_|_|___/\__\___|_| |_|\___|_|   
+// |_|                                                                 
 
 const struct wl_pointer_listener OS_Wayland::pointer_listener = {
 	pointer_handle_enter,
@@ -553,6 +559,20 @@ const struct wl_output_listener OS_Wayland::output_listener = {
 };
 
 void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x, int32_t y, int32_t physical_width, int32_t physical_height, int32_t subpixel, const char *make, const char *model, int32_t transform) {
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	for( int i=0; i < that->output_data.size(); i++)
+		if( that->output_data[i].output == output ) {
+			that->output_data[i].x = x;
+			that->output_data[i].y = y;
+			that->output_data[i].physical_width = physical_width;
+			that->output_data[i].physical_height = physical_height;
+			that->output_data[i].subpixel = subpixel;
+			that->output_data[i].make = make;
+			that->output_data[i].model = model;
+			that->output_data[i].transform = transform;
+		}
+
 	print_line(String("Wayland -- Output -- Geometry +- x: ") + itos(x) + " y: " + itos(y));
 	print_line(String("                              +- width: ") + itos(physical_width) + "mm height: " + itos(physical_height) + "mm");
 	print_line(String("                              +- subpixel: ") + itos(subpixel) );
@@ -562,6 +582,17 @@ void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x
 }
 
 void OS_Wayland::output_handle_mode(void *data, wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh) {
+	
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	for( int i=0; i < that->output_data.size(); i++)
+		if( that->output_data[i].output == output ) {
+			that->output_data[i].flags = flags;
+			that->output_data[i].width = width;
+			that->output_data[i].height = height;
+			that->output_data[i].refresh = refresh;
+		}
+
 	print_line(String("Wayland -- Output -- Mode -- ") + itos(width) + "*" + itos(height) + "@" + itos(refresh) + "mHz");
 }
 
@@ -600,7 +631,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	ERR_FAIL_COND( compositor == NULL);
 	ERR_FAIL_COND( shell == NULL );
 	ERR_FAIL_COND( seat == NULL );
-	ERR_FAIL_COND( output_vector[0] == NULL );
+	ERR_FAIL_COND( output_data.size() == 0 );
 
 	surface = wl_compositor_create_surface( compositor );
 	ERR_FAIL_COND( surface == NULL );
@@ -614,8 +645,8 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	wl_shell_surface_add_listener(shell_surface, &shell_surface_listener, this);
 	wl_seat_add_listener(seat, &seat_listener, this);
 	
-	for( int i = 0; i < output_vector.size(); i++ )
-		wl_output_add_listener( output_vector[i], &output_listener, this );
+	for( int i = 0; i < output_data.size(); i++ )
+		wl_output_add_listener( output_data[i].output, &output_listener, this );
 
 	context_gl = memnew( ContextGL_Wayland( display, surface, current_videomode, false ) );
 	context_gl->initialize();
@@ -728,6 +759,7 @@ const char *OS_Wayland::get_audio_driver_name(int p_driver) const {
     ERR_FAIL_COND_V( !driver, "" );
     return AudioDriverManagerSW::get_driver(p_driver)->get_name();
 }
+
 void OS_Wayland::set_mouse_mode(MouseMode p_mode) {
 	;	// FIXME
 }
@@ -737,7 +769,6 @@ void OS_Wayland::warp_mouse_pos(const Point2& p_to) {
 }
 
 OS::MouseMode OS_Wayland::get_mouse_mode() const {
-
 	return mouse_mode;
 }
 
@@ -766,24 +797,37 @@ void OS_Wayland::get_fullscreen_mode_list(List<VideoMode> *p_list,int p_screen) 
 }
 
 int OS_Wayland::get_screen_count() const {
-	return 0;	// FIXME
+	return output_data.size(); 
 }
 
 int OS_Wayland::get_current_screen() const {
-	return 0;	// FIXME
+	WARN_PRINT("Window positioning is unknown for a Wayland client");
+	return 0;
 }
 
 void OS_Wayland::set_current_screen(int p_screen) {
-	;	// FIXME
+	WARN_PRINT("Window positioning is unknown for a Wayland client");
 }
 
 Point2 OS_Wayland::get_screen_position(int p_screen) const {
-	Point2i position = Point2i(0, 0);	// FIXME
+	if( p_screen >= output_data.size() || p_screen < 0 )
+		return Point2i(0,0);
+
+	int32_t x = output_data[p_screen].x;
+	int32_t y = output_data[p_screen].y;
+
+	Point2i position = Point2i(x, y);
 	return position;
 }
 
 Size2 OS_Wayland::get_screen_size(int p_screen) const {
-	Size2i size = Point2i(0, 0);	// FIXME
+	if( p_screen >= output_data.size() || p_screen < 0 )
+		return Point2i(0,0);
+
+	int32_t width = output_data[p_screen].width;
+	int32_t height = output_data[p_screen].height;
+
+	Size2i size = Point2i(width, height);
 	return size;
 }
 
@@ -805,7 +849,20 @@ void OS_Wayland::set_window_size(const Size2 p_size) {
 }
 
 void OS_Wayland::set_window_fullscreen(bool p_enabled) {
-	;	// FIXME
+
+	if( current_videomode.resizable == false )
+		return;
+
+	if( p_enabled ) {
+		wl_shell_surface_set_fullscreen( shell_surface, 0, 0, NULL );
+		current_videomode.fullscreen = true;
+		maximized = false;
+	}
+	else {
+		wl_shell_surface_set_toplevel( shell_surface );
+		current_videomode.fullscreen = false;
+		maximized = false;
+	}
 }
 
 bool OS_Wayland::is_window_fullscreen() const {
@@ -813,7 +870,7 @@ bool OS_Wayland::is_window_fullscreen() const {
 }
 
 void OS_Wayland::set_window_resizable(bool p_enabled) {
-	;	// FIXME
+	current_videomode.resizable = p_enabled;
 }
 
 bool OS_Wayland::is_window_resizable() const {
@@ -829,11 +886,24 @@ bool OS_Wayland::is_window_minimized() const {
 }
 
 void OS_Wayland::set_window_maximized(bool p_enabled) {
-	;	// FIXME
+	
+	if( current_videomode.resizable == false )
+		return;
+
+	if( p_enabled ) {
+		wl_shell_surface_set_maximized( shell_surface, NULL );
+		maximized = true;
+		current_videomode.fullscreen = false;
+	}
+	else {
+		wl_shell_surface_set_toplevel( shell_surface );
+		maximized = false;
+		current_videomode.fullscreen = false;
+	}		
 }
 
 bool OS_Wayland::is_window_maximized() const {
-	return false;	// FIXME
+	return maximized;
 }
 
 MainLoop *OS_Wayland::get_main_loop() const {
@@ -1007,6 +1077,7 @@ OS_Wayland::OS_Wayland() {
 #endif
 
 	minimized = false;
+	maximized = false;
 	mouse_mode=MOUSE_MODE_VISIBLE;
 
 	event_id = 0;

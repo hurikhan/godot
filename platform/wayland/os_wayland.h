@@ -82,6 +82,7 @@ class OS_Wayland : public OS_Unix {
 	SpatialSound2DServerSW *spatial_sound_2d_server;
 
 	bool force_quit;
+	bool maximized;
 	bool minimized;
 
 	InputDefault *input;
@@ -183,13 +184,29 @@ class OS_Wayland : public OS_Unix {
 
 
 	// output
-	Vector<struct wl_output *> output_vector;
 	static const struct wl_output_listener output_listener;
 	static void output_handle_geometry(void *data, struct wl_output *output, int32_t x, int32_t y, int32_t physical_width, int32_t physical_height, int32_t subpixel, const char *make, const char *model, int32_t transform);
 	static void output_handle_mode(void *data, struct wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh);
 	static void output_handle_done(void *data, struct wl_output *output);
 	static void output_handle_scale(void *data, struct wl_output *output, int32_t factor);
 
+	struct output_data_t {
+		struct wl_output *output;
+		int32_t x;
+		int32_t y;
+		int32_t physical_width;
+		int32_t physical_height;
+		int32_t subpixel;
+		const char *make;
+		const char *model;
+		int32_t transform;
+		int32_t flags;
+		int32_t width;
+		int32_t height;
+		int32_t refresh;
+	};
+
+	Vector<struct output_data_t> output_data;
 
 protected:
 
