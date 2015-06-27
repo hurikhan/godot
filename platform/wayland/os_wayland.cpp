@@ -185,14 +185,10 @@ void OS_Wayland::pointer_handle_enter(void *data, struct wl_pointer *pointer, ui
 	struct wl_buffer *buffer;
 	struct wl_cursor_image *image;
 
-	if ( that->pointer_data.cursor == NULL )
-		return;
-
-	image = that->pointer_data.cursor->images[0];
+	image = that->pointer_data.cursors[0]->images[0];
 	buffer = wl_cursor_image_get_buffer( image );
 	struct wl_surface *cursor_surface = that->pointer_data.cursor_surface;
 	
-
 	wl_pointer_set_cursor( pointer, serial, cursor_surface, image->hotspot_x, image->hotspot_y );
 	wl_surface_attach( cursor_surface, buffer, 0, 0 );
 	wl_surface_damage( cursor_surface, 0, 0, image->width, image->height );
@@ -353,11 +349,35 @@ int OS_Wayland::pointer_get_axis_direction( wl_fixed_t value ) {
 
 void OS_Wayland::pointer_init_cursor_theme( OS_Wayland *that ) {
 	that->pointer_data.cursor_theme = wl_cursor_theme_load( NULL, 32, that->shm );
-	that->pointer_data.cursor = wl_cursor_theme_get_cursor( that->pointer_data.cursor_theme, "left_ptr" );
 	that->pointer_data.cursor_surface = wl_compositor_create_surface( that->compositor );
 
+	for(int i=0;i<CURSOR_MAX;i++) {
+
+		static const char *cursor_file[]={
+			"left_ptr",
+			"xterm",
+			"hand2",
+			"cross",
+			"watch",
+			"left_ptr_watch",
+			"fleur",
+			"hand1",
+			"X_cursor",
+			"sb_v_double_arrow",
+			"sb_h_double_arrow",
+			"size_bdiag",
+			"size_fdiag",
+			"hand1",
+			"sb_v_double_arrow",
+			"sb_h_double_arrow",
+			"question_arrow"
+		};
+		that->pointer_data.cursors[i] = wl_cursor_theme_get_cursor( that->pointer_data.cursor_theme, cursor_file[i] );
+	}
+
 	ERR_FAIL_COND( that->pointer_data.cursor_theme == NULL );
-	ERR_FAIL_COND( that->pointer_data.cursor == NULL );
+	ERR_FAIL_COND( that->pointer_data.cursors[0] == NULL );
+	ERR_FAIL_COND( that->pointer_data.cursor_surface == NULL);
 }
 
 //  _              _                         _   _ _     _                       
@@ -961,7 +981,7 @@ void OS_Wayland::set_main_loop( MainLoop * p_main_loop ) {
 bool OS_Wayland::can_draw() const {
 
 	return !minimized;
-};
+}
 
 void OS_Wayland::set_clipboard(const String& p_text) {
 	;	// FIXME
@@ -970,7 +990,7 @@ void OS_Wayland::set_clipboard(const String& p_text) {
 String OS_Wayland::get_clipboard() const {
 	String ret;	// FIXME
 	return ret;
-};
+}
 
 String OS_Wayland::get_name() {
 	return "Wayland";
@@ -1141,6 +1161,14 @@ OS_Wayland::OS_Wayland() {
 	keyboard_data.repeat_time = 0;
 }
 
-void OS_Wayland::set_cursor_shape(OS::CursorShape) {
-	;	// FIXME
+void OS_Wayland::set_cursor_shape(OS::CursorShape p_shape) {
+	struct wl_buffer *buffer;
+	struct wl_cursor_image *image;
+
+	image = pointer_data.cursors[p_shape]->images[0];
+	buffer = wl_cursor_image_get_buffer( image );
+
+	wl_surface_attach( pointer_data.cursor_surface, buffer, 0, 0 );
+	wl_surface_damage( pointer_data.cursor_surface, 0, 0, image->width, image->height );
+	wl_surface_commit( pointer_data.cursor_surface );
 }

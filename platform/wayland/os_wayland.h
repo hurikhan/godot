@@ -158,7 +158,8 @@ class OS_Wayland : public OS_Unix {
 		int button_mask;
 		struct wl_cursor_theme *cursor_theme;
 		struct wl_surface *cursor_surface;
-		struct wl_cursor *cursor;
+		struct wl_cursor *cursors[CURSOR_MAX];
+
 	} pointer_data;
 
 
