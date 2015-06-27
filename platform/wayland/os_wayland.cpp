@@ -73,6 +73,11 @@ void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint
 		output_data.output = static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) );
 		that->output_data.push_back( output_data );
 	}
+
+	if (strcmp(interface, "wl_shm") == 0) {
+		that->shm = static_cast<wl_shm *> ( wl_registry_bind(registry, id, &wl_shm_interface, 1) );
+		pointer_init_cursor_theme( that );
+	}
 }
 
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
@@ -174,6 +179,24 @@ const struct wl_pointer_listener OS_Wayland::pointer_listener = {
 
 void OS_Wayland::pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
 	print_line("Wayland -- Pointer -- Enter");
+	
+	OS_Wayland *that = static_cast<OS_Wayland *>(data);
+
+	struct wl_buffer *buffer;
+	struct wl_cursor_image *image;
+
+	if ( that->pointer_data.cursor == NULL )
+		return;
+
+	image = that->pointer_data.cursor->images[0];
+	buffer = wl_cursor_image_get_buffer( image );
+	struct wl_surface *cursor_surface = that->pointer_data.cursor_surface;
+	
+
+	wl_pointer_set_cursor( pointer, serial, cursor_surface, image->hotspot_x, image->hotspot_y );
+	wl_surface_attach( cursor_surface, buffer, 0, 0 );
+	wl_surface_damage( cursor_surface, 0, 0, image->width, image->height );
+	wl_surface_commit( cursor_surface );
 }
 
 void OS_Wayland::pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface) {
@@ -326,6 +349,15 @@ int OS_Wayland::pointer_get_axis_direction( wl_fixed_t value ) {
 		return BUTTON_WHEEL_UP;
 
 	return 0;
+}
+
+void OS_Wayland::pointer_init_cursor_theme( OS_Wayland *that ) {
+	that->pointer_data.cursor_theme = wl_cursor_theme_load( NULL, 32, that->shm );
+	that->pointer_data.cursor = wl_cursor_theme_get_cursor( that->pointer_data.cursor_theme, "left_ptr" );
+	that->pointer_data.cursor_surface = wl_compositor_create_surface( that->compositor );
+
+	ERR_FAIL_COND( that->pointer_data.cursor_theme == NULL );
+	ERR_FAIL_COND( that->pointer_data.cursor == NULL );
 }
 
 //  _              _                         _   _ _     _                       
@@ -632,6 +664,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	ERR_FAIL_COND( shell == NULL );
 	ERR_FAIL_COND( seat == NULL );
 	ERR_FAIL_COND( output_data.size() == 0 );
+	ERR_FAIL_COND( shm == NULL );
 
 	surface = wl_compositor_create_surface( compositor );
 	ERR_FAIL_COND( surface == NULL );
@@ -647,6 +680,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	
 	for( int i = 0; i < output_data.size(); i++ )
 		wl_output_add_listener( output_data[i].output, &output_listener, this );
+
 
 	context_gl = memnew( ContextGL_Wayland( display, surface, current_videomode, false ) );
 	context_gl->initialize();

@@ -48,6 +48,7 @@
 #include "servers/physics_2d/physics_2d_server_sw.h"
 
 #include <wayland-client.h>
+#include <wayland-cursor.h>
 #include <xkbcommon/xkbcommon.h>
 
 /*
@@ -105,6 +106,7 @@ class OS_Wayland : public OS_Unix {
 
 	struct wl_display *display;
  	struct wl_compositor *compositor;
+	struct wl_shm *shm;
 
 	// registry
 	struct wl_registry *registry;
@@ -145,6 +147,7 @@ class OS_Wayland : public OS_Unix {
 
 	static int pointer_get_button( uint32_t button );
 	static int pointer_get_axis_direction( wl_fixed_t value );
+	static void pointer_init_cursor_theme( OS_Wayland *that );
 
 	struct {
 		Point2i pos;
@@ -153,6 +156,9 @@ class OS_Wayland : public OS_Unix {
 		Point2i last_click_pos;
 		uint64_t last_click_time;		
 		int button_mask;
+		struct wl_cursor_theme *cursor_theme;
+		struct wl_surface *cursor_surface;
+		struct wl_cursor *cursor;
 	} pointer_data;
 
 

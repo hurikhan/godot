@@ -34,6 +34,11 @@ def can_build():
 		print("Wayland not found.. wayland disabled.")
 		return False
 
+	wayland_cursor_error=os.system("pkg-config wayland-cursor --modversion > /dev/null ")
+	if (wayland_cursor_error):
+		print("Wayland cursor not found.. wayland disabled.")
+		return False
+
 	return True # Wayland enabled
   
 def get_opts():
@@ -105,6 +110,7 @@ def configure(env):
 
 	env.ParseConfig('pkg-config egl --cflags --libs')
 	env.ParseConfig('pkg-config wayland-egl --cflags --libs')
+	env.ParseConfig('pkg-config wayland-cursor --cflags --libs')
         env.ParseConfig('pkg-config xkbcommon --cflags --libs')
 
 
