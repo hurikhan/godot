@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+
 void ContextGL_Wayland::print_config(int number, EGLConfig config) {
 	int buffer, R, G, B, A;
 
@@ -52,17 +53,20 @@ void ContextGL_Wayland::print_config(int number, EGLConfig config) {
 	);
 }
 
+
 void ContextGL_Wayland::release_current() {
-	;
 }
+
 
 void ContextGL_Wayland::make_current() {
 	eglMakeCurrent( egl_display, egl_surface, egl_surface, egl_context );
 }
 
+
 void ContextGL_Wayland::swap_buffers() {
 	eglSwapBuffers( egl_display, egl_surface );
 }
+
 
 void ContextGL_Wayland::resize( int32_t width, int32_t height ) {
 	video_mode.width = width;
@@ -144,9 +148,11 @@ Error ContextGL_Wayland::initialize() {
 	return OK;
 }
 
+
 int ContextGL_Wayland::get_window_width() {
 	return video_mode.width;
 }
+
 
 int ContextGL_Wayland::get_window_height() {
 	return video_mode.height;
@@ -166,10 +172,12 @@ ContextGL_Wayland::ContextGL_Wayland(struct wl_display *p_wayland_display, struc
 	egl_major = egl_minor = 0;
 }
 
+
 ContextGL_Wayland::~ContextGL_Wayland() {
 	if( egl_display != EGL_NO_DISPLAY )
 		eglTerminate( egl_display );
 }
+
 
 #endif
 #endif

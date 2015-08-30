@@ -53,6 +53,7 @@ const struct wl_registry_listener OS_Wayland::registry_listener = {
 	OS_Wayland::registry_remover
 };
 
+
 void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
 
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -80,8 +81,10 @@ void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint
 	}
 }
 
+
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
 }
+
 
 //      _          _ _                   __                  _ _     _                       
 //  ___| |__   ___| | |  ___ _   _ _ __ / _| __ _  ___ ___  | (_)___| |_ ___ _ __   ___ _ __ 
@@ -95,10 +98,12 @@ const struct wl_shell_surface_listener OS_Wayland::shell_surface_listener = {
 	shell_surface_popup
 };
 
+
 void OS_Wayland::shell_surface_ping(void *data, struct wl_shell_surface *shell_surface, uint32_t serial) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 	wl_shell_surface_pong( that->shell_surface, serial );
 }
+
 
 void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *shell_surface, uint32_t edges, int32_t width, int32_t height) {
 	//print_line(String("Wayland -- Shell Surface -- " + itos(edges) + " " + itos(width) + " " + itos(height)));
@@ -116,8 +121,10 @@ void OS_Wayland::shell_surface_configure(void *data, struct wl_shell_surface *sh
 	that->context_gl->resize( width, height );
 }
 
+
 void OS_Wayland::shell_surface_popup(void *data, struct wl_shell_surface *shell_surface) {
 }
+
 
 //                 _     _ _     _                       
 //  ___  ___  __ _| |_  | (_)___| |_ ___ _ __   ___ _ __ 
@@ -129,6 +136,7 @@ const struct wl_seat_listener OS_Wayland::seat_listener = {
 	seat_handle_capabilities,
 	seat_handle_name
 };
+
 
 void OS_Wayland::seat_handle_capabilities(void *data, struct wl_seat *seat, uint32_t caps) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -158,9 +166,11 @@ void OS_Wayland::seat_handle_capabilities(void *data, struct wl_seat *seat, uint
 	}
 }
 
+
 void OS_Wayland::seat_handle_name(void *data, struct wl_seat *seat, const char *name) {
 	print_line(String("Wayland -- Seat -- Name: ") + name );
 }
+
 
 //             _       _              _ _     _                       
 //  _ __   ___ (_)_ __ | |_ ___ _ __  | (_)___| |_ ___ _ __   ___ _ __ 
@@ -176,6 +186,7 @@ const struct wl_pointer_listener OS_Wayland::pointer_listener = {
 	pointer_handle_button,
 	pointer_handle_axis	
 };
+
 
 void OS_Wayland::pointer_handle_enter(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface, wl_fixed_t surface_x, wl_fixed_t surface_y) {
 	print_line("Wayland -- Pointer -- Enter");
@@ -195,9 +206,11 @@ void OS_Wayland::pointer_handle_enter(void *data, struct wl_pointer *pointer, ui
 	wl_surface_commit( cursor_surface );
 }
 
+
 void OS_Wayland::pointer_handle_leave(void *data, struct wl_pointer *pointer, uint32_t serial, struct wl_surface *surface) {
 	print_line("Wayland -- Pointer -- Leave");
 }
+
 
 void OS_Wayland::pointer_handle_motion(void *data, struct wl_pointer *pointer, uint32_t serial, wl_fixed_t surface_x, wl_fixed_t surface_y) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -233,6 +246,7 @@ void OS_Wayland::pointer_handle_motion(void *data, struct wl_pointer *pointer, u
 	that->pointer_data.rel = rel;
 	that->pointer_data.speed= speed;
 }
+
 
 void OS_Wayland::pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -294,6 +308,7 @@ void OS_Wayland::pointer_handle_button(void *data, struct wl_pointer *pointer, u
 	that->pointer_data.button_mask = button_mask;
 }
 
+
 void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
 	//print_line(String( "Wayland -- Pointer -- Axis " + itos(axis) + " " + itos(wl_fixed_to_int(value))));
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -325,6 +340,7 @@ void OS_Wayland::pointer_handle_axis(void *data, struct wl_pointer *pointer, uin
 	that->input->parse_input_event( event );
 }
 
+
 int OS_Wayland::pointer_get_button( uint32_t button ) {
 
 	switch(button) {
@@ -336,6 +352,7 @@ int OS_Wayland::pointer_get_button( uint32_t button ) {
 	return 0;	
 }
 
+
 int OS_Wayland::pointer_get_axis_direction( wl_fixed_t value ) {
 	int _value = wl_fixed_to_int( value );
 
@@ -346,6 +363,7 @@ int OS_Wayland::pointer_get_axis_direction( wl_fixed_t value ) {
 
 	return 0;
 }
+
 
 void OS_Wayland::pointer_init_cursor_theme( OS_Wayland *that ) {
 	that->pointer_data.cursor_theme = wl_cursor_theme_load( NULL, 32, that->shm );
@@ -396,6 +414,7 @@ const struct wl_keyboard_listener OS_Wayland::keyboard_listener = {
 	keyboard_handle_repeat_info
 };
 
+
 void OS_Wayland::keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format, int32_t fd, uint32_t size) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
@@ -415,11 +434,14 @@ void OS_Wayland::keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard
 	print_line("Wayland -- Keyboard -- Keymap initialized");
 }
 
+
 void OS_Wayland::keyboard_handle_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface, struct wl_array *keys) {
 }
 
+
 void OS_Wayland::keyboard_handle_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial, struct wl_surface *surface) {
 }
+
 
 void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t time, uint32_t key, uint32_t state) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -467,10 +489,12 @@ void OS_Wayland::keyboard_handle_key(void *data, struct wl_keyboard *keyboard, u
 	//print_line(itos(that->keyboard_data.repeat_time));
 }
 
+
 void OS_Wayland::keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked, uint32_t group) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 	xkb_state_update_mask(that->keyboard_data.state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
 }
+
 
 void OS_Wayland::keyboard_handle_repeat_info(void *data, struct wl_keyboard *keyboard, int32_t rate, int32_t delay) {
 	print_line(String("Wayland -- Keyboard -- Key repeat info --> Rate: " + itos(rate) + " Delay: " + itos(delay)) );
@@ -480,10 +504,12 @@ void OS_Wayland::keyboard_handle_repeat_info(void *data, struct wl_keyboard *key
 	that->keyboard_data.repeat_delay = delay;
 }
 
+
 struct _TranslatePair {
 	xkb_keysym_t keysym;
 	uint32_t keycode;
 };
+
 
 static _TranslatePair _keysym_to_keycode[]={
 	{	XKB_KEY_Escape,				KEY_ESCAPE	},
@@ -557,6 +583,7 @@ static _TranslatePair _keysym_to_keycode[]={
 	{	0,							0 }
 };
 
+
 uint32_t OS_Wayland::keyboard_get_scancode( OS_Wayland *that, uint32_t key ) {
 
 	uint32_t keysym = xkb_state_key_get_one_sym( that->keyboard_data.state, key + 8);
@@ -569,9 +596,11 @@ uint32_t OS_Wayland::keyboard_get_scancode( OS_Wayland *that, uint32_t key ) {
 	return key + 8;
 }
 
+
 uint32_t OS_Wayland::keyboard_get_unicode( OS_Wayland *that, uint32_t key ) {
 	return xkb_state_key_get_utf32( that->keyboard_data.state, key + 8 );
 }
+
 
 void OS_Wayland::keyboard_repeat_key( OS_Wayland *that ) {
 
@@ -610,6 +639,7 @@ const struct wl_output_listener OS_Wayland::output_listener = {
 	output_handle_scale
 };
 
+
 void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x, int32_t y, int32_t physical_width, int32_t physical_height, int32_t subpixel, const char *make, const char *model, int32_t transform) {
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
@@ -633,6 +663,7 @@ void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x
 	print_line(String("                              +- transform: ") + itos(transform) );
 }
 
+
 void OS_Wayland::output_handle_mode(void *data, wl_output *output, uint32_t flags, int32_t width, int32_t height, int32_t refresh) {
 	
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
@@ -648,9 +679,11 @@ void OS_Wayland::output_handle_mode(void *data, wl_output *output, uint32_t flag
 	print_line(String("Wayland -- Output -- Mode -- ") + itos(width) + "*" + itos(height) + "@" + itos(refresh) + "mHz");
 }
 
+
 void OS_Wayland::output_handle_done(void *data, wl_output *output) {
 	print_line("Wayland -- Output -- Done");
 }
+
 
 void OS_Wayland::output_handle_scale(void *data, wl_output *output, int32_t factor) {
 	print_line(String("Wayland -- Output -- Scale -- scale: ") + itos(factor) );
@@ -753,6 +786,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	input = memnew( InputDefault );
 }
 
+
 void OS_Wayland::finalize() {
 
 	delete_main_loop();
@@ -790,22 +824,27 @@ void OS_Wayland::finalize() {
 	xkb_context_unref( keyboard_data.context );
 }
 
+
 int OS_Wayland::get_video_driver_count() const {
 	return 1;
 }
+
 
 const char * OS_Wayland::get_video_driver_name(int p_driver) const {
 	return "GLES2";
 }
 
+
 OS::VideoMode OS_Wayland::get_default_video_mode() const {
 	return OS::VideoMode(800,600,false);
 }
+
 
 int OS_Wayland::get_audio_driver_count() const {
 
     return AudioDriverManagerSW::get_driver_count();
 }
+
 
 const char *OS_Wayland::get_audio_driver_name(int p_driver) const {
 
@@ -814,54 +853,67 @@ const char *OS_Wayland::get_audio_driver_name(int p_driver) const {
     return AudioDriverManagerSW::get_driver(p_driver)->get_name();
 }
 
+
 void OS_Wayland::set_mouse_mode(MouseMode p_mode) {
 	;	// FIXME
 }
+
 
 void OS_Wayland::warp_mouse_pos(const Point2& p_to) {
 	;	// FIXME
 }
 
+
 OS::MouseMode OS_Wayland::get_mouse_mode() const {
 	return mouse_mode;
 }
+
 
 int OS_Wayland::get_mouse_button_state() const {
 	return 0;	// FIXME -- deprecated?
 }
 
+
 Point2 OS_Wayland::get_mouse_pos() const {
 	return Point2i(0, 0);	// FIXME -- deprecated?
 }
+
 
 void OS_Wayland::set_window_title(const String& p_title) {
 	;	// FIXME
 }
 
+
 void OS_Wayland::set_video_mode(const VideoMode& p_video_mode,int p_screen) {
 	;	// FIXME -- deprecated?
 }
+
 
 OS::VideoMode OS_Wayland::get_video_mode(int p_screen) const {
 	return current_videomode;
 }
 
+
 void OS_Wayland::get_fullscreen_mode_list(List<VideoMode> *p_list,int p_screen) const {
 	;	// FIXME -- deprecated?
 }
 
+
 int OS_Wayland::get_screen_count() const {
 	return output_data.size(); 
 }
+
 
 int OS_Wayland::get_current_screen() const {
 	WARN_PRINT("Window positioning is unknown for a Wayland client");
 	return 0;
 }
 
+
 void OS_Wayland::set_current_screen(int p_screen) {
 	WARN_PRINT("Window positioning is unknown for a Wayland client");
 }
+
 
 Point2 OS_Wayland::get_screen_position(int p_screen) const {
 	if( p_screen >= output_data.size() || p_screen < 0 )
@@ -874,6 +926,7 @@ Point2 OS_Wayland::get_screen_position(int p_screen) const {
 	return position;
 }
 
+
 Size2 OS_Wayland::get_screen_size(int p_screen) const {
 	if( p_screen >= output_data.size() || p_screen < 0 )
 		return Point2i(0,0);
@@ -885,22 +938,27 @@ Size2 OS_Wayland::get_screen_size(int p_screen) const {
 	return size;
 }
 
+
 Point2 OS_Wayland::get_window_position() const {
 	WARN_PRINT("Window positioning is unknown for a Wayland client");
 	return Point2i(0, 0);
 }
 
+
 void OS_Wayland::set_window_position(const Point2& p_position) {
 	WARN_PRINT("Window positioning is unknown for a Wayland client");
 }
+
 
 Size2 OS_Wayland::get_window_size() const {
 	return Size2i(current_videomode.width, current_videomode.height);
 }
 
+
 void OS_Wayland::set_window_size(const Size2 p_size) {
 	shell_surface_configure(this, shell_surface, 0, p_size.width, p_size.height );
 }
+
 
 void OS_Wayland::set_window_fullscreen(bool p_enabled) {
 
@@ -919,25 +977,31 @@ void OS_Wayland::set_window_fullscreen(bool p_enabled) {
 	}
 }
 
+
 bool OS_Wayland::is_window_fullscreen() const {
 	return current_videomode.fullscreen;
 }
+
 
 void OS_Wayland::set_window_resizable(bool p_enabled) {
 	current_videomode.resizable = p_enabled;
 }
 
+
 bool OS_Wayland::is_window_resizable() const {
 	return current_videomode.resizable;
 }
+
 
 void OS_Wayland::set_window_minimized(bool p_enabled) {
 	;	// FIXME
 }
 
+
 bool OS_Wayland::is_window_minimized() const {
 	return false;	// FIXME
 }
+
 
 void OS_Wayland::set_window_maximized(bool p_enabled) {
 	
@@ -956,14 +1020,17 @@ void OS_Wayland::set_window_maximized(bool p_enabled) {
 	}		
 }
 
+
 bool OS_Wayland::is_window_maximized() const {
 	return maximized;
 }
+
 
 MainLoop *OS_Wayland::get_main_loop() const {
 
 	return main_loop;
 }
+
 
 void OS_Wayland::delete_main_loop() {
 
@@ -972,29 +1039,35 @@ void OS_Wayland::delete_main_loop() {
 	main_loop=NULL;
 }
 
+
 void OS_Wayland::set_main_loop( MainLoop * p_main_loop ) {
 
 	main_loop=p_main_loop;
 	input->set_main_loop(p_main_loop);
 }
 
+
 bool OS_Wayland::can_draw() const {
 
 	return !minimized;
 }
 
+
 void OS_Wayland::set_clipboard(const String& p_text) {
 	;	// FIXME
 }
+
 
 String OS_Wayland::get_clipboard() const {
 	String ret;	// FIXME
 	return ret;
 }
 
+
 String OS_Wayland::get_name() {
 	return "Wayland";
 }
+
 
 Error OS_Wayland::shell_open(String p_uri) {
 
@@ -1011,8 +1084,8 @@ Error OS_Wayland::shell_open(String p_uri) {
 	return ok;
 }
 
-String OS_Wayland::get_system_dir(SystemDir p_dir) const {
 
+String OS_Wayland::get_system_dir(SystemDir p_dir) const {
 
 	String xdgparam;
 
@@ -1072,16 +1145,16 @@ void OS_Wayland::move_window_to_foreground() {
 	;	// FIXME
 }
 
+
 void OS_Wayland::release_rendering_thread() {
-
 	context_gl->release_current();
-
 }
+
 
 void OS_Wayland::make_rendering_thread() {
-
 	context_gl->make_current();
 }
+
 
 void OS_Wayland::swap_buffers() {
 
@@ -1115,6 +1188,7 @@ void OS_Wayland::run() {
 	
 	main_loop->finish();
 }
+
 
 OS_Wayland::OS_Wayland() {
 
@@ -1160,6 +1234,7 @@ OS_Wayland::OS_Wayland() {
 	keyboard_data.repeat_key = 0;
 	keyboard_data.repeat_time = 0;
 }
+
 
 void OS_Wayland::set_cursor_shape(OS::CursorShape p_shape) {
 	struct wl_buffer *buffer;
