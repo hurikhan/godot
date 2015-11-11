@@ -36,20 +36,25 @@
 
 
 void ContextGL_Wayland::print_config(int number, EGLConfig config) {
-	int buffer, R, G, B, A;
+	int buffer, R, G, B, A, min_I, max_I;
 
 	eglGetConfigAttrib( egl_display, config, EGL_BUFFER_SIZE, &buffer );
 	eglGetConfigAttrib( egl_display, config, EGL_RED_SIZE, &R );
 	eglGetConfigAttrib( egl_display, config, EGL_GREEN_SIZE, &G );
 	eglGetConfigAttrib( egl_display, config, EGL_BLUE_SIZE, &B );
 	eglGetConfigAttrib( egl_display, config, EGL_ALPHA_SIZE, &A );
+	eglGetConfigAttrib( egl_display, config, EGL_MIN_SWAP_INTERVAL, &min_I );
+	eglGetConfigAttrib( egl_display, config, EGL_MAX_SWAP_INTERVAL, &max_I );
+	
 
 	print_line("EGL -- config[" + itos(number) + "]: "
 		+ itos(R) + "-"
 		+ itos(G) + "-"
 		+ itos(B) + "-"
 		+ itos(A) + " "
-		+ itos(buffer) + " bytes"
+		+ itos(buffer) + " bytes "
+		+ itos(min_I) + ".."
+		+ itos(max_I)
 	);
 }
 
@@ -142,7 +147,9 @@ Error ContextGL_Wayland::initialize() {
 	ERR_FAIL_COND_V( egl_surface == EGL_NO_SURFACE, ERR_UNCONFIGURED );
 	print_line("EGL -- Surface created" );
 
+
 	eglMakeCurrent( egl_display, egl_surface, egl_surface, egl_context );
+	eglSwapInterval( egl_display, 0 );
 	eglSwapBuffers( egl_display, egl_surface );
 		
 	return OK;
