@@ -60,6 +60,7 @@ void ContextGL_Wayland::print_config(int number, EGLConfig config) {
 
 
 void ContextGL_Wayland::release_current() {
+	eglMakeCurrent( egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
 }
 
 
@@ -181,6 +182,12 @@ ContextGL_Wayland::ContextGL_Wayland(struct wl_display *p_wayland_display, struc
 
 
 ContextGL_Wayland::~ContextGL_Wayland() {
+
+	release_current();
+
+	wl_egl_window_destroy( egl_window );
+	eglDestroyContext( egl_display, egl_context );
+
 	if( egl_display != EGL_NO_DISPLAY )
 		eglTerminate( egl_display );
 }

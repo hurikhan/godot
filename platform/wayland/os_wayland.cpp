@@ -70,8 +70,8 @@ void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint
 		that->seat = static_cast<wl_seat *> ( wl_registry_bind(registry, id, &wl_seat_interface, 4) );
 
 	if (strcmp(interface, "wl_output") == 0) {
-		OS_Wayland::output_data_t output_data;
-		output_data.output = static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) );
+		OS_Wayland::output_data_t *output_data = memnew( OS_Wayland::output_data_t );
+		output_data->output = static_cast<wl_output *> ( wl_registry_bind( registry, id, &wl_output_interface, 2 ) );
 		that->output_data.push_back( output_data );
 	}
 
@@ -83,6 +83,25 @@ void OS_Wayland::registry_handler(void *data, struct wl_registry *registry, uint
 
 
 void OS_Wayland::registry_remover(void *data, struct wl_registry *registry, uint32_t id) {
+
+	print_line(String("Wayland -- Registry Remover -- ") + " ID: " + itos( id ) );
+}
+
+
+void OS_Wayland::registry_finalize( OS_Wayland *that ) {
+
+	for( int i=0; i < that->output_data.size(); i++) {
+		wl_output_destroy( that->output_data[i]->output );
+		memdelete( that->output_data[i] );
+	}
+
+	that->output_data.clear();
+
+	wl_seat_destroy( that->seat );
+	wl_shell_destroy( that->shell );
+	wl_shm_destroy( that->shm );
+	wl_compositor_destroy( that->compositor );
+	wl_registry_destroy( that->registry );
 }
 
 
@@ -398,6 +417,15 @@ void OS_Wayland::pointer_init_cursor_theme( OS_Wayland *that ) {
 	ERR_FAIL_COND( that->pointer_data.cursor_surface == NULL);
 }
 
+
+void OS_Wayland::pointer_finalize( OS_Wayland *that ) {
+
+	wl_surface_destroy( that->pointer_data.cursor_surface );
+	wl_cursor_theme_destroy( that->pointer_data.cursor_theme );
+
+	wl_pointer_release( that->pointer );
+}
+
 //  _              _                         _   _ _     _                       
 // | | _____ _   _| |__   ___   __ _ _ __ __| | | (_)___| |_ ___ _ __   ___ _ __ 
 // | |/ / _ \ | | | '_ \ / _ \ / _` | '__/ _` | | | / __| __/ _ \ '_ \ / _ \ '__|
@@ -625,6 +653,16 @@ void OS_Wayland::keyboard_repeat_key( OS_Wayland *that ) {
 	}
 }
 
+
+void OS_Wayland::keyboard_finalize( OS_Wayland *that ) {
+
+	xkb_state_unref( that->keyboard_data.state );
+	xkb_keymap_unref( that->keyboard_data.keymap );
+	xkb_context_unref( that->keyboard_data.context );
+
+	wl_keyboard_release( that->keyboard );
+}
+
 //             _               _     _ _     _
 //  ___  _   _| |_ _ __  _   _| |_  | (_)___| |_ ___ _ __   ___ _ __
 // / _ \| | | | __| '_ \| | | | __| | | / __| __/ _ \ '_ \ / _ \ '__|
@@ -644,15 +682,15 @@ void OS_Wayland::output_handle_geometry(void *data, wl_output *output, int32_t x
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
 	for( int i=0; i < that->output_data.size(); i++)
-		if( that->output_data[i].output == output ) {
-			that->output_data[i].x = x;
-			that->output_data[i].y = y;
-			that->output_data[i].physical_width = physical_width;
-			that->output_data[i].physical_height = physical_height;
-			that->output_data[i].subpixel = subpixel;
-			that->output_data[i].make = make;
-			that->output_data[i].model = model;
-			that->output_data[i].transform = transform;
+		if( that->output_data[i]->output == output ) {
+			that->output_data[i]->x = x;
+			that->output_data[i]->y = y;
+			that->output_data[i]->physical_width = physical_width;
+			that->output_data[i]->physical_height = physical_height;
+			that->output_data[i]->subpixel = subpixel;
+			that->output_data[i]->make = make;
+			that->output_data[i]->model = model;
+			that->output_data[i]->transform = transform;
 		}
 
 	print_line(String("Wayland -- Output -- Geometry +- x: ") + itos(x) + " y: " + itos(y));
@@ -669,11 +707,11 @@ void OS_Wayland::output_handle_mode(void *data, wl_output *output, uint32_t flag
 	OS_Wayland *that = static_cast<OS_Wayland *>(data);
 
 	for( int i=0; i < that->output_data.size(); i++)
-		if( that->output_data[i].output == output ) {
-			that->output_data[i].flags = flags;
-			that->output_data[i].width = width;
-			that->output_data[i].height = height;
-			that->output_data[i].refresh = refresh;
+		if( that->output_data[i]->output == output ) {
+			that->output_data[i]->flags = flags;
+			that->output_data[i]->width = width;
+			that->output_data[i]->height = height;
+			that->output_data[i]->refresh = refresh;
 		}
 
 	print_line(String("Wayland -- Output -- Mode -- ") + itos(width) + "*" + itos(height) + "@" + itos(refresh) + "mHz");
@@ -732,8 +770,7 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	wl_seat_add_listener(seat, &seat_listener, this);
 	
 	for( int i = 0; i < output_data.size(); i++ )
-		wl_output_add_listener( output_data[i].output, &output_listener, this );
-
+		wl_output_add_listener( output_data[i]->output, &output_listener, this );
 
 	context_gl = memnew( ContextGL_Wayland( display, surface, current_videomode, false ) );
 	context_gl->initialize();
@@ -766,7 +803,6 @@ void OS_Wayland::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 		if (!success) {
 			ERR_PRINT("Initializing audio failed.");
 		}
-
 	}
 
 	sample_manager = memnew( SampleManagerMallocSW );
@@ -813,15 +849,22 @@ void OS_Wayland::finalize() {
 
 	memdelete(input);
 
+	if( shell_surface )
+		wl_shell_surface_destroy( shell_surface );
+
+	if( surface )
+		wl_surface_destroy( surface );
+
+	registry_finalize( this );
+	pointer_finalize( this );
+	keyboard_finalize( this );
+
+	wl_display_flush(display);
+	wl_display_disconnect(display);
+
 #if defined(OPENGL_ENABLED) || defined(LEGACYGL_ENABLED)
 	memdelete(context_gl);
 #endif
-
-	wl_display_disconnect(display);
-
-	xkb_state_unref( keyboard_data.state );
-	xkb_keymap_unref( keyboard_data.keymap );
-	xkb_context_unref( keyboard_data.context );
 }
 
 
@@ -919,8 +962,8 @@ Point2 OS_Wayland::get_screen_position(int p_screen) const {
 	if( p_screen >= output_data.size() || p_screen < 0 )
 		return Point2i(0,0);
 
-	int32_t x = output_data[p_screen].x;
-	int32_t y = output_data[p_screen].y;
+	int32_t x = output_data[p_screen]->x;
+	int32_t y = output_data[p_screen]->y;
 
 	Point2i position = Point2i(x, y);
 	return position;
@@ -931,8 +974,8 @@ Size2 OS_Wayland::get_screen_size(int p_screen) const {
 	if( p_screen >= output_data.size() || p_screen < 0 )
 		return Point2i(0,0);
 
-	int32_t width = output_data[p_screen].width;
-	int32_t height = output_data[p_screen].height;
+	int32_t width = output_data[p_screen]->width;
+	int32_t height = output_data[p_screen]->height;
 
 	Size2i size = Point2i(width, height);
 	return size;

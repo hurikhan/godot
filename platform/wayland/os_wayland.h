@@ -116,6 +116,8 @@ class OS_Wayland : public OS_Unix {
 	static void registry_handler(void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version);
 	static void registry_remover(void *data, struct wl_registry *registry, uint32_t id); 
 
+	static void registry_finalize( OS_Wayland *that );
+
 
 	// shell surface
 	struct wl_surface *surface;
@@ -150,6 +152,8 @@ class OS_Wayland : public OS_Unix {
 	static int pointer_get_axis_direction( wl_fixed_t value );
 	static void pointer_init_cursor_theme( OS_Wayland *that );
 
+	static void pointer_finalize( OS_Wayland *that );
+
 	struct {
 		Point2i pos;
 		Point2i rel;
@@ -178,6 +182,8 @@ class OS_Wayland : public OS_Unix {
 	static uint32_t keyboard_get_scancode( OS_Wayland *that, uint32_t key );
 	static uint32_t keyboard_get_unicode( OS_Wayland *that, uint32_t key );
 	static void keyboard_repeat_key( OS_Wayland *that );
+
+	static void keyboard_finalize( OS_Wayland *that );
 
 	struct {
 		struct xkb_context *context;
@@ -214,7 +220,7 @@ class OS_Wayland : public OS_Unix {
 		int32_t refresh;
 	};
 
-	Vector<struct output_data_t> output_data;
+	Vector<struct output_data_t *> output_data;
 
 protected:
 
