@@ -30,7 +30,8 @@
 #define OS_WAYLAND_H
 
 
-#include "os/input.h"
+//#include "os/input.h"
+#include "main/input_default.h"
 #include "os/keyboard.h"
 #include "drivers/unix/os_unix.h"
 #include "context_gl_wayland.h"
