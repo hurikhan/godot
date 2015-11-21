@@ -1,0 +1,3556 @@
+#                                  _        _
+#  ___  ___ ___  _ __  ___   _ __ (_)_ __  (_) __ _
+# / __|/ __/ _ \| '_ \/ __| | '_ \| | '_ \ | |/ _` |
+# \__ \ (_| (_) | | | \__ \ | | | | | | | || | (_| |
+# |___/\___\___/|_| |_|___/ |_| |_|_|_| |_|/ |\__,_|
+#                                        |__/
+
+CPPFLAGS = -DDEBUG_MEMORY_ALLOC -DSCI_NAMESPACE -DTYPED_METHOD_BIND $
+    -DOPENGL_ENABLED -DALSA_ENABLED -DPULSEAUDIO_ENABLED -DWAYLAND_ENABLED $
+    -DUNIX_ENABLED -DGLES2_ENABLED -DGLES_OVER_GL -DMUSEPACK_ENABLED $
+    -DSQUISH_ENABLED -DVORBIS_ENABLED -DOPUS_ENABLED -DPNG_ENABLED $
+    -DDDS_ENABLED -DPVR_ENABLED -DJPG_ENABLED -DWEBP_ENABLED $
+    -DSPEEX_ENABLED -DTOOLS_ENABLED -DGDSCRIPT_ENABLED -DMINIZIP_ENABLED $
+    -DXML_ENABLED -DETC1_ENABLED
+
+CFLAGS = -DOPUS_HAVE_CONFIG_H
+
+CCFLAGS = -g2 -Wall -DDEBUG_ENABLED -DDEBUG_MEMORY_ENABLED -DFREETYPE_ENABLED
+
+CXXFLAGS = -fcolor-diagnostics
+
+CPPPATH = -I./core -I./core/math -I./tools -I./drivers -I./ $
+    -I./platform/wayland -I/usr/include/libdrm -I/usr/include/freetype2 $
+    -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 $
+    -I/usr/lib/glib-2.0/include -I./drivers/vorbis $
+    -I./drivers/opus/silk/float -I./drivers/opus -I./drivers/opus/celt $
+    -I./drivers/opus/silk -I./drivers/opus/silk/float
+
+LIBS = -lEGL -lwayland-egl -lwayland-client -lwayland-cursor $
+    -lxkbcommon -lfreetype -lpulse-simple -lpulse -lGL -lGLU -lpthread $
+    -lasound -lz
+
+rule CC
+  command = clang $CFLAGS $CCFLAGS $CXXFLAGS $CPPFLAGS $CPPPATH -o $out -c $in
+  description = Building CC object $out
+  depfile = $DEP_FILE
+  deps = gcc
+
+rule CXX
+  command = clang++ $CCFLAGS $CXXFLAGS $CPPFLAGS $CPPPATH -o $out -c $in
+  description = Building CXX object $out
+  depfile = $DEP_FILE
+  deps = gcc
+
+rule STATIC_LIBRARY
+  command = ar qc $out $in && ranlib $out
+  description = Linking static library $out
+
+rule CXX_PROG
+  command = clang++ -o $out $in $LIBS
+  description = Linking program $out
+
+rule CLEAN
+  command = ninja -t clean
+  description = Cleaning all built files...
+
+
+build bin/tests/test_containers.o: CXX bin/tests/test_containers.cpp
+  depfile = bin/tests/test_containers.o.d
+
+build bin/tests/test_detailer.o: CXX bin/tests/test_detailer.cpp
+  depfile = bin/tests/test_detailer.o.d
+
+build bin/tests/test_gdscript.o: CXX bin/tests/test_gdscript.cpp
+  depfile = bin/tests/test_gdscript.o.d
+
+build bin/tests/test_gui.o: CXX bin/tests/test_gui.cpp
+  depfile = bin/tests/test_gui.o.d
+
+build bin/tests/test_image.o: CXX bin/tests/test_image.cpp
+  depfile = bin/tests/test_image.o.d
+
+build bin/tests/test_io.o: CXX bin/tests/test_io.cpp
+  depfile = bin/tests/test_io.o.d
+
+build bin/tests/test_main.o: CXX bin/tests/test_main.cpp
+  depfile = bin/tests/test_main.o.d
+
+build bin/tests/test_math.o: CXX bin/tests/test_math.cpp
+  depfile = bin/tests/test_math.o.d
+
+build bin/tests/test_misc.o: CXX bin/tests/test_misc.cpp
+  depfile = bin/tests/test_misc.o.d
+
+build bin/tests/test_particles.o: CXX bin/tests/test_particles.cpp
+  depfile = bin/tests/test_particles.o.d
+
+build bin/tests/test_physics.o: CXX bin/tests/test_physics.cpp
+  depfile = bin/tests/test_physics.o.d
+
+build bin/tests/test_physics_2d.o: CXX bin/tests/test_physics_2d.cpp
+  depfile = bin/tests/test_physics_2d.o.d
+
+build bin/tests/test_python.o: CXX bin/tests/test_python.cpp
+  depfile = bin/tests/test_python.o.d
+
+build bin/tests/test_render.o: CXX bin/tests/test_render.cpp
+  depfile = bin/tests/test_render.o.d
+
+build bin/tests/test_shader_lang.o: CXX bin/tests/test_shader_lang.cpp
+  depfile = bin/tests/test_shader_lang.o.d
+
+build bin/tests/test_sound.o: CXX bin/tests/test_sound.cpp
+  depfile = bin/tests/test_sound.o.d
+
+build bin/tests/test_string.o: CXX bin/tests/test_string.cpp
+  depfile = bin/tests/test_string.o.d
+
+build bin/tests/tests.a: STATIC_LIBRARY bin/tests/test_render.o $
+    bin/tests/test_string.o bin/tests/test_sound.o bin/tests/test_physics.o $
+    bin/tests/test_math.o bin/tests/test_gui.o bin/tests/test_detailer.o $
+    bin/tests/test_particles.o bin/tests/test_misc.o $
+    bin/tests/test_containers.o bin/tests/test_main.o $
+    bin/tests/test_image.o bin/tests/test_io.o bin/tests/test_shader_lang.o $
+    bin/tests/test_gdscript.o bin/tests/test_python.o $
+    bin/tests/test_physics_2d.o
+
+build core/array.o: CXX core/array.cpp
+  depfile = core/array.o.d
+
+build core/bind/core_bind.o: CXX core/bind/core_bind.cpp
+  depfile = core/bind/core_bind.o.d
+
+build core/color.o: CXX core/color.cpp
+  depfile = core/color.o.d
+
+build core/command_queue_mt.o: CXX core/command_queue_mt.cpp
+  depfile = core/command_queue_mt.o.d
+
+build core/compressed_translation.o: CXX core/compressed_translation.cpp
+  depfile = core/compressed_translation.o.d
+
+build core/method_bind.o: CXX core/method_bind.cpp
+  depfile = core/method_bind.o.d
+
+build core/object_type_db.o: CXX core/object_type_db.cpp
+  depfile = core/object_type_db.o.d
+
+build core/image.o: CXX core/image.cpp
+  depfile = core/image.o.d
+
+build core/variant_call.o: CXX core/variant_call.cpp
+  depfile = core/variant_call.o.d
+
+build core/script_language.o: CXX core/script_language.cpp
+  depfile = core/script_language.o.d
+
+build core/input_map.o: CXX core/input_map.cpp
+  depfile = core/input_map.o.d
+
+build core/ref_ptr.o: CXX core/ref_ptr.cpp
+  depfile = core/ref_ptr.o.d
+
+build core/variant.o: CXX core/variant.cpp
+  depfile = core/variant.o.d
+
+build core/print_string.o: CXX core/print_string.cpp
+  depfile = core/print_string.o.d
+
+build core/globals.o: CXX core/globals.cpp
+  depfile = core/globals.o.d
+
+build core/core_string_names.o: CXX core/core_string_names.cpp
+  depfile = core/core_string_names.o.d
+
+build core/event_queue.o: CXX core/event_queue.cpp
+  depfile = core/event_queue.o.d
+
+build core/global_constants.o: CXX core/global_constants.cpp
+  depfile = core/global_constants.o.d
+
+build core/message_queue.o: CXX core/message_queue.cpp
+  depfile = core/message_queue.o.d
+
+build core/vset.o: CXX core/vset.cpp
+  depfile = core/vset.o.d
+
+build core/script_debugger_remote.o: CXX core/script_debugger_remote.cpp
+  depfile = core/script_debugger_remote.o.d
+
+build core/image_quantize.o: CXX core/image_quantize.cpp
+  depfile = core/image_quantize.o.d
+
+build core/string_db.o: CXX core/string_db.cpp
+  depfile = core/string_db.o.d
+
+build core/pool_allocator.o: CXX core/pool_allocator.cpp
+  depfile = core/pool_allocator.o.d
+
+build core/register_core_types.o: CXX core/register_core_types.cpp
+  depfile = core/register_core_types.o.d
+
+build core/fpstr.o: CXX core/fpstr.cpp
+  depfile = core/fpstr.o.d
+
+build core/path_db.o: CXX core/path_db.cpp
+  depfile = core/path_db.o.d
+
+build core/resource.o: CXX core/resource.cpp
+  depfile = core/resource.o.d
+
+build core/vmap.o: CXX core/vmap.cpp
+  depfile = core/vmap.o.d
+
+build core/undo_redo.o: CXX core/undo_redo.cpp
+  depfile = core/undo_redo.o.d
+
+build core/packed_data_container.o: CXX core/packed_data_container.cpp
+  depfile = core/packed_data_container.o.d
+
+build core/script_encryption_key.o: CXX core/script_encryption_key.cpp
+  depfile = core/script_encryption_key.o.d
+
+build core/rid.o: CXX core/rid.cpp
+  depfile = core/rid.o.d
+
+build core/script_debugger_local.o: CXX core/script_debugger_local.cpp
+  depfile = core/script_debugger_local.o.d
+
+build core/func_ref.o: CXX core/func_ref.cpp
+  depfile = core/func_ref.o.d
+
+build core/ustring.o: CXX core/ustring.cpp
+  depfile = core/ustring.o.d
+
+build core/path_remap.o: CXX core/path_remap.cpp
+  depfile = core/path_remap.o.d
+
+build core/translation.o: CXX core/translation.cpp
+  depfile = core/translation.o.d
+
+build core/reference.o: CXX core/reference.cpp
+  depfile = core/reference.o.d
+
+build core/dictionary.o: CXX core/dictionary.cpp
+  depfile = core/dictionary.o.d
+
+build core/object.o: CXX core/object.cpp
+  depfile = core/object.o.d
+
+build core/dvector.o: CXX core/dvector.cpp
+  depfile = core/dvector.o.d
+
+build core/res_ptr.o: CXX core/res_ptr.cpp
+  depfile = core/res_ptr.o.d
+
+build core/script_debugger_debugger.o: CXX core/script_debugger_debugger.cpp
+  depfile = core/script_debugger_debugger.o.d
+
+build core/variant_construct_string.o: CXX core/variant_construct_string.cpp
+  depfile = core/variant_construct_string.o.d
+
+build core/pair.o: CXX core/pair.cpp
+  depfile = core/pair.o.d
+
+build core/safe_refcount.o: CXX core/safe_refcount.cpp
+  depfile = core/safe_refcount.o.d
+
+build core/variant_op.o: CXX core/variant_op.cpp
+  depfile = core/variant_op.o.d
+
+build core/global_defaults.o: CXX core/global_defaults.cpp
+  depfile = core/global_defaults.o.d
+
+build core/error_macros.o: CXX core/error_macros.cpp
+  depfile = core/error_macros.o.d
+
+build core/os/thread.o: CXX core/os/thread.cpp
+  depfile = core/os/thread.o.d
+
+build core/os/memory_pool_dynamic_static.o: CXX $
+    core/os/memory_pool_dynamic_static.cpp
+  depfile = core/os/memory_pool_dynamic_static.o.d
+
+build core/os/memory_pool_dynamic.o: CXX core/os/memory_pool_dynamic.cpp
+  depfile = core/os/memory_pool_dynamic.o.d
+
+build core/os/dir_access.o: CXX core/os/dir_access.cpp
+  depfile = core/os/dir_access.o.d
+
+build core/os/main_loop.o: CXX core/os/main_loop.cpp
+  depfile = core/os/main_loop.o.d
+
+build core/os/mutex.o: CXX core/os/mutex.cpp
+  depfile = core/os/mutex.o.d
+
+build core/os/input_event.o: CXX core/os/input_event.cpp
+  depfile = core/os/input_event.o.d
+
+build core/os/os.o: CXX core/os/os.cpp
+  depfile = core/os/os.o.d
+
+build core/os/copymem.o: CXX core/os/copymem.cpp
+  depfile = core/os/copymem.o.d
+
+build core/os/semaphore.o: CXX core/os/semaphore.cpp
+  depfile = core/os/semaphore.o.d
+
+build core/os/memory.o: CXX core/os/memory.cpp
+  depfile = core/os/memory.o.d
+
+build core/os/keyboard.o: CXX core/os/keyboard.cpp
+  depfile = core/os/keyboard.o.d
+
+build core/os/memory_pool_static.o: CXX core/os/memory_pool_static.cpp
+  depfile = core/os/memory_pool_static.o.d
+
+build core/os/input.o: CXX core/os/input.cpp
+  depfile = core/os/input.o.d
+
+build core/os/thread_dummy.o: CXX core/os/thread_dummy.cpp
+  depfile = core/os/thread_dummy.o.d
+
+build core/os/thread_safe.o: CXX core/os/thread_safe.cpp
+  depfile = core/os/thread_safe.o.d
+
+build core/os/memory_pool_dynamic_prealloc.o: CXX $
+    core/os/memory_pool_dynamic_prealloc.cpp
+  depfile = core/os/memory_pool_dynamic_prealloc.o.d
+
+build core/os/shell.o: CXX core/os/shell.cpp
+  depfile = core/os/shell.o.d
+
+build core/os/file_access.o: CXX core/os/file_access.cpp
+  depfile = core/os/file_access.o.d
+
+build core/math/transform.o: CXX core/math/transform.cpp
+  depfile = core/math/transform.o.d
+
+build core/math/triangulator.o: CXX core/math/triangulator.cpp
+  depfile = core/math/triangulator.o.d
+
+build core/math/math_2d.o: CXX core/math/math_2d.cpp
+  depfile = core/math/math_2d.o.d
+
+build core/math/camera_matrix.o: CXX core/math/camera_matrix.cpp
+  depfile = core/math/camera_matrix.o.d
+
+build core/math/math_funcs.o: CXX core/math/math_funcs.cpp
+  depfile = core/math/math_funcs.o.d
+
+build core/math/bezier_curve.o: CXX core/math/bezier_curve.cpp
+  depfile = core/math/bezier_curve.o.d
+
+build core/math/quat.o: CXX core/math/quat.cpp
+  depfile = core/math/quat.o.d
+
+build core/math/bsp_tree.o: CXX core/math/bsp_tree.cpp
+  depfile = core/math/bsp_tree.o.d
+
+build core/math/triangulate.o: CXX core/math/triangulate.cpp
+  depfile = core/math/triangulate.o.d
+
+build core/math/math_defs.o: CXX core/math/math_defs.cpp
+  depfile = core/math/math_defs.o.d
+
+build core/math/aabb.o: CXX core/math/aabb.cpp
+  depfile = core/math/aabb.o.d
+
+build core/math/plane.o: CXX core/math/plane.cpp
+  depfile = core/math/plane.o.d
+
+build core/math/quick_hull.o: CXX core/math/quick_hull.cpp
+  depfile = core/math/quick_hull.o.d
+
+build core/math/vector3.o: CXX core/math/vector3.cpp
+  depfile = core/math/vector3.o.d
+
+build core/math/matrix3.o: CXX core/math/matrix3.cpp
+  depfile = core/math/matrix3.o.d
+
+build core/math/face3.o: CXX core/math/face3.cpp
+  depfile = core/math/face3.o.d
+
+build core/math/geometry.o: CXX core/math/geometry.cpp
+  depfile = core/math/geometry.o.d
+
+build core/math/triangle_mesh.o: CXX core/math/triangle_mesh.cpp
+  depfile = core/math/triangle_mesh.o.d
+
+build core/io/file_access_memory.o: CXX core/io/file_access_memory.cpp
+  depfile = core/io/file_access_memory.o.d
+
+build core/io/file_access_compressed.o: CXX core/io/file_access_compressed.cpp
+  depfile = core/io/file_access_compressed.o.d
+
+build core/io/http_client.o: CXX core/io/http_client.cpp
+  depfile = core/io/http_client.o.d
+
+build core/io/aes256.o: CXX core/io/aes256.cpp
+  depfile = core/io/aes256.o.d
+
+build core/io/ip.o: CXX core/io/ip.cpp
+  depfile = core/io/ip.o.d
+
+build core/io/tcp_server.o: CXX core/io/tcp_server.cpp
+  depfile = core/io/tcp_server.o.d
+
+build core/io/stream_peer.o: CXX core/io/stream_peer.cpp
+  depfile = core/io/stream_peer.o.d
+
+build core/io/file_access_pack.o: CXX core/io/file_access_pack.cpp
+  depfile = core/io/file_access_pack.o.d
+
+build core/io/md5.o: CXX core/io/md5.cpp
+  depfile = core/io/md5.o.d
+
+build core/io/xml_parser.o: CXX core/io/xml_parser.cpp
+  depfile = core/io/xml_parser.o.d
+
+build core/io/file_access_network.o: CXX core/io/file_access_network.cpp
+  depfile = core/io/file_access_network.o.d
+
+build core/io/file_access_encrypted.o: CXX core/io/file_access_encrypted.cpp
+  depfile = core/io/file_access_encrypted.o.d
+
+build core/io/stream_peer_tcp.o: CXX core/io/stream_peer_tcp.cpp
+  depfile = core/io/stream_peer_tcp.o.d
+
+build core/io/file_access_buffered.o: CXX core/io/file_access_buffered.cpp
+  depfile = core/io/file_access_buffered.o.d
+
+build core/io/config_file.o: CXX core/io/config_file.cpp
+  depfile = core/io/config_file.o.d
+
+build core/io/packet_peer_udp.o: CXX core/io/packet_peer_udp.cpp
+  depfile = core/io/packet_peer_udp.o.d
+
+build core/io/resource_saver.o: CXX core/io/resource_saver.cpp
+  depfile = core/io/resource_saver.o.d
+
+build core/io/translation_loader_po.o: CXX core/io/translation_loader_po.cpp
+  depfile = core/io/translation_loader_po.o.d
+
+build core/io/resource_loader.o: CXX core/io/resource_loader.cpp
+  depfile = core/io/resource_loader.o.d
+
+build core/io/packet_peer.o: CXX core/io/packet_peer.cpp
+  depfile = core/io/packet_peer.o.d
+
+build core/io/resource_format_binary.o: CXX core/io/resource_format_binary.cpp
+  depfile = core/io/resource_format_binary.o.d
+
+build core/io/json.o: CXX core/io/json.cpp
+  depfile = core/io/json.o.d
+
+build core/io/compression.o: CXX core/io/compression.cpp
+  depfile = core/io/compression.o.d
+
+build core/io/resource_format_xml.o: CXX core/io/resource_format_xml.cpp
+  depfile = core/io/resource_format_xml.o.d
+
+build core/io/stream_peer_ssl.o: CXX core/io/stream_peer_ssl.cpp
+  depfile = core/io/stream_peer_ssl.o.d
+
+build core/io/ip_address.o: CXX core/io/ip_address.cpp
+  depfile = core/io/ip_address.o.d
+
+build core/io/image_loader.o: CXX core/io/image_loader.cpp
+  depfile = core/io/image_loader.o.d
+
+build core/io/file_access_zip.o: CXX core/io/file_access_zip.cpp
+  depfile = core/io/file_access_zip.o.d
+
+build core/io/marshalls.o: CXX core/io/marshalls.cpp
+  depfile = core/io/marshalls.o.d
+
+build core/io/base64.o: CC core/io/base64.c
+  depfile = core/io/base64.o.d
+
+build core/io/zip.o: CC core/io/zip.c
+  depfile = core/io/zip.o.d
+
+build core/io/fastlz.o: CC core/io/fastlz.c
+  depfile = core/io/fastlz.o.d
+
+build core/io/unzip.o: CC core/io/unzip.c
+  depfile = core/io/unzip.o.d
+
+build core/io/ioapi.o: CC core/io/ioapi.c
+  depfile = core/io/ioapi.o.d
+
+build platform/android/globals/global_defaults.o: CXX $
+    platform/android/globals/global_defaults.cpp
+  depfile = platform/android/globals/global_defaults.o.d
+
+build platform/iphone/globals/global_defaults.o: CXX $
+    platform/iphone/globals/global_defaults.cpp
+  depfile = platform/iphone/globals/global_defaults.o.d
+
+build core/core.a: STATIC_LIBRARY $
+    platform/android/globals/global_defaults.o $
+    platform/iphone/globals/global_defaults.o core/method_bind.o $
+    core/compressed_translation.o core/object_type_db.o core/image.o $
+    core/variant_call.o core/script_language.o core/input_map.o $
+    core/ref_ptr.o core/variant.o core/print_string.o core/globals.o $
+    core/core_string_names.o core/event_queue.o core/global_constants.o $
+    core/message_queue.o core/vset.o core/script_debugger_remote.o $
+    core/image_quantize.o core/string_db.o core/pool_allocator.o $
+    core/register_core_types.o core/fpstr.o core/path_db.o core/resource.o $
+    core/vmap.o core/undo_redo.o core/packed_data_container.o core/array.o $
+    core/command_queue_mt.o core/script_encryption_key.o core/rid.o $
+    core/script_debugger_local.o core/func_ref.o core/ustring.o $
+    core/path_remap.o core/translation.o core/reference.o core/dictionary.o $
+    core/object.o core/dvector.o core/res_ptr.o $
+    core/script_debugger_debugger.o core/variant_construct_string.o $
+    core/pair.o core/safe_refcount.o core/variant_op.o $
+    core/global_defaults.o core/error_macros.o core/color.o $
+    core/os/thread.o core/os/memory_pool_dynamic_static.o $
+    core/os/memory_pool_dynamic.o core/os/dir_access.o core/os/main_loop.o $
+    core/os/mutex.o core/os/input_event.o core/os/os.o core/os/copymem.o $
+    core/os/semaphore.o core/os/memory.o core/os/keyboard.o $
+    core/os/memory_pool_static.o core/os/input.o core/os/thread_dummy.o $
+    core/os/thread_safe.o core/os/memory_pool_dynamic_prealloc.o $
+    core/os/shell.o core/os/file_access.o core/math/transform.o $
+    core/math/triangulator.o core/math/math_2d.o core/math/camera_matrix.o $
+    core/math/math_funcs.o core/math/bezier_curve.o core/math/quat.o $
+    core/math/bsp_tree.o core/math/triangulate.o core/math/math_defs.o $
+    core/math/aabb.o core/math/plane.o core/math/quick_hull.o $
+    core/math/vector3.o core/math/matrix3.o core/math/face3.o $
+    core/math/geometry.o core/math/triangle_mesh.o $
+    core/io/file_access_memory.o core/io/file_access_compressed.o $
+    core/io/http_client.o core/io/aes256.o core/io/ip.o $
+    core/io/tcp_server.o core/io/stream_peer.o core/io/file_access_pack.o $
+    core/io/md5.o core/io/xml_parser.o core/io/file_access_network.o $
+    core/io/file_access_encrypted.o core/io/stream_peer_tcp.o $
+    core/io/file_access_buffered.o core/io/config_file.o $
+    core/io/packet_peer_udp.o core/io/resource_saver.o $
+    core/io/translation_loader_po.o core/io/resource_loader.o $
+    core/io/packet_peer.o core/io/resource_format_binary.o core/io/json.o $
+    core/io/compression.o core/io/resource_format_xml.o $
+    core/io/stream_peer_ssl.o core/io/ip_address.o core/io/image_loader.o $
+    core/io/file_access_zip.o core/io/marshalls.o core/io/base64.o $
+    core/io/zip.o core/io/fastlz.o core/io/unzip.o core/io/ioapi.o $
+    core/bind/core_bind.o
+
+build drivers/alsa/audio_driver_alsa.o: CXX drivers/alsa/audio_driver_alsa.cpp
+  depfile = drivers/alsa/audio_driver_alsa.o.d
+
+build drivers/chibi/cp_envelope.o: CXX drivers/chibi/cp_envelope.cpp
+  depfile = drivers/chibi/cp_envelope.o.d
+
+build drivers/chibi/cp_file_access_wrapper.o: CXX $
+    drivers/chibi/cp_file_access_wrapper.cpp
+  depfile = drivers/chibi/cp_file_access_wrapper.o.d
+
+build drivers/chibi/cp_instrument.o: CXX drivers/chibi/cp_instrument.cpp
+  depfile = drivers/chibi/cp_instrument.o.d
+
+build drivers/chibi/cp_loader_it.o: CXX drivers/chibi/cp_loader_it.cpp
+  depfile = drivers/chibi/cp_loader_it.o.d
+
+build drivers/chibi/cp_loader_it_info.o: CXX $
+    drivers/chibi/cp_loader_it_info.cpp
+  depfile = drivers/chibi/cp_loader_it_info.o.d
+
+build drivers/chibi/cp_loader_it_instruments.o: CXX $
+    drivers/chibi/cp_loader_it_instruments.cpp
+  depfile = drivers/chibi/cp_loader_it_instruments.o.d
+
+build drivers/chibi/cp_loader_it_patterns.o: CXX $
+    drivers/chibi/cp_loader_it_patterns.cpp
+  depfile = drivers/chibi/cp_loader_it_patterns.o.d
+
+build drivers/chibi/cp_loader_it_samples.o: CXX $
+    drivers/chibi/cp_loader_it_samples.cpp
+  depfile = drivers/chibi/cp_loader_it_samples.o.d
+
+build drivers/chibi/cp_loader_mod.o: CXX drivers/chibi/cp_loader_mod.cpp
+  depfile = drivers/chibi/cp_loader_mod.o.d
+
+build drivers/chibi/cp_loader_s3m.o: CXX drivers/chibi/cp_loader_s3m.cpp
+  depfile = drivers/chibi/cp_loader_s3m.o.d
+
+build drivers/chibi/cp_loader_xm.o: CXX drivers/chibi/cp_loader_xm.cpp
+  depfile = drivers/chibi/cp_loader_xm.o.d
+
+build drivers/chibi/cp_pattern.o: CXX drivers/chibi/cp_pattern.cpp
+  depfile = drivers/chibi/cp_pattern.o.d
+
+build drivers/chibi/cp_player_data.o: CXX drivers/chibi/cp_player_data.cpp
+  depfile = drivers/chibi/cp_player_data.o.d
+
+build drivers/chibi/cp_player_data_control.o: CXX $
+    drivers/chibi/cp_player_data_control.cpp
+  depfile = drivers/chibi/cp_player_data_control.o.d
+
+build drivers/chibi/cp_player_data_effects.o: CXX $
+    drivers/chibi/cp_player_data_effects.cpp
+  depfile = drivers/chibi/cp_player_data_effects.o.d
+
+build drivers/chibi/cp_player_data_envelopes.o: CXX $
+    drivers/chibi/cp_player_data_envelopes.cpp
+  depfile = drivers/chibi/cp_player_data_envelopes.o.d
+
+build drivers/chibi/cp_player_data_events.o: CXX $
+    drivers/chibi/cp_player_data_events.cpp
+  depfile = drivers/chibi/cp_player_data_events.o.d
+
+build drivers/chibi/cp_player_data_filter.o: CXX $
+    drivers/chibi/cp_player_data_filter.cpp
+  depfile = drivers/chibi/cp_player_data_filter.o.d
+
+build drivers/chibi/cp_player_data_nna.o: CXX $
+    drivers/chibi/cp_player_data_nna.cpp
+  depfile = drivers/chibi/cp_player_data_nna.o.d
+
+build drivers/chibi/cp_player_data_notes.o: CXX $
+    drivers/chibi/cp_player_data_notes.cpp
+  depfile = drivers/chibi/cp_player_data_notes.o.d
+
+build drivers/chibi/cp_player_data_reserved.o: CXX $
+    drivers/chibi/cp_player_data_reserved.cpp
+  depfile = drivers/chibi/cp_player_data_reserved.o.d
+
+build drivers/chibi/cp_player_data_utils.o: CXX $
+    drivers/chibi/cp_player_data_utils.cpp
+  depfile = drivers/chibi/cp_player_data_utils.o.d
+
+build drivers/chibi/cp_sample.o: CXX drivers/chibi/cp_sample.cpp
+  depfile = drivers/chibi/cp_sample.o.d
+
+build drivers/chibi/cp_sample_manager.o: CXX $
+    drivers/chibi/cp_sample_manager.cpp
+  depfile = drivers/chibi/cp_sample_manager.o.d
+
+build drivers/chibi/cp_song.o: CXX drivers/chibi/cp_song.cpp
+  depfile = drivers/chibi/cp_song.o.d
+
+build drivers/chibi/cp_tables.o: CXX drivers/chibi/cp_tables.cpp
+  depfile = drivers/chibi/cp_tables.o.d
+
+build drivers/chibi/event_stream_chibi.o: CXX $
+    drivers/chibi/event_stream_chibi.cpp
+  depfile = drivers/chibi/event_stream_chibi.o.d
+
+build drivers/convex_decomp/b2Polygon.o: CXX $
+    drivers/convex_decomp/b2Polygon.cpp
+  depfile = drivers/convex_decomp/b2Polygon.o.d
+
+build drivers/convex_decomp/b2Triangle.o: CXX $
+    drivers/convex_decomp/b2Triangle.cpp
+  depfile = drivers/convex_decomp/b2Triangle.o.d
+
+build drivers/convex_decomp/b2d_decompose.o: CXX $
+    drivers/convex_decomp/b2d_decompose.cpp
+  depfile = drivers/convex_decomp/b2d_decompose.o.d
+
+build drivers/register_driver_types.o: CXX drivers/register_driver_types.cpp
+  depfile = drivers/register_driver_types.o.d
+
+build drivers/drivers.a: STATIC_LIBRARY drivers/register_driver_types.o
+
+build drivers/unix/mutex_posix.o: CXX drivers/unix/mutex_posix.cpp
+  depfile = drivers/unix/mutex_posix.o.d
+
+build drivers/unix/thread_posix.o: CXX drivers/unix/thread_posix.cpp
+  depfile = drivers/unix/thread_posix.o.d
+
+build drivers/unix/ip_unix.o: CXX drivers/unix/ip_unix.cpp
+  depfile = drivers/unix/ip_unix.o.d
+
+build drivers/unix/memory_pool_static_malloc.o: CXX $
+    drivers/unix/memory_pool_static_malloc.cpp
+  depfile = drivers/unix/memory_pool_static_malloc.o.d
+
+build drivers/unix/stream_peer_tcp_posix.o: CXX $
+    drivers/unix/stream_peer_tcp_posix.cpp
+  depfile = drivers/unix/stream_peer_tcp_posix.o.d
+
+build drivers/unix/packet_peer_udp_posix.o: CXX $
+    drivers/unix/packet_peer_udp_posix.cpp
+  depfile = drivers/unix/packet_peer_udp_posix.o.d
+
+build drivers/unix/os_unix.o: CXX drivers/unix/os_unix.cpp
+  depfile = drivers/unix/os_unix.o.d
+
+build drivers/unix/dir_access_unix.o: CXX drivers/unix/dir_access_unix.cpp
+  depfile = drivers/unix/dir_access_unix.o.d
+
+build drivers/unix/semaphore_posix.o: CXX drivers/unix/semaphore_posix.cpp
+  depfile = drivers/unix/semaphore_posix.o.d
+
+build drivers/unix/file_access_unix.o: CXX drivers/unix/file_access_unix.cpp
+  depfile = drivers/unix/file_access_unix.o.d
+
+build drivers/unix/tcp_server_posix.o: CXX drivers/unix/tcp_server_posix.cpp
+  depfile = drivers/unix/tcp_server_posix.o.d
+
+build drivers/pulseaudio/audio_driver_pulseaudio.o: CXX $
+    drivers/pulseaudio/audio_driver_pulseaudio.cpp
+  depfile = drivers/pulseaudio/audio_driver_pulseaudio.o.d
+
+build drivers/windows/thread_windows.o: CXX drivers/windows/thread_windows.cpp
+  depfile = drivers/windows/thread_windows.o.d
+
+build drivers/windows/dir_access_windows.o: CXX $
+    drivers/windows/dir_access_windows.cpp
+  depfile = drivers/windows/dir_access_windows.o.d
+
+build drivers/windows/semaphore_windows.o: CXX $
+    drivers/windows/semaphore_windows.cpp
+  depfile = drivers/windows/semaphore_windows.o.d
+
+build drivers/windows/file_access_windows.o: CXX $
+    drivers/windows/file_access_windows.cpp
+  depfile = drivers/windows/file_access_windows.o.d
+
+build drivers/windows/shell_windows.o: CXX drivers/windows/shell_windows.cpp
+  depfile = drivers/windows/shell_windows.o.d
+
+build drivers/windows/mutex_windows.o: CXX drivers/windows/mutex_windows.cpp
+  depfile = drivers/windows/mutex_windows.o.d
+
+build drivers/gles2/rasterizer_gles2.o: CXX drivers/gles2/rasterizer_gles2.cpp
+  depfile = drivers/gles2/rasterizer_gles2.o.d
+
+build drivers/gles2/shader_gles2.o: CXX drivers/gles2/shader_gles2.cpp
+  depfile = drivers/gles2/shader_gles2.o.d
+
+build drivers/gles2/rasterizer_instance_gles2.o: CXX $
+    drivers/gles2/rasterizer_instance_gles2.cpp
+  depfile = drivers/gles2/rasterizer_instance_gles2.o.d
+
+build drivers/gles2/shader_compiler_gles2.o: CXX $
+    drivers/gles2/shader_compiler_gles2.cpp
+  depfile = drivers/gles2/shader_compiler_gles2.o.d
+
+build drivers/gl_context/context_gl.o: CXX drivers/gl_context/context_gl.cpp
+  depfile = drivers/gl_context/context_gl.o.d
+
+build drivers/gl_context/glew.o: CC drivers/gl_context/glew.c
+  depfile = drivers/gl_context/glew.o.d
+
+build drivers/openssl/stream_peer_openssl.o: CXX $
+    drivers/openssl/stream_peer_openssl.cpp
+  depfile = drivers/openssl/stream_peer_openssl.o.d
+
+build drivers/openssl/register_openssl.o: CXX $
+    drivers/openssl/register_openssl.cpp
+  depfile = drivers/openssl/register_openssl.o.d
+
+build drivers/openssl/curl_hostcheck.o: CC drivers/openssl/curl_hostcheck.c
+  depfile = drivers/openssl/curl_hostcheck.o.d
+
+build drivers/png/example.o: CC drivers/png/example.c
+  depfile = drivers/png/example.o.d
+
+build drivers/png/png.o: CC drivers/png/png.c
+  depfile = drivers/png/png.o.d
+
+build drivers/png/pngerror.o: CC drivers/png/pngerror.c
+  depfile = drivers/png/pngerror.o.d
+
+build drivers/png/pngget.o: CC drivers/png/pngget.c
+  depfile = drivers/png/pngget.o.d
+
+build drivers/png/pngmem.o: CC drivers/png/pngmem.c
+  depfile = drivers/png/pngmem.o.d
+
+build drivers/png/pngpread.o: CC drivers/png/pngpread.c
+  depfile = drivers/png/pngpread.o.d
+
+build drivers/png/pngread.o: CC drivers/png/pngread.c
+  depfile = drivers/png/pngread.o.d
+
+build drivers/png/pngrio.o: CC drivers/png/pngrio.c
+  depfile = drivers/png/pngrio.o.d
+
+build drivers/png/pngrtran.o: CC drivers/png/pngrtran.c
+  depfile = drivers/png/pngrtran.o.d
+
+build drivers/png/pngrutil.o: CC drivers/png/pngrutil.c
+  depfile = drivers/png/pngrutil.o.d
+
+build drivers/png/pngset.o: CC drivers/png/pngset.c
+  depfile = drivers/png/pngset.o.d
+
+build drivers/png/pngtrans.o: CC drivers/png/pngtrans.c
+  depfile = drivers/png/pngtrans.o.d
+
+build drivers/png/pngwio.o: CC drivers/png/pngwio.c
+  depfile = drivers/png/pngwio.o.d
+
+build drivers/png/pngwrite.o: CC drivers/png/pngwrite.c
+  depfile = drivers/png/pngwrite.o.d
+
+build drivers/png/pngwtran.o: CC drivers/png/pngwtran.c
+  depfile = drivers/png/pngwtran.o.d
+
+build drivers/png/pngwutil.o: CC drivers/png/pngwutil.c
+  depfile = drivers/png/pngwutil.o.d
+
+build drivers/png/resource_saver_png.o: CXX drivers/png/resource_saver_png.cpp
+  depfile = drivers/png/resource_saver_png.o.d
+
+build drivers/png/image_loader_png.o: CXX drivers/png/image_loader_png.cpp
+  depfile = drivers/png/image_loader_png.o.d
+
+build drivers/jpg/tinyjpeg.o: CC drivers/jpg/tinyjpeg.c
+  depfile = drivers/jpg/tinyjpeg.o.d
+
+build drivers/jpg/jidctflt.o: CC drivers/jpg/jidctflt.c
+  depfile = drivers/jpg/jidctflt.o.d
+
+build drivers/jpg/image_loader_jpg.o: CXX drivers/jpg/image_loader_jpg.cpp
+  depfile = drivers/jpg/image_loader_jpg.o.d
+
+build drivers/webp/mux/muxedit.o: CC drivers/webp/mux/muxedit.c
+  depfile = drivers/webp/mux/muxedit.o.d
+
+build drivers/webp/mux/muxread.o: CC drivers/webp/mux/muxread.c
+  depfile = drivers/webp/mux/muxread.o.d
+
+build drivers/webp/mux/muxinternal.o: CC drivers/webp/mux/muxinternal.c
+  depfile = drivers/webp/mux/muxinternal.o.d
+
+build drivers/webp/mux/demux.o: CC drivers/webp/mux/demux.c
+  depfile = drivers/webp/mux/demux.o.d
+
+build drivers/webp/enc/tree.o: CC drivers/webp/enc/tree.c
+  depfile = drivers/webp/enc/tree.o.d
+
+build drivers/webp/enc/analysis.o: CC drivers/webp/enc/analysis.c
+  depfile = drivers/webp/enc/analysis.o.d
+
+build drivers/webp/enc/backward_references.o: CC $
+    drivers/webp/enc/backward_references.c
+  depfile = drivers/webp/enc/backward_references.o.d
+
+build drivers/webp/enc/alpha.o: CC drivers/webp/enc/alpha.c
+  depfile = drivers/webp/enc/alpha.o.d
+
+build drivers/webp/enc/picture.o: CC drivers/webp/enc/picture.c
+  depfile = drivers/webp/enc/picture.o.d
+
+build drivers/webp/enc/frame.o: CC drivers/webp/enc/frame.c
+  depfile = drivers/webp/enc/frame.o.d
+
+build drivers/webp/enc/webpenc.o: CC drivers/webp/enc/webpenc.c
+  depfile = drivers/webp/enc/webpenc.o.d
+
+build drivers/webp/enc/cost.o: CC drivers/webp/enc/cost.c
+  depfile = drivers/webp/enc/cost.o.d
+
+build drivers/webp/enc/filter.o: CC drivers/webp/enc/filter.c
+  depfile = drivers/webp/enc/filter.o.d
+
+build drivers/webp/enc/vp8l.o: CC drivers/webp/enc/vp8l.c
+  depfile = drivers/webp/enc/vp8l.o.d
+
+build drivers/webp/enc/quant.o: CC drivers/webp/enc/quant.c
+  depfile = drivers/webp/enc/quant.o.d
+
+build drivers/webp/enc/histogram.o: CC drivers/webp/enc/histogram.c
+  depfile = drivers/webp/enc/histogram.o.d
+
+build drivers/webp/enc/syntax.o: CC drivers/webp/enc/syntax.c
+  depfile = drivers/webp/enc/syntax.o.d
+
+build drivers/webp/enc/config.o: CC drivers/webp/enc/config.c
+  depfile = drivers/webp/enc/config.o.d
+
+build drivers/webp/enc/layer.o: CC drivers/webp/enc/layer.c
+  depfile = drivers/webp/enc/layer.o.d
+
+build drivers/webp/enc/iterator.o: CC drivers/webp/enc/iterator.c
+  depfile = drivers/webp/enc/iterator.o.d
+
+build drivers/webp/dsp/dec_sse2.o: CC drivers/webp/dsp/dec_sse2.c
+  depfile = drivers/webp/dsp/dec_sse2.o.d
+
+build drivers/webp/dsp/upsampling_sse2.o: CC $
+    drivers/webp/dsp/upsampling_sse2.c
+  depfile = drivers/webp/dsp/upsampling_sse2.o.d
+
+build drivers/webp/dsp/dec_neon.o: CC drivers/webp/dsp/dec_neon.c
+  depfile = drivers/webp/dsp/dec_neon.o.d
+
+build drivers/webp/dsp/enc.o: CC drivers/webp/dsp/enc.c
+  depfile = drivers/webp/dsp/enc.o.d
+
+build drivers/webp/dsp/enc_sse2.o: CC drivers/webp/dsp/enc_sse2.c
+  depfile = drivers/webp/dsp/enc_sse2.o.d
+
+build drivers/webp/dsp/upsampling.o: CC drivers/webp/dsp/upsampling.c
+  depfile = drivers/webp/dsp/upsampling.o.d
+
+build drivers/webp/dsp/lossless.o: CC drivers/webp/dsp/lossless.c
+  depfile = drivers/webp/dsp/lossless.o.d
+
+build drivers/webp/dsp/cpu.o: CC drivers/webp/dsp/cpu.c
+  depfile = drivers/webp/dsp/cpu.o.d
+
+build drivers/webp/dsp/dec.o: CC drivers/webp/dsp/dec.c
+  depfile = drivers/webp/dsp/dec.o.d
+
+build drivers/webp/dsp/yuv.o: CC drivers/webp/dsp/yuv.c
+  depfile = drivers/webp/dsp/yuv.o.d
+
+build drivers/webp/utils/bit_reader.o: CC drivers/webp/utils/bit_reader.c
+  depfile = drivers/webp/utils/bit_reader.o.d
+
+build drivers/webp/utils/filters.o: CC drivers/webp/utils/filters.c
+  depfile = drivers/webp/utils/filters.o.d
+
+build drivers/webp/utils/bit_writer.o: CC drivers/webp/utils/bit_writer.c
+  depfile = drivers/webp/utils/bit_writer.o.d
+
+build drivers/webp/utils/thread.o: CC drivers/webp/utils/thread.c
+  depfile = drivers/webp/utils/thread.o.d
+
+build drivers/webp/utils/quant_levels.o: CC drivers/webp/utils/quant_levels.c
+  depfile = drivers/webp/utils/quant_levels.o.d
+
+build drivers/webp/utils/color_cache.o: CC drivers/webp/utils/color_cache.c
+  depfile = drivers/webp/utils/color_cache.o.d
+
+build drivers/webp/utils/rescaler.o: CC drivers/webp/utils/rescaler.c
+  depfile = drivers/webp/utils/rescaler.o.d
+
+build drivers/webp/utils/utils.o: CC drivers/webp/utils/utils.c
+  depfile = drivers/webp/utils/utils.o.d
+
+build drivers/webp/utils/huffman.o: CC drivers/webp/utils/huffman.c
+  depfile = drivers/webp/utils/huffman.o.d
+
+build drivers/webp/utils/huffman_encode.o: CC $
+    drivers/webp/utils/huffman_encode.c
+  depfile = drivers/webp/utils/huffman_encode.o.d
+
+build drivers/webp/dec/tree.o: CC drivers/webp/dec/tree.c
+  depfile = drivers/webp/dec/tree.o.d
+
+build drivers/webp/dec/alpha.o: CC drivers/webp/dec/alpha.c
+  depfile = drivers/webp/dec/alpha.o.d
+
+build drivers/webp/dec/frame.o: CC drivers/webp/dec/frame.c
+  depfile = drivers/webp/dec/frame.o.d
+
+build drivers/webp/dec/vp8l.o: CC drivers/webp/dec/vp8l.c
+  depfile = drivers/webp/dec/vp8l.o.d
+
+build drivers/webp/dec/vp8.o: CC drivers/webp/dec/vp8.c
+  depfile = drivers/webp/dec/vp8.o.d
+
+build drivers/webp/dec/quant.o: CC drivers/webp/dec/quant.c
+  depfile = drivers/webp/dec/quant.o.d
+
+build drivers/webp/dec/webp.o: CC drivers/webp/dec/webp.c
+  depfile = drivers/webp/dec/webp.o.d
+
+build drivers/webp/dec/buffer.o: CC drivers/webp/dec/buffer.c
+  depfile = drivers/webp/dec/buffer.o.d
+
+build drivers/webp/dec/io.o: CC drivers/webp/dec/io.c
+  depfile = drivers/webp/dec/io.o.d
+
+build drivers/webp/dec/layer.o: CC drivers/webp/dec/layer.c
+  depfile = drivers/webp/dec/layer.o.d
+
+build drivers/webp/dec/idec.o: CC drivers/webp/dec/idec.c
+  depfile = drivers/webp/dec/idec.o.d
+
+build drivers/webp/image_loader_webp.o: CXX drivers/webp/image_loader_webp.cpp
+  depfile = drivers/webp/image_loader_webp.o.d
+
+build drivers/drivers0.a: STATIC_LIBRARY drivers/unix/mutex_posix.o $
+    drivers/unix/thread_posix.o drivers/unix/ip_unix.o $
+    drivers/unix/memory_pool_static_malloc.o $
+    drivers/unix/stream_peer_tcp_posix.o $
+    drivers/unix/packet_peer_udp_posix.o drivers/unix/os_unix.o $
+    drivers/unix/dir_access_unix.o drivers/unix/semaphore_posix.o $
+    drivers/unix/file_access_unix.o drivers/unix/tcp_server_posix.o $
+    drivers/alsa/audio_driver_alsa.o $
+    drivers/pulseaudio/audio_driver_pulseaudio.o $
+    drivers/windows/thread_windows.o drivers/windows/dir_access_windows.o $
+    drivers/windows/semaphore_windows.o $
+    drivers/windows/file_access_windows.o drivers/windows/shell_windows.o $
+    drivers/windows/mutex_windows.o drivers/gles2/rasterizer_gles2.o $
+    drivers/gles2/shader_gles2.o drivers/gles2/rasterizer_instance_gles2.o $
+    drivers/gles2/shader_compiler_gles2.o drivers/gl_context/context_gl.o $
+    drivers/gl_context/glew.o drivers/openssl/stream_peer_openssl.o $
+    drivers/openssl/register_openssl.o drivers/openssl/curl_hostcheck.o $
+    drivers/png/example.o drivers/png/png.o drivers/png/pngerror.o $
+    drivers/png/pngget.o drivers/png/pngmem.o drivers/png/pngpread.o $
+    drivers/png/pngread.o drivers/png/pngrio.o drivers/png/pngrtran.o $
+    drivers/png/pngrutil.o drivers/png/pngset.o drivers/png/pngtrans.o $
+    drivers/png/pngwio.o drivers/png/pngwrite.o drivers/png/pngwtran.o $
+    drivers/png/pngwutil.o drivers/png/resource_saver_png.o $
+    drivers/png/image_loader_png.o drivers/jpg/tinyjpeg.o $
+    drivers/jpg/jidctflt.o drivers/jpg/image_loader_jpg.o $
+    drivers/webp/mux/muxedit.o drivers/webp/mux/muxread.o $
+    drivers/webp/mux/muxinternal.o drivers/webp/mux/demux.o $
+    drivers/webp/enc/tree.o drivers/webp/enc/analysis.o $
+    drivers/webp/enc/backward_references.o drivers/webp/enc/alpha.o $
+    drivers/webp/enc/picture.o drivers/webp/enc/frame.o $
+    drivers/webp/enc/webpenc.o drivers/webp/enc/cost.o $
+    drivers/webp/enc/filter.o drivers/webp/enc/vp8l.o $
+    drivers/webp/enc/quant.o drivers/webp/enc/histogram.o $
+    drivers/webp/enc/syntax.o drivers/webp/enc/config.o $
+    drivers/webp/enc/layer.o drivers/webp/enc/iterator.o $
+    drivers/webp/dsp/dec_sse2.o drivers/webp/dsp/upsampling_sse2.o $
+    drivers/webp/dsp/dec_neon.o drivers/webp/dsp/enc.o $
+    drivers/webp/dsp/enc_sse2.o drivers/webp/dsp/upsampling.o $
+    drivers/webp/dsp/lossless.o drivers/webp/dsp/cpu.o $
+    drivers/webp/dsp/dec.o drivers/webp/dsp/yuv.o $
+    drivers/webp/utils/bit_reader.o drivers/webp/utils/filters.o $
+    drivers/webp/utils/bit_writer.o drivers/webp/utils/thread.o $
+    drivers/webp/utils/quant_levels.o drivers/webp/utils/color_cache.o $
+    drivers/webp/utils/rescaler.o drivers/webp/utils/utils.o $
+    drivers/webp/utils/huffman.o drivers/webp/utils/huffman_encode.o $
+    drivers/webp/dec/tree.o drivers/webp/dec/alpha.o $
+    drivers/webp/dec/frame.o drivers/webp/dec/vp8l.o drivers/webp/dec/vp8.o $
+    drivers/webp/dec/quant.o drivers/webp/dec/webp.o $
+    drivers/webp/dec/buffer.o drivers/webp/dec/io.o $
+    drivers/webp/dec/layer.o drivers/webp/dec/idec.o $
+    drivers/webp/image_loader_webp.o
+
+build drivers/rtaudio/audio_driver_rtaudio.o: CXX $
+    drivers/rtaudio/audio_driver_rtaudio.cpp
+  depfile = drivers/rtaudio/audio_driver_rtaudio.o.d
+
+build drivers/rtaudio/RtAudio.o: CXX drivers/rtaudio/RtAudio.cpp
+  depfile = drivers/rtaudio/RtAudio.o.d
+
+build drivers/nedmalloc/nedmalloc.o: CXX drivers/nedmalloc/nedmalloc.cpp
+  depfile = drivers/nedmalloc/nedmalloc.o.d
+
+build drivers/nedmalloc/memory_pool_static_nedmalloc.o: CXX $
+    drivers/nedmalloc/memory_pool_static_nedmalloc.cpp
+  depfile = drivers/nedmalloc/memory_pool_static_nedmalloc.o.d
+
+build drivers/nrex/nrex.o: CXX drivers/nrex/nrex.cpp
+  depfile = drivers/nrex/nrex.o.d
+
+build drivers/nrex/regex.o: CXX drivers/nrex/regex.cpp
+  depfile = drivers/nrex/regex.o.d
+
+build drivers/dds/texture_loader_dds.o: CXX drivers/dds/texture_loader_dds.cpp
+  depfile = drivers/dds/texture_loader_dds.o.d
+
+build drivers/pvr/BitScale.o: CXX drivers/pvr/BitScale.cpp
+  depfile = drivers/pvr/BitScale.o.d
+
+build drivers/pvr/MortonTable.o: CXX drivers/pvr/MortonTable.cpp
+  depfile = drivers/pvr/MortonTable.o.d
+
+build drivers/pvr/PvrTcDecoder.o: CXX drivers/pvr/PvrTcDecoder.cpp
+  depfile = drivers/pvr/PvrTcDecoder.o.d
+
+build drivers/pvr/PvrTcEncoder.o: CXX drivers/pvr/PvrTcEncoder.cpp
+  depfile = drivers/pvr/PvrTcEncoder.o.d
+
+build drivers/pvr/PvrTcPacket.o: CXX drivers/pvr/PvrTcPacket.cpp
+  depfile = drivers/pvr/PvrTcPacket.o.d
+
+build drivers/pvr/texture_loader_pvr.o: CXX drivers/pvr/texture_loader_pvr.cpp
+  depfile = drivers/pvr/texture_loader_pvr.o.d
+
+build drivers/etc1/image_etc.o: CXX drivers/etc1/image_etc.cpp
+  depfile = drivers/etc1/image_etc.o.d
+
+build drivers/etc1/rg_etc1.o: CXX drivers/etc1/rg_etc1.cpp
+  depfile = drivers/etc1/rg_etc1.o.d
+
+build drivers/ogg/bitwise.o: CC drivers/ogg/bitwise.c
+  depfile = drivers/ogg/bitwise.o.d
+
+build drivers/ogg/framing.o: CC drivers/ogg/framing.c
+  depfile = drivers/ogg/framing.o.d
+
+build drivers/vorbis/audio_stream_ogg_vorbis.o: CXX $
+    drivers/vorbis/audio_stream_ogg_vorbis.cpp
+  depfile = drivers/vorbis/audio_stream_ogg_vorbis.o.d
+
+build drivers/vorbis/analysis.o: CC drivers/vorbis/analysis.c
+  depfile = drivers/vorbis/analysis.o.d
+
+build drivers/vorbis/bitrate.o: CC drivers/vorbis/bitrate.c
+  depfile = drivers/vorbis/bitrate.o.d
+
+build drivers/vorbis/block.o: CC drivers/vorbis/block.c
+  depfile = drivers/vorbis/block.o.d
+
+build drivers/vorbis/codebook.o: CC drivers/vorbis/codebook.c
+  depfile = drivers/vorbis/codebook.o.d
+
+build drivers/vorbis/envelope.o: CC drivers/vorbis/envelope.c
+  depfile = drivers/vorbis/envelope.o.d
+
+build drivers/vorbis/floor0.o: CC drivers/vorbis/floor0.c
+  depfile = drivers/vorbis/floor0.o.d
+
+build drivers/vorbis/floor1.o: CC drivers/vorbis/floor1.c
+  depfile = drivers/vorbis/floor1.o.d
+
+build drivers/vorbis/info.o: CC drivers/vorbis/info.c
+  depfile = drivers/vorbis/info.o.d
+
+build drivers/vorbis/lookup.o: CC drivers/vorbis/lookup.c
+  depfile = drivers/vorbis/lookup.o.d
+
+build drivers/vorbis/lpc.o: CC drivers/vorbis/lpc.c
+  depfile = drivers/vorbis/lpc.o.d
+
+build drivers/vorbis/lsp.o: CC drivers/vorbis/lsp.c
+  depfile = drivers/vorbis/lsp.o.d
+
+build drivers/vorbis/mapping0.o: CC drivers/vorbis/mapping0.c
+  depfile = drivers/vorbis/mapping0.o.d
+
+build drivers/vorbis/mdct.o: CC drivers/vorbis/mdct.c
+  depfile = drivers/vorbis/mdct.o.d
+
+build drivers/vorbis/psy.o: CC drivers/vorbis/psy.c
+  depfile = drivers/vorbis/psy.o.d
+
+build drivers/vorbis/registry.o: CC drivers/vorbis/registry.c
+  depfile = drivers/vorbis/registry.o.d
+
+build drivers/vorbis/res0.o: CC drivers/vorbis/res0.c
+  depfile = drivers/vorbis/res0.o.d
+
+build drivers/vorbis/sharedbook.o: CC drivers/vorbis/sharedbook.c
+  depfile = drivers/vorbis/sharedbook.o.d
+
+build drivers/vorbis/smallft.o: CC drivers/vorbis/smallft.c
+  depfile = drivers/vorbis/smallft.o.d
+
+build drivers/vorbis/synthesis.o: CC drivers/vorbis/synthesis.c
+  depfile = drivers/vorbis/synthesis.o.d
+
+build drivers/vorbis/vorbisenc.o: CC drivers/vorbis/vorbisenc.c
+  depfile = drivers/vorbis/vorbisenc.o.d
+
+build drivers/vorbis/vorbisfile.o: CC drivers/vorbis/vorbisfile.c
+  depfile = drivers/vorbis/vorbisfile.o.d
+
+build drivers/vorbis/window.o: CC drivers/vorbis/window.c
+  depfile = drivers/vorbis/window.o.d
+
+build drivers/drivers1.a: STATIC_LIBRARY drivers/dds/texture_loader_dds.o $
+    drivers/pvr/BitScale.o drivers/pvr/MortonTable.o $
+    drivers/pvr/PvrTcDecoder.o drivers/pvr/PvrTcEncoder.o $
+    drivers/pvr/PvrTcPacket.o drivers/pvr/texture_loader_pvr.o $
+    drivers/etc1/image_etc.o drivers/etc1/rg_etc1.o $
+    drivers/rtaudio/audio_driver_rtaudio.o drivers/rtaudio/RtAudio.o $
+    drivers/nedmalloc/nedmalloc.o $
+    drivers/nedmalloc/memory_pool_static_nedmalloc.o drivers/nrex/nrex.o $
+    drivers/nrex/regex.o drivers/chibi/cp_loader_it_samples.o $
+    drivers/chibi/cp_loader_it_info.o drivers/chibi/cp_sample_manager.o $
+    drivers/chibi/cp_loader_xm.o drivers/chibi/cp_sample.o $
+    drivers/chibi/cp_player_data_filter.o drivers/chibi/cp_instrument.o $
+    drivers/chibi/cp_loader_it_instruments.o $
+    drivers/chibi/cp_player_data_effects.o $
+    drivers/chibi/cp_player_data_events.o drivers/chibi/cp_pattern.o $
+    drivers/chibi/cp_loader_it.o drivers/chibi/event_stream_chibi.o $
+    drivers/chibi/cp_player_data_reserved.o drivers/chibi/cp_song.o $
+    drivers/chibi/cp_player_data_control.o $
+    drivers/chibi/cp_file_access_wrapper.o $
+    drivers/chibi/cp_player_data_envelopes.o $
+    drivers/chibi/cp_player_data_nna.o drivers/chibi/cp_loader_s3m.o $
+    drivers/chibi/cp_loader_it_patterns.o drivers/chibi/cp_loader_mod.o $
+    drivers/chibi/cp_envelope.o drivers/chibi/cp_tables.o $
+    drivers/chibi/cp_player_data.o drivers/chibi/cp_player_data_utils.o $
+    drivers/chibi/cp_player_data_notes.o drivers/ogg/bitwise.o $
+    drivers/ogg/framing.o drivers/vorbis/audio_stream_ogg_vorbis.o $
+    drivers/vorbis/analysis.o drivers/vorbis/bitrate.o $
+    drivers/vorbis/block.o drivers/vorbis/codebook.o $
+    drivers/vorbis/envelope.o drivers/vorbis/floor0.o $
+    drivers/vorbis/floor1.o drivers/vorbis/info.o drivers/vorbis/lookup.o $
+    drivers/vorbis/lpc.o drivers/vorbis/lsp.o drivers/vorbis/mapping0.o $
+    drivers/vorbis/mdct.o drivers/vorbis/psy.o drivers/vorbis/registry.o $
+    drivers/vorbis/res0.o drivers/vorbis/sharedbook.o $
+    drivers/vorbis/smallft.o drivers/vorbis/synthesis.o $
+    drivers/vorbis/vorbisenc.o drivers/vorbis/vorbisfile.o $
+    drivers/vorbis/window.o
+
+build drivers/opus/celt/bands.o: CC drivers/opus/celt/bands.c
+  depfile = drivers/opus/celt/bands.o.d
+
+build drivers/opus/celt/celt_lpc.o: CC drivers/opus/celt/celt_lpc.c
+  depfile = drivers/opus/celt/celt_lpc.o.d
+
+build drivers/opus/celt/entenc.o: CC drivers/opus/celt/entenc.c
+  depfile = drivers/opus/celt/entenc.o.d
+
+build drivers/opus/celt/mdct.o: CC drivers/opus/celt/mdct.c
+  depfile = drivers/opus/celt/mdct.o.d
+
+build drivers/opus/celt/quant_bands.o: CC drivers/opus/celt/quant_bands.c
+  depfile = drivers/opus/celt/quant_bands.o.d
+
+build drivers/opus/celt/celt.o: CC drivers/opus/celt/celt.c
+  depfile = drivers/opus/celt/celt.o.d
+
+build drivers/opus/celt/cwrs.o: CC drivers/opus/celt/cwrs.c
+  depfile = drivers/opus/celt/cwrs.o.d
+
+build drivers/opus/celt/kiss_fft.o: CC drivers/opus/celt/kiss_fft.c
+  depfile = drivers/opus/celt/kiss_fft.o.d
+
+build drivers/opus/celt/modes.o: CC drivers/opus/celt/modes.c
+  depfile = drivers/opus/celt/modes.o.d
+
+build drivers/opus/celt/rate.o: CC drivers/opus/celt/rate.c
+  depfile = drivers/opus/celt/rate.o.d
+
+build drivers/opus/celt/celt_decoder.o: CC drivers/opus/celt/celt_decoder.c
+  depfile = drivers/opus/celt/celt_decoder.o.d
+
+build drivers/opus/celt/entcode.o: CC drivers/opus/celt/entcode.c
+  depfile = drivers/opus/celt/entcode.o.d
+
+build drivers/opus/celt/laplace.o: CC drivers/opus/celt/laplace.c
+  depfile = drivers/opus/celt/laplace.o.d
+
+build drivers/opus/celt/vq.o: CC drivers/opus/celt/vq.c
+  depfile = drivers/opus/celt/vq.o.d
+
+build drivers/opus/celt/celt_encoder.o: CC drivers/opus/celt/celt_encoder.c
+  depfile = drivers/opus/celt/celt_encoder.o.d
+
+build drivers/opus/celt/entdec.o: CC drivers/opus/celt/entdec.c
+  depfile = drivers/opus/celt/entdec.o.d
+
+build drivers/opus/celt/mathops.o: CC drivers/opus/celt/mathops.c
+  depfile = drivers/opus/celt/mathops.o.d
+
+build drivers/opus/celt/pitch.o: CC drivers/opus/celt/pitch.c
+  depfile = drivers/opus/celt/pitch.o.d
+
+build drivers/opus/silk/A2NLSF.o: CC drivers/opus/silk/A2NLSF.c
+  depfile = drivers/opus/silk/A2NLSF.o.d
+
+build drivers/opus/silk/decoder_set_fs.o: CC $
+    drivers/opus/silk/decoder_set_fs.c
+  depfile = drivers/opus/silk/decoder_set_fs.o.d
+
+build drivers/opus/silk/NLSF_stabilize.o: CC $
+    drivers/opus/silk/NLSF_stabilize.c
+  depfile = drivers/opus/silk/NLSF_stabilize.o.d
+
+build drivers/opus/silk/sigm_Q15.o: CC drivers/opus/silk/sigm_Q15.c
+  depfile = drivers/opus/silk/sigm_Q15.o.d
+
+build drivers/opus/silk/ana_filt_bank_1.o: CC $
+    drivers/opus/silk/ana_filt_bank_1.c
+  depfile = drivers/opus/silk/ana_filt_bank_1.o.d
+
+build drivers/opus/silk/enc_API.o: CC drivers/opus/silk/enc_API.c
+  depfile = drivers/opus/silk/enc_API.o.d
+
+build drivers/opus/silk/NLSF_unpack.o: CC drivers/opus/silk/NLSF_unpack.c
+  depfile = drivers/opus/silk/NLSF_unpack.o.d
+
+build drivers/opus/silk/sort.o: CC drivers/opus/silk/sort.c
+  depfile = drivers/opus/silk/sort.o.d
+
+build drivers/opus/silk/biquad_alt.o: CC drivers/opus/silk/biquad_alt.c
+  depfile = drivers/opus/silk/biquad_alt.o.d
+
+build drivers/opus/silk/encode_indices.o: CC $
+    drivers/opus/silk/encode_indices.c
+  depfile = drivers/opus/silk/encode_indices.o.d
+
+build drivers/opus/silk/NLSF_VQ.o: CC drivers/opus/silk/NLSF_VQ.c
+  depfile = drivers/opus/silk/NLSF_VQ.o.d
+
+build drivers/opus/silk/stereo_decode_pred.o: CC $
+    drivers/opus/silk/stereo_decode_pred.c
+  depfile = drivers/opus/silk/stereo_decode_pred.o.d
+
+build drivers/opus/silk/bwexpander_32.o: CC drivers/opus/silk/bwexpander_32.c
+  depfile = drivers/opus/silk/bwexpander_32.o.d
+
+build drivers/opus/silk/encode_pulses.o: CC drivers/opus/silk/encode_pulses.c
+  depfile = drivers/opus/silk/encode_pulses.o.d
+
+build drivers/opus/silk/NLSF_VQ_weights_laroia.o: CC $
+    drivers/opus/silk/NLSF_VQ_weights_laroia.c
+  depfile = drivers/opus/silk/NLSF_VQ_weights_laroia.o.d
+
+build drivers/opus/silk/stereo_encode_pred.o: CC $
+    drivers/opus/silk/stereo_encode_pred.c
+  depfile = drivers/opus/silk/stereo_encode_pred.o.d
+
+build drivers/opus/silk/bwexpander.o: CC drivers/opus/silk/bwexpander.c
+  depfile = drivers/opus/silk/bwexpander.o.d
+
+build drivers/opus/silk/gain_quant.o: CC drivers/opus/silk/gain_quant.c
+  depfile = drivers/opus/silk/gain_quant.o.d
+
+build drivers/opus/silk/NSQ.o: CC drivers/opus/silk/NSQ.c
+  depfile = drivers/opus/silk/NSQ.o.d
+
+build drivers/opus/silk/stereo_find_predictor.o: CC $
+    drivers/opus/silk/stereo_find_predictor.c
+  depfile = drivers/opus/silk/stereo_find_predictor.o.d
+
+build drivers/opus/silk/check_control_input.o: CC $
+    drivers/opus/silk/check_control_input.c
+  depfile = drivers/opus/silk/check_control_input.o.d
+
+build drivers/opus/silk/HP_variable_cutoff.o: CC $
+    drivers/opus/silk/HP_variable_cutoff.c
+  depfile = drivers/opus/silk/HP_variable_cutoff.o.d
+
+build drivers/opus/silk/NSQ_del_dec.o: CC drivers/opus/silk/NSQ_del_dec.c
+  depfile = drivers/opus/silk/NSQ_del_dec.o.d
+
+build drivers/opus/silk/stereo_LR_to_MS.o: CC $
+    drivers/opus/silk/stereo_LR_to_MS.c
+  depfile = drivers/opus/silk/stereo_LR_to_MS.o.d
+
+build drivers/opus/silk/CNG.o: CC drivers/opus/silk/CNG.c
+  depfile = drivers/opus/silk/CNG.o.d
+
+build drivers/opus/silk/init_decoder.o: CC drivers/opus/silk/init_decoder.c
+  depfile = drivers/opus/silk/init_decoder.o.d
+
+build drivers/opus/silk/pitch_est_tables.o: CC $
+    drivers/opus/silk/pitch_est_tables.c
+  depfile = drivers/opus/silk/pitch_est_tables.o.d
+
+build drivers/opus/silk/stereo_MS_to_LR.o: CC $
+    drivers/opus/silk/stereo_MS_to_LR.c
+  depfile = drivers/opus/silk/stereo_MS_to_LR.o.d
+
+build drivers/opus/silk/code_signs.o: CC drivers/opus/silk/code_signs.c
+  depfile = drivers/opus/silk/code_signs.o.d
+
+build drivers/opus/silk/init_encoder.o: CC drivers/opus/silk/init_encoder.c
+  depfile = drivers/opus/silk/init_encoder.o.d
+
+build drivers/opus/silk/PLC.o: CC drivers/opus/silk/PLC.c
+  depfile = drivers/opus/silk/PLC.o.d
+
+build drivers/opus/silk/stereo_quant_pred.o: CC $
+    drivers/opus/silk/stereo_quant_pred.c
+  depfile = drivers/opus/silk/stereo_quant_pred.o.d
+
+build drivers/opus/silk/control_audio_bandwidth.o: CC $
+    drivers/opus/silk/control_audio_bandwidth.c
+  depfile = drivers/opus/silk/control_audio_bandwidth.o.d
+
+build drivers/opus/silk/inner_prod_aligned.o: CC $
+    drivers/opus/silk/inner_prod_aligned.c
+  depfile = drivers/opus/silk/inner_prod_aligned.o.d
+
+build drivers/opus/silk/process_NLSFs.o: CC drivers/opus/silk/process_NLSFs.c
+  depfile = drivers/opus/silk/process_NLSFs.o.d
+
+build drivers/opus/silk/sum_sqr_shift.o: CC drivers/opus/silk/sum_sqr_shift.c
+  depfile = drivers/opus/silk/sum_sqr_shift.o.d
+
+build drivers/opus/silk/control_codec.o: CC drivers/opus/silk/control_codec.c
+  depfile = drivers/opus/silk/control_codec.o.d
+
+build drivers/opus/silk/interpolate.o: CC drivers/opus/silk/interpolate.c
+  depfile = drivers/opus/silk/interpolate.o.d
+
+build drivers/opus/silk/quant_LTP_gains.o: CC $
+    drivers/opus/silk/quant_LTP_gains.c
+  depfile = drivers/opus/silk/quant_LTP_gains.o.d
+
+build drivers/opus/silk/table_LSF_cos.o: CC drivers/opus/silk/table_LSF_cos.c
+  depfile = drivers/opus/silk/table_LSF_cos.o.d
+
+build drivers/opus/silk/control_SNR.o: CC drivers/opus/silk/control_SNR.c
+  depfile = drivers/opus/silk/control_SNR.o.d
+
+build drivers/opus/silk/lin2log.o: CC drivers/opus/silk/lin2log.c
+  depfile = drivers/opus/silk/lin2log.o.d
+
+build drivers/opus/silk/resampler.o: CC drivers/opus/silk/resampler.c
+  depfile = drivers/opus/silk/resampler.o.d
+
+build drivers/opus/silk/tables_gain.o: CC drivers/opus/silk/tables_gain.c
+  depfile = drivers/opus/silk/tables_gain.o.d
+
+build drivers/opus/silk/debug.o: CC drivers/opus/silk/debug.c
+  depfile = drivers/opus/silk/debug.o.d
+
+build drivers/opus/silk/log2lin.o: CC drivers/opus/silk/log2lin.c
+  depfile = drivers/opus/silk/log2lin.o.d
+
+build drivers/opus/silk/resampler_down2_3.o: CC $
+    drivers/opus/silk/resampler_down2_3.c
+  depfile = drivers/opus/silk/resampler_down2_3.o.d
+
+build drivers/opus/silk/tables_LTP.o: CC drivers/opus/silk/tables_LTP.c
+  depfile = drivers/opus/silk/tables_LTP.o.d
+
+build drivers/opus/silk/dec_API.o: CC drivers/opus/silk/dec_API.c
+  depfile = drivers/opus/silk/dec_API.o.d
+
+build drivers/opus/silk/LPC_analysis_filter.o: CC $
+    drivers/opus/silk/LPC_analysis_filter.c
+  depfile = drivers/opus/silk/LPC_analysis_filter.o.d
+
+build drivers/opus/silk/resampler_down2.o: CC $
+    drivers/opus/silk/resampler_down2.c
+  depfile = drivers/opus/silk/resampler_down2.o.d
+
+build drivers/opus/silk/tables_NLSF_CB_NB_MB.o: CC $
+    drivers/opus/silk/tables_NLSF_CB_NB_MB.c
+  depfile = drivers/opus/silk/tables_NLSF_CB_NB_MB.o.d
+
+build drivers/opus/silk/decode_core.o: CC drivers/opus/silk/decode_core.c
+  depfile = drivers/opus/silk/decode_core.o.d
+
+build drivers/opus/silk/LPC_inv_pred_gain.o: CC $
+    drivers/opus/silk/LPC_inv_pred_gain.c
+  depfile = drivers/opus/silk/LPC_inv_pred_gain.o.d
+
+build drivers/opus/silk/resampler_private_AR2.o: CC $
+    drivers/opus/silk/resampler_private_AR2.c
+  depfile = drivers/opus/silk/resampler_private_AR2.o.d
+
+build drivers/opus/silk/tables_NLSF_CB_WB.o: CC $
+    drivers/opus/silk/tables_NLSF_CB_WB.c
+  depfile = drivers/opus/silk/tables_NLSF_CB_WB.o.d
+
+build drivers/opus/silk/decode_frame.o: CC drivers/opus/silk/decode_frame.c
+  depfile = drivers/opus/silk/decode_frame.o.d
+
+build drivers/opus/silk/LP_variable_cutoff.o: CC $
+    drivers/opus/silk/LP_variable_cutoff.c
+  depfile = drivers/opus/silk/LP_variable_cutoff.o.d
+
+build drivers/opus/silk/resampler_private_down_FIR.o: CC $
+    drivers/opus/silk/resampler_private_down_FIR.c
+  depfile = drivers/opus/silk/resampler_private_down_FIR.o.d
+
+build drivers/opus/silk/tables_other.o: CC drivers/opus/silk/tables_other.c
+  depfile = drivers/opus/silk/tables_other.o.d
+
+build drivers/opus/silk/decode_indices.o: CC $
+    drivers/opus/silk/decode_indices.c
+  depfile = drivers/opus/silk/decode_indices.o.d
+
+build drivers/opus/silk/NLSF2A.o: CC drivers/opus/silk/NLSF2A.c
+  depfile = drivers/opus/silk/NLSF2A.o.d
+
+build drivers/opus/silk/resampler_private_IIR_FIR.o: CC $
+    drivers/opus/silk/resampler_private_IIR_FIR.c
+  depfile = drivers/opus/silk/resampler_private_IIR_FIR.o.d
+
+build drivers/opus/silk/tables_pitch_lag.o: CC $
+    drivers/opus/silk/tables_pitch_lag.c
+  depfile = drivers/opus/silk/tables_pitch_lag.o.d
+
+build drivers/opus/silk/decode_parameters.o: CC $
+    drivers/opus/silk/decode_parameters.c
+  depfile = drivers/opus/silk/decode_parameters.o.d
+
+build drivers/opus/silk/NLSF_decode.o: CC drivers/opus/silk/NLSF_decode.c
+  depfile = drivers/opus/silk/NLSF_decode.o.d
+
+build drivers/opus/silk/resampler_private_up2_HQ.o: CC $
+    drivers/opus/silk/resampler_private_up2_HQ.c
+  depfile = drivers/opus/silk/resampler_private_up2_HQ.o.d
+
+build drivers/opus/silk/tables_pulses_per_block.o: CC $
+    drivers/opus/silk/tables_pulses_per_block.c
+  depfile = drivers/opus/silk/tables_pulses_per_block.o.d
+
+build drivers/opus/silk/decode_pitch.o: CC drivers/opus/silk/decode_pitch.c
+  depfile = drivers/opus/silk/decode_pitch.o.d
+
+build drivers/opus/silk/NLSF_del_dec_quant.o: CC $
+    drivers/opus/silk/NLSF_del_dec_quant.c
+  depfile = drivers/opus/silk/NLSF_del_dec_quant.o.d
+
+build drivers/opus/silk/resampler_rom.o: CC drivers/opus/silk/resampler_rom.c
+  depfile = drivers/opus/silk/resampler_rom.o.d
+
+build drivers/opus/silk/VAD.o: CC drivers/opus/silk/VAD.c
+  depfile = drivers/opus/silk/VAD.o.d
+
+build drivers/opus/silk/decode_pulses.o: CC drivers/opus/silk/decode_pulses.c
+  depfile = drivers/opus/silk/decode_pulses.o.d
+
+build drivers/opus/silk/NLSF_encode.o: CC drivers/opus/silk/NLSF_encode.c
+  depfile = drivers/opus/silk/NLSF_encode.o.d
+
+build drivers/opus/silk/shell_coder.o: CC drivers/opus/silk/shell_coder.c
+  depfile = drivers/opus/silk/shell_coder.o.d
+
+build drivers/opus/silk/VQ_WMat_EC.o: CC drivers/opus/silk/VQ_WMat_EC.c
+  depfile = drivers/opus/silk/VQ_WMat_EC.o.d
+
+build drivers/opus/analysis.o: CC drivers/opus/analysis.c
+  depfile = drivers/opus/analysis.o.d
+
+build drivers/opus/internal.o: CC drivers/opus/internal.c
+  depfile = drivers/opus/internal.o.d
+
+build drivers/opus/opus.o: CC drivers/opus/opus.c
+  depfile = drivers/opus/opus.o.d
+
+build drivers/opus/opus_multistream.o: CC drivers/opus/opus_multistream.c
+  depfile = drivers/opus/opus_multistream.o.d
+
+build drivers/opus/repacketizer.o: CC drivers/opus/repacketizer.c
+  depfile = drivers/opus/repacketizer.o.d
+
+build drivers/opus/wincerts.o: CC drivers/opus/wincerts.c
+  depfile = drivers/opus/wincerts.o.d
+
+build drivers/opus/http.o: CC drivers/opus/http.c
+  depfile = drivers/opus/http.o.d
+
+build drivers/opus/mlp.o: CC drivers/opus/mlp.c
+  depfile = drivers/opus/mlp.o.d
+
+build drivers/opus/opus_encoder.o: CC drivers/opus/opus_encoder.c
+  depfile = drivers/opus/opus_encoder.o.d
+
+build drivers/opus/opus_multistream_decoder.o: CC $
+    drivers/opus/opus_multistream_decoder.c
+  depfile = drivers/opus/opus_multistream_decoder.o.d
+
+build drivers/opus/info.o: CC drivers/opus/info.c
+  depfile = drivers/opus/info.o.d
+
+build drivers/opus/mlp_data.o: CC drivers/opus/mlp_data.c
+  depfile = drivers/opus/mlp_data.o.d
+
+build drivers/opus/opus_decoder.o: CC drivers/opus/opus_decoder.c
+  depfile = drivers/opus/opus_decoder.o.d
+
+build drivers/opus/opusfile.o: CC drivers/opus/opusfile.c
+  depfile = drivers/opus/opusfile.o.d
+
+build drivers/opus/opus_multistream_encoder.o: CC $
+    drivers/opus/opus_multistream_encoder.c
+  depfile = drivers/opus/opus_multistream_encoder.o.d
+
+build drivers/opus/stream.o: CC drivers/opus/stream.c
+  depfile = drivers/opus/stream.o.d
+
+build drivers/opus/silk/float/apply_sine_window_FLP.o: CC $
+    drivers/opus/silk/float/apply_sine_window_FLP.c
+  depfile = drivers/opus/silk/float/apply_sine_window_FLP.o.d
+
+build drivers/opus/silk/float/inner_product_FLP.o: CC $
+    drivers/opus/silk/float/inner_product_FLP.c
+  depfile = drivers/opus/silk/float/inner_product_FLP.o.d
+
+build drivers/opus/silk/float/regularize_correlations_FLP.o: CC $
+    drivers/opus/silk/float/regularize_correlations_FLP.c
+  depfile = drivers/opus/silk/float/regularize_correlations_FLP.o.d
+
+build drivers/opus/silk/float/autocorrelation_FLP.o: CC $
+    drivers/opus/silk/float/autocorrelation_FLP.c
+  depfile = drivers/opus/silk/float/autocorrelation_FLP.o.d
+
+build drivers/opus/silk/float/k2a_FLP.o: CC drivers/opus/silk/float/k2a_FLP.c
+  depfile = drivers/opus/silk/float/k2a_FLP.o.d
+
+build drivers/opus/silk/float/residual_energy_FLP.o: CC $
+    drivers/opus/silk/float/residual_energy_FLP.c
+  depfile = drivers/opus/silk/float/residual_energy_FLP.o.d
+
+build drivers/opus/silk/float/burg_modified_FLP.o: CC $
+    drivers/opus/silk/float/burg_modified_FLP.c
+  depfile = drivers/opus/silk/float/burg_modified_FLP.o.d
+
+build drivers/opus/silk/float/levinsondurbin_FLP.o: CC $
+    drivers/opus/silk/float/levinsondurbin_FLP.c
+  depfile = drivers/opus/silk/float/levinsondurbin_FLP.o.d
+
+build drivers/opus/silk/float/scale_copy_vector_FLP.o: CC $
+    drivers/opus/silk/float/scale_copy_vector_FLP.c
+  depfile = drivers/opus/silk/float/scale_copy_vector_FLP.o.d
+
+build drivers/opus/silk/float/bwexpander_FLP.o: CC $
+    drivers/opus/silk/float/bwexpander_FLP.c
+  depfile = drivers/opus/silk/float/bwexpander_FLP.o.d
+
+build drivers/opus/silk/float/LPC_analysis_filter_FLP.o: CC $
+    drivers/opus/silk/float/LPC_analysis_filter_FLP.c
+  depfile = drivers/opus/silk/float/LPC_analysis_filter_FLP.o.d
+
+build drivers/opus/silk/float/scale_vector_FLP.o: CC $
+    drivers/opus/silk/float/scale_vector_FLP.c
+  depfile = drivers/opus/silk/float/scale_vector_FLP.o.d
+
+build drivers/opus/silk/float/corrMatrix_FLP.o: CC $
+    drivers/opus/silk/float/corrMatrix_FLP.c
+  depfile = drivers/opus/silk/float/corrMatrix_FLP.o.d
+
+build drivers/opus/silk/float/LPC_inv_pred_gain_FLP.o: CC $
+    drivers/opus/silk/float/LPC_inv_pred_gain_FLP.c
+  depfile = drivers/opus/silk/float/LPC_inv_pred_gain_FLP.o.d
+
+build drivers/opus/silk/float/schur_FLP.o: CC $
+    drivers/opus/silk/float/schur_FLP.c
+  depfile = drivers/opus/silk/float/schur_FLP.o.d
+
+build drivers/opus/silk/float/encode_frame_FLP.o: CC $
+    drivers/opus/silk/float/encode_frame_FLP.c
+  depfile = drivers/opus/silk/float/encode_frame_FLP.o.d
+
+build drivers/opus/silk/float/LTP_analysis_filter_FLP.o: CC $
+    drivers/opus/silk/float/LTP_analysis_filter_FLP.c
+  depfile = drivers/opus/silk/float/LTP_analysis_filter_FLP.o.d
+
+build drivers/opus/silk/float/solve_LS_FLP.o: CC $
+    drivers/opus/silk/float/solve_LS_FLP.c
+  depfile = drivers/opus/silk/float/solve_LS_FLP.o.d
+
+build drivers/opus/silk/float/energy_FLP.o: CC $
+    drivers/opus/silk/float/energy_FLP.c
+  depfile = drivers/opus/silk/float/energy_FLP.o.d
+
+build drivers/opus/silk/float/LTP_scale_ctrl_FLP.o: CC $
+    drivers/opus/silk/float/LTP_scale_ctrl_FLP.c
+  depfile = drivers/opus/silk/float/LTP_scale_ctrl_FLP.o.d
+
+build drivers/opus/silk/float/sort_FLP.o: CC $
+    drivers/opus/silk/float/sort_FLP.c
+  depfile = drivers/opus/silk/float/sort_FLP.o.d
+
+build drivers/opus/silk/float/find_LPC_FLP.o: CC $
+    drivers/opus/silk/float/find_LPC_FLP.c
+  depfile = drivers/opus/silk/float/find_LPC_FLP.o.d
+
+build drivers/opus/silk/float/noise_shape_analysis_FLP.o: CC $
+    drivers/opus/silk/float/noise_shape_analysis_FLP.c
+  depfile = drivers/opus/silk/float/noise_shape_analysis_FLP.o.d
+
+build drivers/opus/silk/float/warped_autocorrelation_FLP.o: CC $
+    drivers/opus/silk/float/warped_autocorrelation_FLP.c
+  depfile = drivers/opus/silk/float/warped_autocorrelation_FLP.o.d
+
+build drivers/opus/silk/float/find_LTP_FLP.o: CC $
+    drivers/opus/silk/float/find_LTP_FLP.c
+  depfile = drivers/opus/silk/float/find_LTP_FLP.o.d
+
+build drivers/opus/silk/float/pitch_analysis_core_FLP.o: CC $
+    drivers/opus/silk/float/pitch_analysis_core_FLP.c
+  depfile = drivers/opus/silk/float/pitch_analysis_core_FLP.o.d
+
+build drivers/opus/silk/float/wrappers_FLP.o: CC $
+    drivers/opus/silk/float/wrappers_FLP.c
+  depfile = drivers/opus/silk/float/wrappers_FLP.o.d
+
+build drivers/opus/silk/float/find_pitch_lags_FLP.o: CC $
+    drivers/opus/silk/float/find_pitch_lags_FLP.c
+  depfile = drivers/opus/silk/float/find_pitch_lags_FLP.o.d
+
+build drivers/opus/silk/float/prefilter_FLP.o: CC $
+    drivers/opus/silk/float/prefilter_FLP.c
+  depfile = drivers/opus/silk/float/prefilter_FLP.o.d
+
+build drivers/opus/silk/float/find_pred_coefs_FLP.o: CC $
+    drivers/opus/silk/float/find_pred_coefs_FLP.c
+  depfile = drivers/opus/silk/float/find_pred_coefs_FLP.o.d
+
+build drivers/opus/silk/float/process_gains_FLP.o: CC $
+    drivers/opus/silk/float/process_gains_FLP.c
+  depfile = drivers/opus/silk/float/process_gains_FLP.o.d
+
+build drivers/opus/audio_stream_opus.o: CXX drivers/opus/audio_stream_opus.cpp
+  depfile = drivers/opus/audio_stream_opus.o.d
+
+build drivers/drivers2.a: STATIC_LIBRARY drivers/opus/celt/bands.o $
+    drivers/opus/celt/celt_lpc.o drivers/opus/celt/entenc.o $
+    drivers/opus/celt/mdct.o drivers/opus/celt/quant_bands.o $
+    drivers/opus/celt/celt.o drivers/opus/celt/cwrs.o $
+    drivers/opus/celt/kiss_fft.o drivers/opus/celt/modes.o $
+    drivers/opus/celt/rate.o drivers/opus/celt/celt_decoder.o $
+    drivers/opus/celt/entcode.o drivers/opus/celt/laplace.o $
+    drivers/opus/celt/vq.o drivers/opus/celt/celt_encoder.o $
+    drivers/opus/celt/entdec.o drivers/opus/celt/mathops.o $
+    drivers/opus/celt/pitch.o drivers/opus/silk/A2NLSF.o $
+    drivers/opus/silk/decoder_set_fs.o drivers/opus/silk/NLSF_stabilize.o $
+    drivers/opus/silk/sigm_Q15.o drivers/opus/silk/ana_filt_bank_1.o $
+    drivers/opus/silk/enc_API.o drivers/opus/silk/NLSF_unpack.o $
+    drivers/opus/silk/sort.o drivers/opus/silk/biquad_alt.o $
+    drivers/opus/silk/encode_indices.o drivers/opus/silk/NLSF_VQ.o $
+    drivers/opus/silk/stereo_decode_pred.o $
+    drivers/opus/silk/bwexpander_32.o drivers/opus/silk/encode_pulses.o $
+    drivers/opus/silk/NLSF_VQ_weights_laroia.o $
+    drivers/opus/silk/stereo_encode_pred.o drivers/opus/silk/bwexpander.o $
+    drivers/opus/silk/gain_quant.o drivers/opus/silk/NSQ.o $
+    drivers/opus/silk/stereo_find_predictor.o $
+    drivers/opus/silk/check_control_input.o $
+    drivers/opus/silk/HP_variable_cutoff.o drivers/opus/silk/NSQ_del_dec.o $
+    drivers/opus/silk/stereo_LR_to_MS.o drivers/opus/silk/CNG.o $
+    drivers/opus/silk/init_decoder.o drivers/opus/silk/pitch_est_tables.o $
+    drivers/opus/silk/stereo_MS_to_LR.o drivers/opus/silk/code_signs.o $
+    drivers/opus/silk/init_encoder.o drivers/opus/silk/PLC.o $
+    drivers/opus/silk/stereo_quant_pred.o $
+    drivers/opus/silk/control_audio_bandwidth.o $
+    drivers/opus/silk/inner_prod_aligned.o $
+    drivers/opus/silk/process_NLSFs.o drivers/opus/silk/sum_sqr_shift.o $
+    drivers/opus/silk/control_codec.o drivers/opus/silk/interpolate.o $
+    drivers/opus/silk/quant_LTP_gains.o drivers/opus/silk/table_LSF_cos.o $
+    drivers/opus/silk/control_SNR.o drivers/opus/silk/lin2log.o $
+    drivers/opus/silk/resampler.o drivers/opus/silk/tables_gain.o $
+    drivers/opus/silk/debug.o drivers/opus/silk/log2lin.o $
+    drivers/opus/silk/resampler_down2_3.o drivers/opus/silk/tables_LTP.o $
+    drivers/opus/silk/dec_API.o drivers/opus/silk/LPC_analysis_filter.o $
+    drivers/opus/silk/resampler_down2.o $
+    drivers/opus/silk/tables_NLSF_CB_NB_MB.o $
+    drivers/opus/silk/decode_core.o drivers/opus/silk/LPC_inv_pred_gain.o $
+    drivers/opus/silk/resampler_private_AR2.o $
+    drivers/opus/silk/tables_NLSF_CB_WB.o drivers/opus/silk/decode_frame.o $
+    drivers/opus/silk/LP_variable_cutoff.o $
+    drivers/opus/silk/resampler_private_down_FIR.o $
+    drivers/opus/silk/tables_other.o drivers/opus/silk/decode_indices.o $
+    drivers/opus/silk/NLSF2A.o $
+    drivers/opus/silk/resampler_private_IIR_FIR.o $
+    drivers/opus/silk/tables_pitch_lag.o $
+    drivers/opus/silk/decode_parameters.o drivers/opus/silk/NLSF_decode.o $
+    drivers/opus/silk/resampler_private_up2_HQ.o $
+    drivers/opus/silk/tables_pulses_per_block.o $
+    drivers/opus/silk/decode_pitch.o drivers/opus/silk/NLSF_del_dec_quant.o $
+    drivers/opus/silk/resampler_rom.o drivers/opus/silk/VAD.o $
+    drivers/opus/silk/decode_pulses.o drivers/opus/silk/NLSF_encode.o $
+    drivers/opus/silk/shell_coder.o drivers/opus/silk/VQ_WMat_EC.o $
+    drivers/opus/analysis.o drivers/opus/internal.o drivers/opus/opus.o $
+    drivers/opus/opus_multistream.o drivers/opus/repacketizer.o $
+    drivers/opus/wincerts.o drivers/opus/http.o drivers/opus/mlp.o $
+    drivers/opus/opus_encoder.o drivers/opus/opus_multistream_decoder.o $
+    drivers/opus/info.o drivers/opus/mlp_data.o drivers/opus/opus_decoder.o $
+    drivers/opus/opusfile.o drivers/opus/opus_multistream_encoder.o $
+    drivers/opus/stream.o drivers/opus/silk/float/apply_sine_window_FLP.o $
+    drivers/opus/silk/float/inner_product_FLP.o $
+    drivers/opus/silk/float/regularize_correlations_FLP.o $
+    drivers/opus/silk/float/autocorrelation_FLP.o $
+    drivers/opus/silk/float/k2a_FLP.o $
+    drivers/opus/silk/float/residual_energy_FLP.o $
+    drivers/opus/silk/float/burg_modified_FLP.o $
+    drivers/opus/silk/float/levinsondurbin_FLP.o $
+    drivers/opus/silk/float/scale_copy_vector_FLP.o $
+    drivers/opus/silk/float/bwexpander_FLP.o $
+    drivers/opus/silk/float/LPC_analysis_filter_FLP.o $
+    drivers/opus/silk/float/scale_vector_FLP.o $
+    drivers/opus/silk/float/corrMatrix_FLP.o $
+    drivers/opus/silk/float/LPC_inv_pred_gain_FLP.o $
+    drivers/opus/silk/float/schur_FLP.o $
+    drivers/opus/silk/float/encode_frame_FLP.o $
+    drivers/opus/silk/float/LTP_analysis_filter_FLP.o $
+    drivers/opus/silk/float/solve_LS_FLP.o $
+    drivers/opus/silk/float/energy_FLP.o $
+    drivers/opus/silk/float/LTP_scale_ctrl_FLP.o $
+    drivers/opus/silk/float/sort_FLP.o $
+    drivers/opus/silk/float/find_LPC_FLP.o $
+    drivers/opus/silk/float/noise_shape_analysis_FLP.o $
+    drivers/opus/silk/float/warped_autocorrelation_FLP.o $
+    drivers/opus/silk/float/find_LTP_FLP.o $
+    drivers/opus/silk/float/pitch_analysis_core_FLP.o $
+    drivers/opus/silk/float/wrappers_FLP.o $
+    drivers/opus/silk/float/find_pitch_lags_FLP.o $
+    drivers/opus/silk/float/prefilter_FLP.o $
+    drivers/opus/silk/float/find_pred_coefs_FLP.o $
+    drivers/opus/silk/float/process_gains_FLP.o $
+    drivers/opus/audio_stream_opus.o
+
+build drivers/mpc/audio_stream_mpc.o: CXX drivers/mpc/audio_stream_mpc.cpp
+  depfile = drivers/mpc/audio_stream_mpc.o.d
+
+build drivers/speex/bits.o: CC drivers/speex/bits.c
+  depfile = drivers/speex/bits.o.d
+
+build drivers/speex/buffer.o: CC drivers/speex/buffer.c
+  depfile = drivers/speex/buffer.o.d
+
+build drivers/speex/cb_search.o: CC drivers/speex/cb_search.c
+  depfile = drivers/speex/cb_search.o.d
+
+build drivers/speex/exc_10_16_table.o: CC drivers/speex/exc_10_16_table.c
+  depfile = drivers/speex/exc_10_16_table.o.d
+
+build drivers/speex/exc_10_32_table.o: CC drivers/speex/exc_10_32_table.c
+  depfile = drivers/speex/exc_10_32_table.o.d
+
+build drivers/speex/exc_20_32_table.o: CC drivers/speex/exc_20_32_table.c
+  depfile = drivers/speex/exc_20_32_table.o.d
+
+build drivers/speex/exc_5_256_table.o: CC drivers/speex/exc_5_256_table.c
+  depfile = drivers/speex/exc_5_256_table.o.d
+
+build drivers/speex/exc_5_64_table.o: CC drivers/speex/exc_5_64_table.c
+  depfile = drivers/speex/exc_5_64_table.o.d
+
+build drivers/speex/exc_8_128_table.o: CC drivers/speex/exc_8_128_table.c
+  depfile = drivers/speex/exc_8_128_table.o.d
+
+build drivers/speex/fftwrap.o: CC drivers/speex/fftwrap.c
+  depfile = drivers/speex/fftwrap.o.d
+
+build drivers/speex/filterbank.o: CC drivers/speex/filterbank.c
+  depfile = drivers/speex/filterbank.o.d
+
+build drivers/speex/filters.o: CC drivers/speex/filters.c
+  depfile = drivers/speex/filters.o.d
+
+build drivers/speex/gain_table.o: CC drivers/speex/gain_table.c
+  depfile = drivers/speex/gain_table.o.d
+
+build drivers/speex/gain_table_lbr.o: CC drivers/speex/gain_table_lbr.c
+  depfile = drivers/speex/gain_table_lbr.o.d
+
+build drivers/speex/hexc_10_32_table.o: CC drivers/speex/hexc_10_32_table.c
+  depfile = drivers/speex/hexc_10_32_table.o.d
+
+build drivers/speex/hexc_table.o: CC drivers/speex/hexc_table.c
+  depfile = drivers/speex/hexc_table.o.d
+
+build drivers/speex/high_lsp_tables.o: CC drivers/speex/high_lsp_tables.c
+  depfile = drivers/speex/high_lsp_tables.o.d
+
+build drivers/speex/jitter.o: CC drivers/speex/jitter.c
+  depfile = drivers/speex/jitter.o.d
+
+build drivers/speex/kiss_fft.o: CC drivers/speex/kiss_fft.c
+  depfile = drivers/speex/kiss_fft.o.d
+
+build drivers/speex/kiss_fftr.o: CC drivers/speex/kiss_fftr.c
+  depfile = drivers/speex/kiss_fftr.o.d
+
+build drivers/speex/lpc.o: CC drivers/speex/lpc.c
+  depfile = drivers/speex/lpc.o.d
+
+build drivers/speex/lsp.o: CC drivers/speex/lsp.c
+  depfile = drivers/speex/lsp.o.d
+
+build drivers/speex/lsp_tables_nb.o: CC drivers/speex/lsp_tables_nb.c
+  depfile = drivers/speex/lsp_tables_nb.o.d
+
+build drivers/speex/ltp.o: CC drivers/speex/ltp.c
+  depfile = drivers/speex/ltp.o.d
+
+build drivers/speex/mdf.o: CC drivers/speex/mdf.c
+  depfile = drivers/speex/mdf.o.d
+
+build drivers/speex/modes.o: CC drivers/speex/modes.c
+  depfile = drivers/speex/modes.o.d
+
+build drivers/speex/modes_wb.o: CC drivers/speex/modes_wb.c
+  depfile = drivers/speex/modes_wb.o.d
+
+build drivers/speex/nb_celp.o: CC drivers/speex/nb_celp.c
+  depfile = drivers/speex/nb_celp.o.d
+
+build drivers/speex/preprocess.o: CC drivers/speex/preprocess.c
+  depfile = drivers/speex/preprocess.o.d
+
+build drivers/speex/quant_lsp.o: CC drivers/speex/quant_lsp.c
+  depfile = drivers/speex/quant_lsp.o.d
+
+build drivers/speex/resample.o: CC drivers/speex/resample.c
+  depfile = drivers/speex/resample.o.d
+
+build drivers/speex/sb_celp.o: CC drivers/speex/sb_celp.c
+  depfile = drivers/speex/sb_celp.o.d
+
+build drivers/speex/scal.o: CC drivers/speex/scal.c
+  depfile = drivers/speex/scal.o.d
+
+build drivers/speex/smallft.o: CC drivers/speex/smallft.c
+  depfile = drivers/speex/smallft.o.d
+
+build drivers/speex/speex.o: CC drivers/speex/speex.c
+  depfile = drivers/speex/speex.o.d
+
+build drivers/speex/speex_callbacks.o: CC drivers/speex/speex_callbacks.c
+  depfile = drivers/speex/speex_callbacks.o.d
+
+build drivers/speex/speex_header.o: CC drivers/speex/speex_header.c
+  depfile = drivers/speex/speex_header.o.d
+
+build drivers/speex/stereo.o: CC drivers/speex/stereo.c
+  depfile = drivers/speex/stereo.o.d
+
+build drivers/speex/vbr.o: CC drivers/speex/vbr.c
+  depfile = drivers/speex/vbr.o.d
+
+build drivers/speex/vq.o: CC drivers/speex/vq.c
+  depfile = drivers/speex/vq.o.d
+
+build drivers/speex/window.o: CC drivers/speex/window.c
+  depfile = drivers/speex/window.o.d
+
+build drivers/speex/audio_stream_speex.o: CXX $
+    drivers/speex/audio_stream_speex.cpp
+  depfile = drivers/speex/audio_stream_speex.o.d
+
+build drivers/mpc/huffman.o: CC drivers/mpc/huffman.c
+  depfile = drivers/mpc/huffman.o.d
+
+build drivers/mpc/mpc_bits_reader.o: CC drivers/mpc/mpc_bits_reader.c
+  depfile = drivers/mpc/mpc_bits_reader.o.d
+
+build drivers/mpc/mpc_decoder.o: CC drivers/mpc/mpc_decoder.c
+  depfile = drivers/mpc/mpc_decoder.o.d
+
+build drivers/mpc/mpc_demux.o: CC drivers/mpc/mpc_demux.c
+  depfile = drivers/mpc/mpc_demux.o.d
+
+build drivers/mpc/mpc_reader.o: CC drivers/mpc/mpc_reader.c
+  depfile = drivers/mpc/mpc_reader.o.d
+
+build drivers/mpc/requant.o: CC drivers/mpc/requant.c
+  depfile = drivers/mpc/requant.o.d
+
+build drivers/mpc/streaminfo.o: CC drivers/mpc/streaminfo.c
+  depfile = drivers/mpc/streaminfo.o.d
+
+build drivers/mpc/synth_filter.o: CC drivers/mpc/synth_filter.c
+  depfile = drivers/mpc/synth_filter.o.d
+
+build drivers/squish/alpha.o: CXX drivers/squish/alpha.cpp
+  depfile = drivers/squish/alpha.o.d
+
+build drivers/squish/clusterfit.o: CXX drivers/squish/clusterfit.cpp
+  depfile = drivers/squish/clusterfit.o.d
+
+build drivers/squish/colourblock.o: CXX drivers/squish/colourblock.cpp
+  depfile = drivers/squish/colourblock.o.d
+
+build drivers/squish/colourfit.o: CXX drivers/squish/colourfit.cpp
+  depfile = drivers/squish/colourfit.o.d
+
+build drivers/squish/colourset.o: CXX drivers/squish/colourset.cpp
+  depfile = drivers/squish/colourset.o.d
+
+build drivers/squish/maths.o: CXX drivers/squish/maths.cpp
+  depfile = drivers/squish/maths.o.d
+
+build drivers/squish/rangefit.o: CXX drivers/squish/rangefit.cpp
+  depfile = drivers/squish/rangefit.o.d
+
+build drivers/squish/singlecolourfit.o: CXX drivers/squish/singlecolourfit.cpp
+  depfile = drivers/squish/singlecolourfit.o.d
+
+build drivers/squish/squish.o: CXX drivers/squish/squish.cpp
+  depfile = drivers/squish/squish.o.d
+
+build drivers/squish/image_compress_squish.o: CXX $
+    drivers/squish/image_compress_squish.cpp
+  depfile = drivers/squish/image_compress_squish.o.d
+
+build drivers/drivers3.a: STATIC_LIBRARY drivers/convex_decomp/b2Triangle.o $
+    drivers/convex_decomp/b2Polygon.o drivers/convex_decomp/b2d_decompose.o $
+    drivers/speex/bits.o drivers/speex/buffer.o drivers/speex/cb_search.o $
+    drivers/speex/exc_10_16_table.o drivers/speex/exc_10_32_table.o $
+    drivers/speex/exc_20_32_table.o drivers/speex/exc_5_256_table.o $
+    drivers/speex/exc_5_64_table.o drivers/speex/exc_8_128_table.o $
+    drivers/speex/fftwrap.o drivers/speex/filterbank.o $
+    drivers/speex/filters.o drivers/speex/gain_table.o $
+    drivers/speex/gain_table_lbr.o drivers/speex/hexc_10_32_table.o $
+    drivers/speex/hexc_table.o drivers/speex/high_lsp_tables.o $
+    drivers/speex/jitter.o drivers/speex/kiss_fft.o $
+    drivers/speex/kiss_fftr.o drivers/speex/lpc.o drivers/speex/lsp.o $
+    drivers/speex/lsp_tables_nb.o drivers/speex/ltp.o drivers/speex/mdf.o $
+    drivers/speex/modes.o drivers/speex/modes_wb.o drivers/speex/nb_celp.o $
+    drivers/speex/preprocess.o drivers/speex/quant_lsp.o $
+    drivers/speex/resample.o drivers/speex/sb_celp.o drivers/speex/scal.o $
+    drivers/speex/smallft.o drivers/speex/speex.o $
+    drivers/speex/speex_callbacks.o drivers/speex/speex_header.o $
+    drivers/speex/stereo.o drivers/speex/vbr.o drivers/speex/vq.o $
+    drivers/speex/window.o drivers/speex/audio_stream_speex.o $
+    drivers/mpc/huffman.o drivers/mpc/mpc_bits_reader.o $
+    drivers/mpc/mpc_decoder.o drivers/mpc/mpc_demux.o $
+    drivers/mpc/mpc_reader.o drivers/mpc/requant.o drivers/mpc/streaminfo.o $
+    drivers/mpc/synth_filter.o drivers/mpc/audio_stream_mpc.o $
+    drivers/squish/alpha.o drivers/squish/clusterfit.o $
+    drivers/squish/colourblock.o drivers/squish/colourfit.o $
+    drivers/squish/colourset.o drivers/squish/maths.o $
+    drivers/squish/rangefit.o drivers/squish/singlecolourfit.o $
+    drivers/squish/squish.o drivers/squish/image_compress_squish.o
+
+build main/input_default.o: CXX main/input_default.cpp
+  depfile = main/input_default.o.d
+
+build main/main.o: CXX main/main.cpp
+  depfile = main/main.o.d
+
+build main/performance.o: CXX main/performance.cpp
+  depfile = main/performance.o.d
+
+build main/main.a: STATIC_LIBRARY main/main.o main/performance.o $
+    main/input_default.o
+
+build modules/gdscript/gd_compiler.o: CXX modules/gdscript/gd_compiler.cpp
+  depfile = modules/gdscript/gd_compiler.o.d
+
+build modules/gdscript/gd_editor.o: CXX modules/gdscript/gd_editor.cpp
+  depfile = modules/gdscript/gd_editor.o.d
+
+build modules/gdscript/gd_functions.o: CXX modules/gdscript/gd_functions.cpp
+  depfile = modules/gdscript/gd_functions.o.d
+
+build modules/gdscript/gd_parser.o: CXX modules/gdscript/gd_parser.cpp
+  depfile = modules/gdscript/gd_parser.o.d
+
+build modules/gdscript/gd_pretty_print.o: CXX $
+    modules/gdscript/gd_pretty_print.cpp
+  depfile = modules/gdscript/gd_pretty_print.o.d
+
+build modules/gdscript/gd_script.o: CXX modules/gdscript/gd_script.cpp
+  depfile = modules/gdscript/gd_script.o.d
+
+build modules/gdscript/gd_tokenizer.o: CXX modules/gdscript/gd_tokenizer.cpp
+  depfile = modules/gdscript/gd_tokenizer.o.d
+
+build modules/gdscript/register_types.o: CXX $
+    modules/gdscript/register_types.cpp
+  depfile = modules/gdscript/register_types.o.d
+
+build modules/gridmap/grid_map.o: CXX modules/gridmap/grid_map.cpp
+  depfile = modules/gridmap/grid_map.o.d
+
+build modules/gridmap/grid_map_editor_plugin.o: CXX $
+    modules/gridmap/grid_map_editor_plugin.cpp
+  depfile = modules/gridmap/grid_map_editor_plugin.o.d
+
+build modules/gridmap/register_types.o: CXX modules/gridmap/register_types.cpp
+  depfile = modules/gridmap/register_types.o.d
+
+build modules/register_module_types.o: CXX modules/register_module_types.cpp
+  depfile = modules/register_module_types.o.d
+
+build modules/modules.a: STATIC_LIBRARY modules/register_module_types.o $
+    modules/gridmap/grid_map_editor_plugin.o $
+    modules/gridmap/register_types.o modules/gridmap/grid_map.o $
+    modules/gdscript/gd_parser.o modules/gdscript/gd_pretty_print.o $
+    modules/gdscript/gd_functions.o modules/gdscript/gd_script.o $
+    modules/gdscript/gd_tokenizer.o modules/gdscript/gd_editor.o $
+    modules/gdscript/gd_compiler.o modules/gdscript/register_types.o
+
+build scene/2d/animated_sprite.o: CXX scene/2d/animated_sprite.cpp
+  depfile = scene/2d/animated_sprite.o.d
+
+build scene/2d/area_2d.o: CXX scene/2d/area_2d.cpp
+  depfile = scene/2d/area_2d.o.d
+
+build scene/2d/back_buffer_copy.o: CXX scene/2d/back_buffer_copy.cpp
+  depfile = scene/2d/back_buffer_copy.o.d
+
+build scene/2d/camera_2d.o: CXX scene/2d/camera_2d.cpp
+  depfile = scene/2d/camera_2d.o.d
+
+build scene/2d/canvas_item.o: CXX scene/2d/canvas_item.cpp
+  depfile = scene/2d/canvas_item.o.d
+
+build scene/2d/canvas_modulate.o: CXX scene/2d/canvas_modulate.cpp
+  depfile = scene/2d/canvas_modulate.o.d
+
+build scene/2d/collision_object_2d.o: CXX scene/2d/collision_object_2d.cpp
+  depfile = scene/2d/collision_object_2d.o.d
+
+build scene/2d/collision_polygon_2d.o: CXX scene/2d/collision_polygon_2d.cpp
+  depfile = scene/2d/collision_polygon_2d.o.d
+
+build scene/2d/collision_shape_2d.o: CXX scene/2d/collision_shape_2d.cpp
+  depfile = scene/2d/collision_shape_2d.o.d
+
+build scene/2d/joints_2d.o: CXX scene/2d/joints_2d.cpp
+  depfile = scene/2d/joints_2d.o.d
+
+build scene/2d/light_2d.o: CXX scene/2d/light_2d.cpp
+  depfile = scene/2d/light_2d.o.d
+
+build scene/2d/light_occluder_2d.o: CXX scene/2d/light_occluder_2d.cpp
+  depfile = scene/2d/light_occluder_2d.o.d
+
+build scene/2d/navigation2d.o: CXX scene/2d/navigation2d.cpp
+  depfile = scene/2d/navigation2d.o.d
+
+build scene/2d/navigation_polygon.o: CXX scene/2d/navigation_polygon.cpp
+  depfile = scene/2d/navigation_polygon.o.d
+
+build scene/2d/node_2d.o: CXX scene/2d/node_2d.cpp
+  depfile = scene/2d/node_2d.o.d
+
+build scene/2d/node_2d_singleton.o: CXX scene/2d/node_2d_singleton.cpp
+  depfile = scene/2d/node_2d_singleton.o.d
+
+build scene/2d/parallax_background.o: CXX scene/2d/parallax_background.cpp
+  depfile = scene/2d/parallax_background.o.d
+
+build scene/2d/parallax_layer.o: CXX scene/2d/parallax_layer.cpp
+  depfile = scene/2d/parallax_layer.o.d
+
+build scene/2d/particles_2d.o: CXX scene/2d/particles_2d.cpp
+  depfile = scene/2d/particles_2d.o.d
+
+build scene/2d/path_2d.o: CXX scene/2d/path_2d.cpp
+  depfile = scene/2d/path_2d.o.d
+
+build scene/2d/path_texture.o: CXX scene/2d/path_texture.cpp
+  depfile = scene/2d/path_texture.o.d
+
+build scene/2d/physics_body_2d.o: CXX scene/2d/physics_body_2d.cpp
+  depfile = scene/2d/physics_body_2d.o.d
+
+build scene/2d/polygon_2d.o: CXX scene/2d/polygon_2d.cpp
+  depfile = scene/2d/polygon_2d.o.d
+
+build scene/2d/position_2d.o: CXX scene/2d/position_2d.cpp
+  depfile = scene/2d/position_2d.o.d
+
+build scene/2d/ray_cast_2d.o: CXX scene/2d/ray_cast_2d.cpp
+  depfile = scene/2d/ray_cast_2d.o.d
+
+build scene/2d/remote_transform_2d.o: CXX scene/2d/remote_transform_2d.cpp
+  depfile = scene/2d/remote_transform_2d.o.d
+
+build scene/2d/sample_player_2d.o: CXX scene/2d/sample_player_2d.cpp
+  depfile = scene/2d/sample_player_2d.o.d
+
+build scene/2d/screen_button.o: CXX scene/2d/screen_button.cpp
+  depfile = scene/2d/screen_button.o.d
+
+build scene/2d/sound_player_2d.o: CXX scene/2d/sound_player_2d.cpp
+  depfile = scene/2d/sound_player_2d.o.d
+
+build scene/2d/sprite.o: CXX scene/2d/sprite.cpp
+  depfile = scene/2d/sprite.o.d
+
+build scene/2d/tile_map.o: CXX scene/2d/tile_map.cpp
+  depfile = scene/2d/tile_map.o.d
+
+build scene/2d/visibility_notifier_2d.o: CXX $
+    scene/2d/visibility_notifier_2d.cpp
+  depfile = scene/2d/visibility_notifier_2d.o.d
+
+build scene/2d/y_sort.o: CXX scene/2d/y_sort.cpp
+  depfile = scene/2d/y_sort.o.d
+
+build scene/3d/area.o: CXX scene/3d/area.cpp
+  depfile = scene/3d/area.o.d
+
+build scene/3d/baked_light_instance.o: CXX scene/3d/baked_light_instance.cpp
+  depfile = scene/3d/baked_light_instance.o.d
+
+build scene/3d/body_shape.o: CXX scene/3d/body_shape.cpp
+  depfile = scene/3d/body_shape.o.d
+
+build scene/3d/bone_attachment.o: CXX scene/3d/bone_attachment.cpp
+  depfile = scene/3d/bone_attachment.o.d
+
+build scene/3d/camera.o: CXX scene/3d/camera.cpp
+  depfile = scene/3d/camera.o.d
+
+build scene/3d/character_camera.o: CXX scene/3d/character_camera.cpp
+  depfile = scene/3d/character_camera.o.d
+
+build scene/3d/collision_object.o: CXX scene/3d/collision_object.cpp
+  depfile = scene/3d/collision_object.o.d
+
+build scene/3d/collision_polygon.o: CXX scene/3d/collision_polygon.cpp
+  depfile = scene/3d/collision_polygon.o.d
+
+build scene/3d/immediate_geometry.o: CXX scene/3d/immediate_geometry.cpp
+  depfile = scene/3d/immediate_geometry.o.d
+
+build scene/3d/interpolated_camera.o: CXX scene/3d/interpolated_camera.cpp
+  depfile = scene/3d/interpolated_camera.o.d
+
+build scene/3d/light.o: CXX scene/3d/light.cpp
+  depfile = scene/3d/light.o.d
+
+build scene/3d/mesh_instance.o: CXX scene/3d/mesh_instance.cpp
+  depfile = scene/3d/mesh_instance.o.d
+
+build scene/3d/multimesh_instance.o: CXX scene/3d/multimesh_instance.cpp
+  depfile = scene/3d/multimesh_instance.o.d
+
+build scene/3d/navigation.o: CXX scene/3d/navigation.cpp
+  depfile = scene/3d/navigation.o.d
+
+build scene/3d/navigation_agent.o: CXX scene/3d/navigation_agent.cpp
+  depfile = scene/3d/navigation_agent.o.d
+
+build scene/3d/navigation_mesh.o: CXX scene/3d/navigation_mesh.cpp
+  depfile = scene/3d/navigation_mesh.o.d
+
+build scene/3d/optimized_spatial_scene.o: CXX $
+    scene/3d/optimized_spatial_scene.cpp
+  depfile = scene/3d/optimized_spatial_scene.o.d
+
+build scene/3d/particles.o: CXX scene/3d/particles.cpp
+  depfile = scene/3d/particles.o.d
+
+build scene/3d/path.o: CXX scene/3d/path.cpp
+  depfile = scene/3d/path.o.d
+
+build scene/3d/physics_body.o: CXX scene/3d/physics_body.cpp
+  depfile = scene/3d/physics_body.o.d
+
+build scene/3d/physics_joint.o: CXX scene/3d/physics_joint.cpp
+  depfile = scene/3d/physics_joint.o.d
+
+build scene/3d/portal.o: CXX scene/3d/portal.cpp
+  depfile = scene/3d/portal.o.d
+
+build scene/3d/position_3d.o: CXX scene/3d/position_3d.cpp
+  depfile = scene/3d/position_3d.o.d
+
+build scene/3d/proximity_group.o: CXX scene/3d/proximity_group.cpp
+  depfile = scene/3d/proximity_group.o.d
+
+build scene/3d/quad.o: CXX scene/3d/quad.cpp
+  depfile = scene/3d/quad.o.d
+
+build scene/3d/ray_cast.o: CXX scene/3d/ray_cast.cpp
+  depfile = scene/3d/ray_cast.o.d
+
+build scene/3d/room_instance.o: CXX scene/3d/room_instance.cpp
+  depfile = scene/3d/room_instance.o.d
+
+build scene/3d/scenario_fx.o: CXX scene/3d/scenario_fx.cpp
+  depfile = scene/3d/scenario_fx.o.d
+
+build scene/3d/skeleton.o: CXX scene/3d/skeleton.cpp
+  depfile = scene/3d/skeleton.o.d
+
+build scene/3d/spatial.o: CXX scene/3d/spatial.cpp
+  depfile = scene/3d/spatial.o.d
+
+build scene/3d/spatial_indexer.o: CXX scene/3d/spatial_indexer.cpp
+  depfile = scene/3d/spatial_indexer.o.d
+
+build scene/3d/spatial_player.o: CXX scene/3d/spatial_player.cpp
+  depfile = scene/3d/spatial_player.o.d
+
+build scene/3d/spatial_sample_player.o: CXX scene/3d/spatial_sample_player.cpp
+  depfile = scene/3d/spatial_sample_player.o.d
+
+build scene/3d/spatial_stream_player.o: CXX scene/3d/spatial_stream_player.cpp
+  depfile = scene/3d/spatial_stream_player.o.d
+
+build scene/3d/sprite_3d.o: CXX scene/3d/sprite_3d.cpp
+  depfile = scene/3d/sprite_3d.o.d
+
+build scene/3d/test_cube.o: CXX scene/3d/test_cube.cpp
+  depfile = scene/3d/test_cube.o.d
+
+build scene/3d/vehicle_body.o: CXX scene/3d/vehicle_body.cpp
+  depfile = scene/3d/vehicle_body.o.d
+
+build scene/3d/visibility_notifier.o: CXX scene/3d/visibility_notifier.cpp
+  depfile = scene/3d/visibility_notifier.o.d
+
+build scene/3d/visual_instance.o: CXX scene/3d/visual_instance.cpp
+  depfile = scene/3d/visual_instance.o.d
+
+build scene/animation/animation_cache.o: CXX $
+    scene/animation/animation_cache.cpp
+  depfile = scene/animation/animation_cache.o.d
+
+build scene/animation/animation_player.o: CXX $
+    scene/animation/animation_player.cpp
+  depfile = scene/animation/animation_player.o.d
+
+build scene/animation/animation_tree_player.o: CXX $
+    scene/animation/animation_tree_player.cpp
+  depfile = scene/animation/animation_tree_player.o.d
+
+build scene/animation/transitioner.o: CXX scene/animation/transitioner.cpp
+  depfile = scene/animation/transitioner.o.d
+
+build scene/animation/tween.o: CXX scene/animation/tween.cpp
+  depfile = scene/animation/tween.o.d
+
+build scene/animation/tween_interpolaters.o: CXX $
+    scene/animation/tween_interpolaters.cpp
+  depfile = scene/animation/tween_interpolaters.o.d
+
+build scene/audio/event_player.o: CXX scene/audio/event_player.cpp
+  depfile = scene/audio/event_player.o.d
+
+build scene/audio/sample_player.o: CXX scene/audio/sample_player.cpp
+  depfile = scene/audio/sample_player.o.d
+
+build scene/audio/sound_room_params.o: CXX scene/audio/sound_room_params.cpp
+  depfile = scene/audio/sound_room_params.o.d
+
+build scene/audio/stream_player.o: CXX scene/audio/stream_player.cpp
+  depfile = scene/audio/stream_player.o.d
+
+build scene/gui/base_button.o: CXX scene/gui/base_button.cpp
+  depfile = scene/gui/base_button.o.d
+
+build scene/gui/box_container.o: CXX scene/gui/box_container.cpp
+  depfile = scene/gui/box_container.o.d
+
+build scene/gui/button.o: CXX scene/gui/button.cpp
+  depfile = scene/gui/button.o.d
+
+build scene/gui/button_array.o: CXX scene/gui/button_array.cpp
+  depfile = scene/gui/button_array.o.d
+
+build scene/gui/button_group.o: CXX scene/gui/button_group.cpp
+  depfile = scene/gui/button_group.o.d
+
+build scene/gui/center_container.o: CXX scene/gui/center_container.cpp
+  depfile = scene/gui/center_container.o.d
+
+build scene/gui/check_box.o: CXX scene/gui/check_box.cpp
+  depfile = scene/gui/check_box.o.d
+
+build scene/gui/check_button.o: CXX scene/gui/check_button.cpp
+  depfile = scene/gui/check_button.o.d
+
+build scene/gui/color_picker.o: CXX scene/gui/color_picker.cpp
+  depfile = scene/gui/color_picker.o.d
+
+build scene/gui/color_ramp_edit.o: CXX scene/gui/color_ramp_edit.cpp
+  depfile = scene/gui/color_ramp_edit.o.d
+
+build scene/gui/container.o: CXX scene/gui/container.cpp
+  depfile = scene/gui/container.o.d
+
+build scene/gui/control.o: CXX scene/gui/control.cpp
+  depfile = scene/gui/control.o.d
+
+build scene/gui/custom_button.o: CXX scene/gui/custom_button.cpp
+  depfile = scene/gui/custom_button.o.d
+
+build scene/gui/dialogs.o: CXX scene/gui/dialogs.cpp
+  depfile = scene/gui/dialogs.o.d
+
+build scene/gui/file_dialog.o: CXX scene/gui/file_dialog.cpp
+  depfile = scene/gui/file_dialog.o.d
+
+build scene/gui/graph_edit.o: CXX scene/gui/graph_edit.cpp
+  depfile = scene/gui/graph_edit.o.d
+
+build scene/gui/graph_node.o: CXX scene/gui/graph_node.cpp
+  depfile = scene/gui/graph_node.o.d
+
+build scene/gui/grid_container.o: CXX scene/gui/grid_container.cpp
+  depfile = scene/gui/grid_container.o.d
+
+build scene/gui/item_list.o: CXX scene/gui/item_list.cpp
+  depfile = scene/gui/item_list.o.d
+
+build scene/gui/label.o: CXX scene/gui/label.cpp
+  depfile = scene/gui/label.o.d
+
+build scene/gui/line_edit.o: CXX scene/gui/line_edit.cpp
+  depfile = scene/gui/line_edit.o.d
+
+build scene/gui/margin_container.o: CXX scene/gui/margin_container.cpp
+  depfile = scene/gui/margin_container.o.d
+
+build scene/gui/menu_button.o: CXX scene/gui/menu_button.cpp
+  depfile = scene/gui/menu_button.o.d
+
+build scene/gui/option_button.o: CXX scene/gui/option_button.cpp
+  depfile = scene/gui/option_button.o.d
+
+build scene/gui/panel.o: CXX scene/gui/panel.cpp
+  depfile = scene/gui/panel.o.d
+
+build scene/gui/panel_container.o: CXX scene/gui/panel_container.cpp
+  depfile = scene/gui/panel_container.o.d
+
+build scene/gui/patch_9_frame.o: CXX scene/gui/patch_9_frame.cpp
+  depfile = scene/gui/patch_9_frame.o.d
+
+build scene/gui/popup.o: CXX scene/gui/popup.cpp
+  depfile = scene/gui/popup.o.d
+
+build scene/gui/popup_menu.o: CXX scene/gui/popup_menu.cpp
+  depfile = scene/gui/popup_menu.o.d
+
+build scene/gui/progress_bar.o: CXX scene/gui/progress_bar.cpp
+  depfile = scene/gui/progress_bar.o.d
+
+build scene/gui/range.o: CXX scene/gui/range.cpp
+  depfile = scene/gui/range.o.d
+
+build scene/gui/reference_frame.o: CXX scene/gui/reference_frame.cpp
+  depfile = scene/gui/reference_frame.o.d
+
+build scene/gui/rich_text_label.o: CXX scene/gui/rich_text_label.cpp
+  depfile = scene/gui/rich_text_label.o.d
+
+build scene/gui/scroll_bar.o: CXX scene/gui/scroll_bar.cpp
+  depfile = scene/gui/scroll_bar.o.d
+
+build scene/gui/scroll_container.o: CXX scene/gui/scroll_container.cpp
+  depfile = scene/gui/scroll_container.o.d
+
+build scene/gui/separator.o: CXX scene/gui/separator.cpp
+  depfile = scene/gui/separator.o.d
+
+build scene/gui/slider.o: CXX scene/gui/slider.cpp
+  depfile = scene/gui/slider.o.d
+
+build scene/gui/spin_box.o: CXX scene/gui/spin_box.cpp
+  depfile = scene/gui/spin_box.o.d
+
+build scene/gui/split_container.o: CXX scene/gui/split_container.cpp
+  depfile = scene/gui/split_container.o.d
+
+build scene/gui/tab_container.o: CXX scene/gui/tab_container.cpp
+  depfile = scene/gui/tab_container.o.d
+
+build scene/gui/tabs.o: CXX scene/gui/tabs.cpp
+  depfile = scene/gui/tabs.o.d
+
+build scene/gui/text_edit.o: CXX scene/gui/text_edit.cpp
+  depfile = scene/gui/text_edit.o.d
+
+build scene/gui/texture_button.o: CXX scene/gui/texture_button.cpp
+  depfile = scene/gui/texture_button.o.d
+
+build scene/gui/texture_frame.o: CXX scene/gui/texture_frame.cpp
+  depfile = scene/gui/texture_frame.o.d
+
+build scene/gui/texture_progress.o: CXX scene/gui/texture_progress.cpp
+  depfile = scene/gui/texture_progress.o.d
+
+build scene/gui/tool_button.o: CXX scene/gui/tool_button.cpp
+  depfile = scene/gui/tool_button.o.d
+
+build scene/gui/tree.o: CXX scene/gui/tree.cpp
+  depfile = scene/gui/tree.o.d
+
+build scene/gui/video_player.o: CXX scene/gui/video_player.cpp
+  depfile = scene/gui/video_player.o.d
+
+build scene/io/resource_format_image.o: CXX scene/io/resource_format_image.cpp
+  depfile = scene/io/resource_format_image.o.d
+
+build scene/io/resource_format_wav.o: CXX scene/io/resource_format_wav.cpp
+  depfile = scene/io/resource_format_wav.o.d
+
+build scene/main/canvas_layer.o: CXX scene/main/canvas_layer.cpp
+  depfile = scene/main/canvas_layer.o.d
+
+build scene/main/instance_placeholder.o: CXX $
+    scene/main/instance_placeholder.cpp
+  depfile = scene/main/instance_placeholder.o.d
+
+build scene/main/misc.o: CXX scene/main/misc.cpp
+  depfile = scene/main/misc.o.d
+
+build scene/main/node.o: CXX scene/main/node.cpp
+  depfile = scene/main/node.o.d
+
+build scene/main/resource_preloader.o: CXX scene/main/resource_preloader.cpp
+  depfile = scene/main/resource_preloader.o.d
+
+build scene/main/scene_main_loop.o: CXX scene/main/scene_main_loop.cpp
+  depfile = scene/main/scene_main_loop.o.d
+
+build scene/main/scene_singleton.o: CXX scene/main/scene_singleton.cpp
+  depfile = scene/main/scene_singleton.o.d
+
+build scene/main/timer.o: CXX scene/main/timer.cpp
+  depfile = scene/main/timer.o.d
+
+build scene/main/viewport.o: CXX scene/main/viewport.cpp
+  depfile = scene/main/viewport.o.d
+
+build scene/register_scene_types.o: CXX scene/register_scene_types.cpp
+  depfile = scene/register_scene_types.o.d
+
+build scene/resources/animation.o: CXX scene/resources/animation.cpp
+  depfile = scene/resources/animation.o.d
+
+build scene/resources/audio_stream.o: CXX scene/resources/audio_stream.cpp
+  depfile = scene/resources/audio_stream.o.d
+
+build scene/resources/audio_stream_resampled.o: CXX $
+    scene/resources/audio_stream_resampled.cpp
+  depfile = scene/resources/audio_stream_resampled.o.d
+
+build scene/resources/baked_light.o: CXX scene/resources/baked_light.cpp
+  depfile = scene/resources/baked_light.o.d
+
+build scene/resources/bit_mask.o: CXX scene/resources/bit_mask.cpp
+  depfile = scene/resources/bit_mask.o.d
+
+build scene/resources/bounds.o: CXX scene/resources/bounds.cpp
+  depfile = scene/resources/bounds.o.d
+
+build scene/resources/box_shape.o: CXX scene/resources/box_shape.cpp
+  depfile = scene/resources/box_shape.o.d
+
+build scene/resources/canvas.o: CXX scene/resources/canvas.cpp
+  depfile = scene/resources/canvas.o.d
+
+build scene/resources/capsule_shape.o: CXX scene/resources/capsule_shape.cpp
+  depfile = scene/resources/capsule_shape.o.d
+
+build scene/resources/capsule_shape_2d.o: CXX $
+    scene/resources/capsule_shape_2d.cpp
+  depfile = scene/resources/capsule_shape_2d.o.d
+
+build scene/resources/circle_shape_2d.o: CXX $
+    scene/resources/circle_shape_2d.cpp
+  depfile = scene/resources/circle_shape_2d.o.d
+
+build scene/resources/color_ramp.o: CXX scene/resources/color_ramp.cpp
+  depfile = scene/resources/color_ramp.o.d
+
+build scene/resources/concave_polygon_shape.o: CXX $
+    scene/resources/concave_polygon_shape.cpp
+  depfile = scene/resources/concave_polygon_shape.o.d
+
+build scene/resources/concave_polygon_shape_2d.o: CXX $
+    scene/resources/concave_polygon_shape_2d.cpp
+  depfile = scene/resources/concave_polygon_shape_2d.o.d
+
+build scene/resources/convex_polygon_shape.o: CXX $
+    scene/resources/convex_polygon_shape.cpp
+  depfile = scene/resources/convex_polygon_shape.o.d
+
+build scene/resources/convex_polygon_shape_2d.o: CXX $
+    scene/resources/convex_polygon_shape_2d.cpp
+  depfile = scene/resources/convex_polygon_shape_2d.o.d
+
+build scene/resources/curve.o: CXX scene/resources/curve.cpp
+  depfile = scene/resources/curve.o.d
+
+build scene/resources/default_theme/default_theme.o: CXX $
+    scene/resources/default_theme/default_theme.cpp
+  depfile = scene/resources/default_theme/default_theme.o.d
+
+build scene/resources/environment.o: CXX scene/resources/environment.cpp
+  depfile = scene/resources/environment.o.d
+
+build scene/resources/event_stream.o: CXX scene/resources/event_stream.cpp
+  depfile = scene/resources/event_stream.o.d
+
+build scene/resources/font.o: CXX scene/resources/font.cpp
+  depfile = scene/resources/font.o.d
+
+build scene/resources/gibberish_stream.o: CXX $
+    scene/resources/gibberish_stream.cpp
+  depfile = scene/resources/gibberish_stream.o.d
+
+build scene/resources/height_map_shape.o: CXX $
+    scene/resources/height_map_shape.cpp
+  depfile = scene/resources/height_map_shape.o.d
+
+build scene/resources/material.o: CXX scene/resources/material.cpp
+  depfile = scene/resources/material.o.d
+
+build scene/resources/mesh.o: CXX scene/resources/mesh.cpp
+  depfile = scene/resources/mesh.o.d
+
+build scene/resources/mesh_data_tool.o: CXX scene/resources/mesh_data_tool.cpp
+  depfile = scene/resources/mesh_data_tool.o.d
+
+build scene/resources/mesh_library.o: CXX scene/resources/mesh_library.cpp
+  depfile = scene/resources/mesh_library.o.d
+
+build scene/resources/mikktspace.o: CC scene/resources/mikktspace.c
+  depfile = scene/resources/mikktspace.o.d
+
+build scene/resources/multimesh.o: CXX scene/resources/multimesh.cpp
+  depfile = scene/resources/multimesh.o.d
+
+build scene/resources/packed_scene.o: CXX scene/resources/packed_scene.cpp
+  depfile = scene/resources/packed_scene.o.d
+
+build scene/resources/plane_shape.o: CXX scene/resources/plane_shape.cpp
+  depfile = scene/resources/plane_shape.o.d
+
+build scene/resources/polygon_path_finder.o: CXX $
+    scene/resources/polygon_path_finder.cpp
+  depfile = scene/resources/polygon_path_finder.o.d
+
+build scene/resources/ray_shape.o: CXX scene/resources/ray_shape.cpp
+  depfile = scene/resources/ray_shape.o.d
+
+build scene/resources/rectangle_shape_2d.o: CXX $
+    scene/resources/rectangle_shape_2d.cpp
+  depfile = scene/resources/rectangle_shape_2d.o.d
+
+build scene/resources/rich_text.o: CXX scene/resources/rich_text.cpp
+  depfile = scene/resources/rich_text.o.d
+
+build scene/resources/room.o: CXX scene/resources/room.cpp
+  depfile = scene/resources/room.o.d
+
+build scene/resources/sample.o: CXX scene/resources/sample.cpp
+  depfile = scene/resources/sample.o.d
+
+build scene/resources/sample_library.o: CXX scene/resources/sample_library.cpp
+  depfile = scene/resources/sample_library.o.d
+
+build scene/resources/scene_format_text.o: CXX $
+    scene/resources/scene_format_text.cpp
+  depfile = scene/resources/scene_format_text.o.d
+
+build scene/resources/scene_preloader.o: CXX $
+    scene/resources/scene_preloader.cpp
+  depfile = scene/resources/scene_preloader.o.d
+
+build scene/resources/segment_shape_2d.o: CXX $
+    scene/resources/segment_shape_2d.cpp
+  depfile = scene/resources/segment_shape_2d.o.d
+
+build scene/resources/shader.o: CXX scene/resources/shader.cpp
+  depfile = scene/resources/shader.o.d
+
+build scene/resources/shader_graph.o: CXX scene/resources/shader_graph.cpp
+  depfile = scene/resources/shader_graph.o.d
+
+build scene/resources/shape.o: CXX scene/resources/shape.cpp
+  depfile = scene/resources/shape.o.d
+
+build scene/resources/shape_2d.o: CXX scene/resources/shape_2d.cpp
+  depfile = scene/resources/shape_2d.o.d
+
+build scene/resources/shape_line_2d.o: CXX scene/resources/shape_line_2d.cpp
+  depfile = scene/resources/shape_line_2d.o.d
+
+build scene/resources/space_2d.o: CXX scene/resources/space_2d.cpp
+  depfile = scene/resources/space_2d.o.d
+
+build scene/resources/sphere_shape.o: CXX scene/resources/sphere_shape.cpp
+  depfile = scene/resources/sphere_shape.o.d
+
+build scene/resources/style_box.o: CXX scene/resources/style_box.cpp
+  depfile = scene/resources/style_box.o.d
+
+build scene/resources/surface_tool.o: CXX scene/resources/surface_tool.cpp
+  depfile = scene/resources/surface_tool.o.d
+
+build scene/resources/texture.o: CXX scene/resources/texture.cpp
+  depfile = scene/resources/texture.o.d
+
+build scene/resources/theme.o: CXX scene/resources/theme.cpp
+  depfile = scene/resources/theme.o.d
+
+build scene/resources/tile_set.o: CXX scene/resources/tile_set.cpp
+  depfile = scene/resources/tile_set.o.d
+
+build scene/resources/video_stream.o: CXX scene/resources/video_stream.cpp
+  depfile = scene/resources/video_stream.o.d
+
+build scene/resources/volume.o: CXX scene/resources/volume.cpp
+  depfile = scene/resources/volume.o.d
+
+build scene/resources/world.o: CXX scene/resources/world.cpp
+  depfile = scene/resources/world.o.d
+
+build scene/resources/world_2d.o: CXX scene/resources/world_2d.cpp
+  depfile = scene/resources/world_2d.o.d
+
+build scene/scene_string_names.o: CXX scene/scene_string_names.cpp
+  depfile = scene/scene_string_names.o.d
+
+build scene/scene.a: STATIC_LIBRARY scene/scene_string_names.o $
+    scene/register_scene_types.o scene/main/scene_main_loop.o $
+    scene/main/resource_preloader.o scene/main/timer.o $
+    scene/main/canvas_layer.o scene/main/viewport.o $
+    scene/main/instance_placeholder.o scene/main/scene_singleton.o $
+    scene/main/misc.o scene/main/node.o scene/gui/progress_bar.o $
+    scene/gui/texture_button.o scene/gui/option_button.o $
+    scene/gui/check_button.o scene/gui/patch_9_frame.o $
+    scene/gui/scroll_bar.o scene/gui/rich_text_label.o $
+    scene/gui/text_edit.o scene/gui/tree.o scene/gui/panel.o $
+    scene/gui/label.o scene/gui/check_box.o scene/gui/container.o $
+    scene/gui/grid_container.o scene/gui/tab_container.o $
+    scene/gui/item_list.o scene/gui/margin_container.o $
+    scene/gui/graph_edit.o scene/gui/box_container.o $
+    scene/gui/color_ramp_edit.o scene/gui/panel_container.o $
+    scene/gui/color_picker.o scene/gui/custom_button.o scene/gui/button.o $
+    scene/gui/base_button.o scene/gui/slider.o scene/gui/control.o $
+    scene/gui/split_container.o scene/gui/texture_progress.o $
+    scene/gui/popup_menu.o scene/gui/button_array.o $
+    scene/gui/center_container.o scene/gui/dialogs.o $
+    scene/gui/menu_button.o scene/gui/tool_button.o $
+    scene/gui/texture_frame.o scene/gui/scroll_container.o $
+    scene/gui/spin_box.o scene/gui/video_player.o scene/gui/graph_node.o $
+    scene/gui/line_edit.o scene/gui/range.o scene/gui/tabs.o $
+    scene/gui/separator.o scene/gui/button_group.o scene/gui/popup.o $
+    scene/gui/file_dialog.o scene/gui/reference_frame.o $
+    scene/3d/proximity_group.o scene/3d/navigation.o scene/3d/light.o $
+    scene/3d/collision_polygon.o scene/3d/multimesh_instance.o $
+    scene/3d/immediate_geometry.o scene/3d/optimized_spatial_scene.o $
+    scene/3d/sprite_3d.o scene/3d/body_shape.o scene/3d/physics_joint.o $
+    scene/3d/navigation_mesh.o scene/3d/collision_object.o $
+    scene/3d/room_instance.o scene/3d/portal.o scene/3d/position_3d.o $
+    scene/3d/spatial_stream_player.o scene/3d/test_cube.o $
+    scene/3d/physics_body.o scene/3d/baked_light_instance.o $
+    scene/3d/spatial_player.o scene/3d/visibility_notifier.o $
+    scene/3d/quad.o scene/3d/spatial.o scene/3d/skeleton.o $
+    scene/3d/camera.o scene/3d/particles.o scene/3d/path.o $
+    scene/3d/ray_cast.o scene/3d/bone_attachment.o $
+    scene/3d/character_camera.o scene/3d/scenario_fx.o $
+    scene/3d/spatial_indexer.o scene/3d/visual_instance.o scene/3d/area.o $
+    scene/3d/mesh_instance.o scene/3d/interpolated_camera.o $
+    scene/3d/navigation_agent.o scene/3d/spatial_sample_player.o $
+    scene/3d/vehicle_body.o scene/2d/back_buffer_copy.o $
+    scene/2d/joints_2d.o scene/2d/canvas_item.o scene/2d/navigation2d.o $
+    scene/2d/ray_cast_2d.o scene/2d/screen_button.o $
+    scene/2d/remote_transform_2d.o scene/2d/y_sort.o $
+    scene/2d/animated_sprite.o scene/2d/path_2d.o $
+    scene/2d/sound_player_2d.o scene/2d/physics_body_2d.o $
+    scene/2d/visibility_notifier_2d.o scene/2d/parallax_background.o $
+    scene/2d/navigation_polygon.o scene/2d/sprite.o scene/2d/position_2d.o $
+    scene/2d/particles_2d.o scene/2d/collision_polygon_2d.o $
+    scene/2d/path_texture.o scene/2d/light_occluder_2d.o $
+    scene/2d/collision_object_2d.o scene/2d/collision_shape_2d.o $
+    scene/2d/sample_player_2d.o scene/2d/parallax_layer.o $
+    scene/2d/node_2d.o scene/2d/canvas_modulate.o scene/2d/camera_2d.o $
+    scene/2d/polygon_2d.o scene/2d/tile_map.o scene/2d/light_2d.o $
+    scene/2d/node_2d_singleton.o scene/2d/area_2d.o $
+    scene/animation/animation_tree_player.o scene/animation/transitioner.o $
+    scene/animation/tween_interpolaters.o scene/animation/animation_cache.o $
+    scene/animation/tween.o scene/animation/animation_player.o $
+    scene/audio/sample_player.o scene/audio/sound_room_params.o $
+    scene/audio/stream_player.o scene/audio/event_player.o $
+    scene/resources/shape_line_2d.o scene/resources/scene_preloader.o $
+    scene/resources/surface_tool.o scene/resources/capsule_shape.o $
+    scene/resources/room.o scene/resources/event_stream.o $
+    scene/resources/theme.o scene/resources/capsule_shape_2d.o $
+    scene/resources/convex_polygon_shape.o scene/resources/shape.o $
+    scene/resources/animation.o scene/resources/polygon_path_finder.o $
+    scene/resources/material.o scene/resources/concave_polygon_shape_2d.o $
+    scene/resources/scene_format_text.o scene/resources/box_shape.o $
+    scene/resources/canvas.o scene/resources/packed_scene.o $
+    scene/resources/rich_text.o scene/resources/mesh_data_tool.o $
+    scene/resources/baked_light.o scene/resources/rectangle_shape_2d.o $
+    scene/resources/height_map_shape.o scene/resources/sphere_shape.o $
+    scene/resources/circle_shape_2d.o scene/resources/volume.o $
+    scene/resources/audio_stream_resampled.o $
+    scene/resources/gibberish_stream.o scene/resources/style_box.o $
+    scene/resources/tile_set.o scene/resources/multimesh.o $
+    scene/resources/ray_shape.o scene/resources/convex_polygon_shape_2d.o $
+    scene/resources/sample_library.o scene/resources/texture.o $
+    scene/resources/world_2d.o scene/resources/shader.o $
+    scene/resources/video_stream.o scene/resources/mesh.o $
+    scene/resources/shader_graph.o scene/resources/segment_shape_2d.o $
+    scene/resources/font.o scene/resources/shape_2d.o $
+    scene/resources/bounds.o scene/resources/color_ramp.o $
+    scene/resources/audio_stream.o scene/resources/bit_mask.o $
+    scene/resources/plane_shape.o scene/resources/curve.o $
+    scene/resources/world.o scene/resources/sample.o $
+    scene/resources/environment.o scene/resources/space_2d.o $
+    scene/resources/mesh_library.o scene/resources/concave_polygon_shape.o $
+    scene/resources/mikktspace.o $
+    scene/resources/default_theme/default_theme.o $
+    scene/io/resource_format_wav.o scene/io/resource_format_image.o
+
+build servers/audio/audio_driver_dummy.o: CXX $
+    servers/audio/audio_driver_dummy.cpp
+  depfile = servers/audio/audio_driver_dummy.o.d
+
+build servers/audio/audio_filter_sw.o: CXX servers/audio/audio_filter_sw.cpp
+  depfile = servers/audio/audio_filter_sw.o.d
+
+build servers/audio/audio_mixer_sw.o: CXX servers/audio/audio_mixer_sw.cpp
+  depfile = servers/audio/audio_mixer_sw.o.d
+
+build servers/audio/audio_rb_resampler.o: CXX $
+    servers/audio/audio_rb_resampler.cpp
+  depfile = servers/audio/audio_rb_resampler.o.d
+
+build servers/audio/audio_server_sw.o: CXX servers/audio/audio_server_sw.cpp
+  depfile = servers/audio/audio_server_sw.o.d
+
+build servers/audio/reverb_buffers_sw.o: CXX $
+    servers/audio/reverb_buffers_sw.cpp
+  depfile = servers/audio/reverb_buffers_sw.o.d
+
+build servers/audio/reverb_sw.o: CXX servers/audio/reverb_sw.cpp
+  depfile = servers/audio/reverb_sw.o.d
+
+build servers/audio/sample_manager_sw.o: CXX $
+    servers/audio/sample_manager_sw.cpp
+  depfile = servers/audio/sample_manager_sw.o.d
+
+build servers/audio/voice_rb_sw.o: CXX servers/audio/voice_rb_sw.cpp
+  depfile = servers/audio/voice_rb_sw.o.d
+
+build servers/audio_server.o: CXX servers/audio_server.cpp
+  depfile = servers/audio_server.o.d
+
+build servers/physics/area_pair_sw.o: CXX servers/physics/area_pair_sw.cpp
+  depfile = servers/physics/area_pair_sw.o.d
+
+build servers/physics/area_sw.o: CXX servers/physics/area_sw.cpp
+  depfile = servers/physics/area_sw.o.d
+
+build servers/physics/body_pair_sw.o: CXX servers/physics/body_pair_sw.cpp
+  depfile = servers/physics/body_pair_sw.o.d
+
+build servers/physics/body_sw.o: CXX servers/physics/body_sw.cpp
+  depfile = servers/physics/body_sw.o.d
+
+build servers/physics/broad_phase_basic.o: CXX $
+    servers/physics/broad_phase_basic.cpp
+  depfile = servers/physics/broad_phase_basic.o.d
+
+build servers/physics/broad_phase_octree.o: CXX $
+    servers/physics/broad_phase_octree.cpp
+  depfile = servers/physics/broad_phase_octree.o.d
+
+build servers/physics/broad_phase_sw.o: CXX servers/physics/broad_phase_sw.cpp
+  depfile = servers/physics/broad_phase_sw.o.d
+
+build servers/physics/collision_object_sw.o: CXX $
+    servers/physics/collision_object_sw.cpp
+  depfile = servers/physics/collision_object_sw.o.d
+
+build servers/physics/collision_solver_sat.o: CXX $
+    servers/physics/collision_solver_sat.cpp
+  depfile = servers/physics/collision_solver_sat.o.d
+
+build servers/physics/collision_solver_sw.o: CXX $
+    servers/physics/collision_solver_sw.cpp
+  depfile = servers/physics/collision_solver_sw.o.d
+
+build servers/physics/constraint_sw.o: CXX servers/physics/constraint_sw.cpp
+  depfile = servers/physics/constraint_sw.o.d
+
+build servers/physics/gjk_epa.o: CXX servers/physics/gjk_epa.cpp
+  depfile = servers/physics/gjk_epa.o.d
+
+build servers/physics/joints/cone_twist_joint_sw.o: CXX $
+    servers/physics/joints/cone_twist_joint_sw.cpp
+  depfile = servers/physics/joints/cone_twist_joint_sw.o.d
+
+build servers/physics/joints/generic_6dof_joint_sw.o: CXX $
+    servers/physics/joints/generic_6dof_joint_sw.cpp
+  depfile = servers/physics/joints/generic_6dof_joint_sw.o.d
+
+build servers/physics/joints/hinge_joint_sw.o: CXX $
+    servers/physics/joints/hinge_joint_sw.cpp
+  depfile = servers/physics/joints/hinge_joint_sw.o.d
+
+build servers/physics/joints/jacobian_entry_sw.o: CXX $
+    servers/physics/joints/jacobian_entry_sw.cpp
+  depfile = servers/physics/joints/jacobian_entry_sw.o.d
+
+build servers/physics/joints/pin_joint_sw.o: CXX $
+    servers/physics/joints/pin_joint_sw.cpp
+  depfile = servers/physics/joints/pin_joint_sw.o.d
+
+build servers/physics/joints/slider_joint_sw.o: CXX $
+    servers/physics/joints/slider_joint_sw.cpp
+  depfile = servers/physics/joints/slider_joint_sw.o.d
+
+build servers/physics/joints_sw.o: CXX servers/physics/joints_sw.cpp
+  depfile = servers/physics/joints_sw.o.d
+
+build servers/physics/physics_server_sw.o: CXX $
+    servers/physics/physics_server_sw.cpp
+  depfile = servers/physics/physics_server_sw.o.d
+
+build servers/physics/shape_sw.o: CXX servers/physics/shape_sw.cpp
+  depfile = servers/physics/shape_sw.o.d
+
+build servers/physics/space_sw.o: CXX servers/physics/space_sw.cpp
+  depfile = servers/physics/space_sw.o.d
+
+build servers/physics/step_sw.o: CXX servers/physics/step_sw.cpp
+  depfile = servers/physics/step_sw.o.d
+
+build servers/physics_2d/area_2d_sw.o: CXX servers/physics_2d/area_2d_sw.cpp
+  depfile = servers/physics_2d/area_2d_sw.o.d
+
+build servers/physics_2d/area_pair_2d_sw.o: CXX $
+    servers/physics_2d/area_pair_2d_sw.cpp
+  depfile = servers/physics_2d/area_pair_2d_sw.o.d
+
+build servers/physics_2d/body_2d_sw.o: CXX servers/physics_2d/body_2d_sw.cpp
+  depfile = servers/physics_2d/body_2d_sw.o.d
+
+build servers/physics_2d/body_pair_2d_sw.o: CXX $
+    servers/physics_2d/body_pair_2d_sw.cpp
+  depfile = servers/physics_2d/body_pair_2d_sw.o.d
+
+build servers/physics_2d/broad_phase_2d_basic.o: CXX $
+    servers/physics_2d/broad_phase_2d_basic.cpp
+  depfile = servers/physics_2d/broad_phase_2d_basic.o.d
+
+build servers/physics_2d/broad_phase_2d_hash_grid.o: CXX $
+    servers/physics_2d/broad_phase_2d_hash_grid.cpp
+  depfile = servers/physics_2d/broad_phase_2d_hash_grid.o.d
+
+build servers/physics_2d/broad_phase_2d_sw.o: CXX $
+    servers/physics_2d/broad_phase_2d_sw.cpp
+  depfile = servers/physics_2d/broad_phase_2d_sw.o.d
+
+build servers/physics_2d/collision_object_2d_sw.o: CXX $
+    servers/physics_2d/collision_object_2d_sw.cpp
+  depfile = servers/physics_2d/collision_object_2d_sw.o.d
+
+build servers/physics_2d/collision_solver_2d_sat.o: CXX $
+    servers/physics_2d/collision_solver_2d_sat.cpp
+  depfile = servers/physics_2d/collision_solver_2d_sat.o.d
+
+build servers/physics_2d/collision_solver_2d_sw.o: CXX $
+    servers/physics_2d/collision_solver_2d_sw.cpp
+  depfile = servers/physics_2d/collision_solver_2d_sw.o.d
+
+build servers/physics_2d/constraint_2d_sw.o: CXX $
+    servers/physics_2d/constraint_2d_sw.cpp
+  depfile = servers/physics_2d/constraint_2d_sw.o.d
+
+build servers/physics_2d/joints_2d_sw.o: CXX $
+    servers/physics_2d/joints_2d_sw.cpp
+  depfile = servers/physics_2d/joints_2d_sw.o.d
+
+build servers/physics_2d/physics_2d_server_sw.o: CXX $
+    servers/physics_2d/physics_2d_server_sw.cpp
+  depfile = servers/physics_2d/physics_2d_server_sw.o.d
+
+build servers/physics_2d/physics_2d_server_wrap_mt.o: CXX $
+    servers/physics_2d/physics_2d_server_wrap_mt.cpp
+  depfile = servers/physics_2d/physics_2d_server_wrap_mt.o.d
+
+build servers/physics_2d/shape_2d_sw.o: CXX servers/physics_2d/shape_2d_sw.cpp
+  depfile = servers/physics_2d/shape_2d_sw.o.d
+
+build servers/physics_2d/space_2d_sw.o: CXX servers/physics_2d/space_2d_sw.cpp
+  depfile = servers/physics_2d/space_2d_sw.o.d
+
+build servers/physics_2d/step_2d_sw.o: CXX servers/physics_2d/step_2d_sw.cpp
+  depfile = servers/physics_2d/step_2d_sw.o.d
+
+build servers/physics_2d_server.o: CXX servers/physics_2d_server.cpp
+  depfile = servers/physics_2d_server.o.d
+
+build servers/physics_server.o: CXX servers/physics_server.cpp
+  depfile = servers/physics_server.o.d
+
+build servers/register_server_types.o: CXX servers/register_server_types.cpp
+  depfile = servers/register_server_types.o.d
+
+build servers/visual_server.o: CXX servers/visual_server.cpp
+  depfile = servers/visual_server.o.d
+
+build servers/spatial_sound_2d_server.o: CXX $
+    servers/spatial_sound_2d_server.cpp
+  depfile = servers/spatial_sound_2d_server.o.d
+
+build servers/spatial_sound_server.o: CXX servers/spatial_sound_server.cpp
+  depfile = servers/spatial_sound_server.o.d
+
+build servers/visual/visual_server_wrap_mt.o: CXX $
+    servers/visual/visual_server_wrap_mt.cpp
+  depfile = servers/visual/visual_server_wrap_mt.o.d
+
+build servers/visual/particle_system_sw.o: CXX $
+    servers/visual/particle_system_sw.cpp
+  depfile = servers/visual/particle_system_sw.o.d
+
+build servers/visual/visual_server_raster.o: CXX $
+    servers/visual/visual_server_raster.cpp
+  depfile = servers/visual/visual_server_raster.o.d
+
+build servers/visual/shader_compiler.o: CXX servers/visual/shader_compiler.cpp
+  depfile = servers/visual/shader_compiler.o.d
+
+build servers/visual/rasterizer_dummy.o: CXX $
+    servers/visual/rasterizer_dummy.cpp
+  depfile = servers/visual/rasterizer_dummy.o.d
+
+build servers/visual/rasterizer.o: CXX servers/visual/rasterizer.cpp
+  depfile = servers/visual/rasterizer.o.d
+
+build servers/visual/shader_graph.o: CXX servers/visual/shader_graph.cpp
+  depfile = servers/visual/shader_graph.o.d
+
+build servers/visual/shader_language.o: CXX servers/visual/shader_language.cpp
+  depfile = servers/visual/shader_language.o.d
+
+build servers/spatial_sound/spatial_sound_server_sw.o: CXX $
+    servers/spatial_sound/spatial_sound_server_sw.cpp
+  depfile = servers/spatial_sound/spatial_sound_server_sw.o.d
+
+build servers/spatial_sound_2d/spatial_sound_2d_server_sw.o: CXX $
+    servers/spatial_sound_2d/spatial_sound_2d_server_sw.cpp
+  depfile = servers/spatial_sound_2d/spatial_sound_2d_server_sw.o.d
+
+build servers/servers.a: STATIC_LIBRARY servers/visual_server.o $
+    servers/audio_server.o servers/physics_2d_server.o $
+    servers/spatial_sound_2d_server.o servers/physics_server.o $
+    servers/register_server_types.o servers/spatial_sound_server.o $
+    servers/physics/body_sw.o servers/physics/collision_solver_sat.o $
+    servers/physics/collision_solver_sw.o servers/physics/shape_sw.o $
+    servers/physics/broad_phase_basic.o servers/physics/area_pair_sw.o $
+    servers/physics/broad_phase_octree.o servers/physics/gjk_epa.o $
+    servers/physics/area_sw.o servers/physics/step_sw.o $
+    servers/physics/constraint_sw.o servers/physics/joints_sw.o $
+    servers/physics/body_pair_sw.o servers/physics/physics_server_sw.o $
+    servers/physics/broad_phase_sw.o servers/physics/space_sw.o $
+    servers/physics/collision_object_sw.o $
+    servers/physics/joints/jacobian_entry_sw.o $
+    servers/physics/joints/slider_joint_sw.o $
+    servers/physics/joints/cone_twist_joint_sw.o $
+    servers/physics/joints/hinge_joint_sw.o $
+    servers/physics/joints/pin_joint_sw.o $
+    servers/physics/joints/generic_6dof_joint_sw.o $
+    servers/physics_2d/body_pair_2d_sw.o $
+    servers/physics_2d/broad_phase_2d_basic.o $
+    servers/physics_2d/area_2d_sw.o $
+    servers/physics_2d/collision_solver_2d_sw.o $
+    servers/physics_2d/joints_2d_sw.o servers/physics_2d/constraint_2d_sw.o $
+    servers/physics_2d/physics_2d_server_wrap_mt.o $
+    servers/physics_2d/step_2d_sw.o servers/physics_2d/space_2d_sw.o $
+    servers/physics_2d/collision_solver_2d_sat.o $
+    servers/physics_2d/broad_phase_2d_hash_grid.o $
+    servers/physics_2d/physics_2d_server_sw.o $
+    servers/physics_2d/shape_2d_sw.o servers/physics_2d/body_2d_sw.o $
+    servers/physics_2d/area_pair_2d_sw.o $
+    servers/physics_2d/broad_phase_2d_sw.o $
+    servers/physics_2d/collision_object_2d_sw.o $
+    servers/visual/visual_server_wrap_mt.o $
+    servers/visual/particle_system_sw.o $
+    servers/visual/visual_server_raster.o servers/visual/shader_compiler.o $
+    servers/visual/rasterizer_dummy.o servers/visual/rasterizer.o $
+    servers/visual/shader_graph.o servers/visual/shader_language.o $
+    servers/audio/voice_rb_sw.o servers/audio/audio_filter_sw.o $
+    servers/audio/audio_rb_resampler.o servers/audio/reverb_buffers_sw.o $
+    servers/audio/audio_driver_dummy.o servers/audio/reverb_sw.o $
+    servers/audio/sample_manager_sw.o servers/audio/audio_mixer_sw.o $
+    servers/audio/audio_server_sw.o $
+    servers/spatial_sound/spatial_sound_server_sw.o $
+    servers/spatial_sound_2d/spatial_sound_2d_server_sw.o
+
+build tools/collada/collada.o: CXX tools/collada/collada.cpp
+  depfile = tools/collada/collada.o.d
+
+build tools/doc/doc_data.o: CXX tools/doc/doc_data.cpp
+  depfile = tools/doc/doc_data.o.d
+
+build tools/docdump/doc_dump.o: CXX tools/docdump/doc_dump.cpp
+  depfile = tools/docdump/doc_dump.o.d
+
+build tools/editor/animation_editor.o: CXX tools/editor/animation_editor.cpp
+  depfile = tools/editor/animation_editor.o.d
+
+build tools/editor/array_property_edit.o: CXX $
+    tools/editor/array_property_edit.cpp
+  depfile = tools/editor/array_property_edit.o.d
+
+build tools/editor/call_dialog.o: CXX tools/editor/call_dialog.cpp
+  depfile = tools/editor/call_dialog.o.d
+
+build tools/editor/code_editor.o: CXX tools/editor/code_editor.cpp
+  depfile = tools/editor/code_editor.o.d
+
+build tools/editor/connections_dialog.o: CXX $
+    tools/editor/connections_dialog.cpp
+  depfile = tools/editor/connections_dialog.o.d
+
+build tools/editor/console.o: CXX tools/editor/console.cpp
+  depfile = tools/editor/console.o.d
+
+build tools/editor/create_dialog.o: CXX tools/editor/create_dialog.cpp
+  depfile = tools/editor/create_dialog.o.d
+
+build tools/editor/default_saver.o: CXX tools/editor/default_saver.cpp
+  depfile = tools/editor/default_saver.o.d
+
+build tools/editor/dependency_editor.o: CXX tools/editor/dependency_editor.cpp
+  depfile = tools/editor/dependency_editor.o.d
+
+build tools/editor/editor_data.o: CXX tools/editor/editor_data.cpp
+  depfile = tools/editor/editor_data.o.d
+
+build tools/editor/editor_dir_dialog.o: CXX tools/editor/editor_dir_dialog.cpp
+  depfile = tools/editor/editor_dir_dialog.o.d
+
+build tools/editor/editor_file_dialog.o: CXX $
+    tools/editor/editor_file_dialog.cpp
+  depfile = tools/editor/editor_file_dialog.o.d
+
+build tools/editor/editor_file_system.o: CXX $
+    tools/editor/editor_file_system.cpp
+  depfile = tools/editor/editor_file_system.o.d
+
+build tools/editor/editor_fonts.o: CXX tools/editor/editor_fonts.cpp
+  depfile = tools/editor/editor_fonts.o.d
+
+build tools/editor/editor_help.o: CXX tools/editor/editor_help.cpp
+  depfile = tools/editor/editor_help.o.d
+
+build tools/editor/editor_import_export.o: CXX $
+    tools/editor/editor_import_export.cpp
+  depfile = tools/editor/editor_import_export.o.d
+
+build tools/editor/editor_log.o: CXX tools/editor/editor_log.cpp
+  depfile = tools/editor/editor_log.o.d
+
+build tools/editor/editor_node.o: CXX tools/editor/editor_node.cpp
+  depfile = tools/editor/editor_node.o.d
+
+build tools/editor/editor_path.o: CXX tools/editor/editor_path.cpp
+  depfile = tools/editor/editor_path.o.d
+
+build tools/editor/editor_plugin.o: CXX tools/editor/editor_plugin.cpp
+  depfile = tools/editor/editor_plugin.o.d
+
+build tools/editor/editor_reimport_dialog.o: CXX $
+    tools/editor/editor_reimport_dialog.cpp
+  depfile = tools/editor/editor_reimport_dialog.o.d
+
+build tools/editor/editor_resource_preview.o: CXX $
+    tools/editor/editor_resource_preview.cpp
+  depfile = tools/editor/editor_resource_preview.o.d
+
+build tools/editor/editor_run.o: CXX tools/editor/editor_run.cpp
+  depfile = tools/editor/editor_run.o.d
+
+build tools/editor/editor_run_native.o: CXX tools/editor/editor_run_native.cpp
+  depfile = tools/editor/editor_run_native.o.d
+
+build tools/editor/editor_run_script.o: CXX tools/editor/editor_run_script.cpp
+  depfile = tools/editor/editor_run_script.o.d
+
+build tools/editor/editor_selection.o: CXX tools/editor/editor_selection.cpp
+  depfile = tools/editor/editor_selection.o.d
+
+build tools/editor/editor_settings.o: CXX tools/editor/editor_settings.cpp
+  depfile = tools/editor/editor_settings.o.d
+
+build tools/editor/editor_sub_scene.o: CXX tools/editor/editor_sub_scene.cpp
+  depfile = tools/editor/editor_sub_scene.o.d
+
+build tools/editor/editor_vu.o: CXX tools/editor/editor_vu.cpp
+  depfile = tools/editor/editor_vu.o.d
+
+build tools/editor/file_type_cache.o: CXX tools/editor/file_type_cache.cpp
+  depfile = tools/editor/file_type_cache.o.d
+
+build tools/editor/fileserver/editor_file_server.o: CXX $
+    tools/editor/fileserver/editor_file_server.cpp
+  depfile = tools/editor/fileserver/editor_file_server.o.d
+
+build tools/editor/groups_editor.o: CXX tools/editor/groups_editor.cpp
+  depfile = tools/editor/groups_editor.o.d
+
+build tools/editor/import_settings.o: CXX tools/editor/import_settings.cpp
+  depfile = tools/editor/import_settings.o.d
+
+build tools/editor/inspector_dock.o: CXX tools/editor/inspector_dock.cpp
+  depfile = tools/editor/inspector_dock.o.d
+
+build tools/editor/io_plugins/editor_atlas.o: CXX $
+    tools/editor/io_plugins/editor_atlas.cpp
+  depfile = tools/editor/io_plugins/editor_atlas.o.d
+
+build tools/editor/io_plugins/editor_font_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_font_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_font_import_plugin.o.d
+
+build tools/editor/io_plugins/editor_import_collada.o: CXX $
+    tools/editor/io_plugins/editor_import_collada.cpp
+  depfile = tools/editor/io_plugins/editor_import_collada.o.d
+
+build tools/editor/io_plugins/editor_mesh_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_mesh_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_mesh_import_plugin.o.d
+
+build tools/editor/io_plugins/editor_sample_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_sample_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_sample_import_plugin.o.d
+
+build tools/editor/io_plugins/editor_scene_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_scene_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_scene_import_plugin.o.d
+
+build tools/editor/io_plugins/editor_scene_importer_fbxconv.o: CXX $
+    tools/editor/io_plugins/editor_scene_importer_fbxconv.cpp
+  depfile = tools/editor/io_plugins/editor_scene_importer_fbxconv.o.d
+
+build tools/editor/io_plugins/editor_texture_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_texture_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_texture_import_plugin.o.d
+
+build tools/editor/io_plugins/editor_translation_import_plugin.o: CXX $
+    tools/editor/io_plugins/editor_translation_import_plugin.cpp
+  depfile = tools/editor/io_plugins/editor_translation_import_plugin.o.d
+
+build tools/editor/multi_node_edit.o: CXX tools/editor/multi_node_edit.cpp
+  depfile = tools/editor/multi_node_edit.o.d
+
+build tools/editor/optimized_save_dialog.o: CXX $
+    tools/editor/optimized_save_dialog.cpp
+  depfile = tools/editor/optimized_save_dialog.o.d
+
+build tools/editor/output_strings.o: CXX tools/editor/output_strings.cpp
+  depfile = tools/editor/output_strings.o.d
+
+build tools/editor/pane_drag.o: CXX tools/editor/pane_drag.cpp
+  depfile = tools/editor/pane_drag.o.d
+
+build tools/editor/plugins/animation_data_editor_plugin.o: CXX $
+    tools/editor/plugins/animation_data_editor_plugin.cpp
+  depfile = tools/editor/plugins/animation_data_editor_plugin.o.d
+
+build tools/editor/plugins/animation_player_editor_plugin.o: CXX $
+    tools/editor/plugins/animation_player_editor_plugin.cpp
+  depfile = tools/editor/plugins/animation_player_editor_plugin.o.d
+
+build tools/editor/plugins/animation_tree_editor_plugin.o: CXX $
+    tools/editor/plugins/animation_tree_editor_plugin.cpp
+  depfile = tools/editor/plugins/animation_tree_editor_plugin.o.d
+
+build tools/editor/plugins/baked_light_baker.o: CXX $
+    tools/editor/plugins/baked_light_baker.cpp
+  depfile = tools/editor/plugins/baked_light_baker.o.d
+
+build tools/editor/plugins/baked_light_baker_cmpxchg.o: CXX $
+    tools/editor/plugins/baked_light_baker_cmpxchg.cpp
+  depfile = tools/editor/plugins/baked_light_baker_cmpxchg.o.d
+
+build tools/editor/plugins/baked_light_editor_plugin.o: CXX $
+    tools/editor/plugins/baked_light_editor_plugin.cpp
+  depfile = tools/editor/plugins/baked_light_editor_plugin.o.d
+
+build tools/editor/plugins/camera_editor_plugin.o: CXX $
+    tools/editor/plugins/camera_editor_plugin.cpp
+  depfile = tools/editor/plugins/camera_editor_plugin.o.d
+
+build tools/editor/plugins/canvas_item_editor_plugin.o: CXX $
+    tools/editor/plugins/canvas_item_editor_plugin.cpp
+  depfile = tools/editor/plugins/canvas_item_editor_plugin.o.d
+
+build tools/editor/plugins/collision_polygon_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/collision_polygon_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/collision_polygon_2d_editor_plugin.o.d
+
+build tools/editor/plugins/collision_polygon_editor_plugin.o: CXX $
+    tools/editor/plugins/collision_polygon_editor_plugin.cpp
+  depfile = tools/editor/plugins/collision_polygon_editor_plugin.o.d
+
+build tools/editor/plugins/collision_shape_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/collision_shape_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/collision_shape_2d_editor_plugin.o.d
+
+build tools/editor/plugins/color_ramp_editor_plugin.o: CXX $
+    tools/editor/plugins/color_ramp_editor_plugin.cpp
+  depfile = tools/editor/plugins/color_ramp_editor_plugin.o.d
+
+build tools/editor/plugins/control_editor_plugin.o: CXX $
+    tools/editor/plugins/control_editor_plugin.cpp
+  depfile = tools/editor/plugins/control_editor_plugin.o.d
+
+build tools/editor/plugins/cube_grid_theme_editor_plugin.o: CXX $
+    tools/editor/plugins/cube_grid_theme_editor_plugin.cpp
+  depfile = tools/editor/plugins/cube_grid_theme_editor_plugin.o.d
+
+build tools/editor/plugins/editor_preview_plugins.o: CXX $
+    tools/editor/plugins/editor_preview_plugins.cpp
+  depfile = tools/editor/plugins/editor_preview_plugins.o.d
+
+build tools/editor/plugins/item_list_editor_plugin.o: CXX $
+    tools/editor/plugins/item_list_editor_plugin.cpp
+  depfile = tools/editor/plugins/item_list_editor_plugin.o.d
+
+build tools/editor/plugins/light_occluder_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/light_occluder_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/light_occluder_2d_editor_plugin.o.d
+
+build tools/editor/plugins/mesh_editor_plugin.o: CXX $
+    tools/editor/plugins/mesh_editor_plugin.cpp
+  depfile = tools/editor/plugins/mesh_editor_plugin.o.d
+
+build tools/editor/plugins/multimesh_editor_plugin.o: CXX $
+    tools/editor/plugins/multimesh_editor_plugin.cpp
+  depfile = tools/editor/plugins/multimesh_editor_plugin.o.d
+
+build tools/editor/plugins/navigation_polygon_editor_plugin.o: CXX $
+    tools/editor/plugins/navigation_polygon_editor_plugin.cpp
+  depfile = tools/editor/plugins/navigation_polygon_editor_plugin.o.d
+
+build tools/editor/plugins/particles_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/particles_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/particles_2d_editor_plugin.o.d
+
+build tools/editor/plugins/particles_editor_plugin.o: CXX $
+    tools/editor/plugins/particles_editor_plugin.cpp
+  depfile = tools/editor/plugins/particles_editor_plugin.o.d
+
+build tools/editor/plugins/path_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/path_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/path_2d_editor_plugin.o.d
+
+build tools/editor/plugins/path_editor_plugin.o: CXX $
+    tools/editor/plugins/path_editor_plugin.cpp
+  depfile = tools/editor/plugins/path_editor_plugin.o.d
+
+build tools/editor/plugins/polygon_2d_editor_plugin.o: CXX $
+    tools/editor/plugins/polygon_2d_editor_plugin.cpp
+  depfile = tools/editor/plugins/polygon_2d_editor_plugin.o.d
+
+build tools/editor/plugins/resource_preloader_editor_plugin.o: CXX $
+    tools/editor/plugins/resource_preloader_editor_plugin.cpp
+  depfile = tools/editor/plugins/resource_preloader_editor_plugin.o.d
+
+build tools/editor/plugins/rich_text_editor_plugin.o: CXX $
+    tools/editor/plugins/rich_text_editor_plugin.cpp
+  depfile = tools/editor/plugins/rich_text_editor_plugin.o.d
+
+build tools/editor/plugins/sample_editor_plugin.o: CXX $
+    tools/editor/plugins/sample_editor_plugin.cpp
+  depfile = tools/editor/plugins/sample_editor_plugin.o.d
+
+build tools/editor/plugins/sample_library_editor_plugin.o: CXX $
+    tools/editor/plugins/sample_library_editor_plugin.cpp
+  depfile = tools/editor/plugins/sample_library_editor_plugin.o.d
+
+build tools/editor/plugins/sample_player_editor_plugin.o: CXX $
+    tools/editor/plugins/sample_player_editor_plugin.cpp
+  depfile = tools/editor/plugins/sample_player_editor_plugin.o.d
+
+build tools/editor/plugins/script_editor_plugin.o: CXX $
+    tools/editor/plugins/script_editor_plugin.cpp
+  depfile = tools/editor/plugins/script_editor_plugin.o.d
+
+build tools/editor/plugins/shader_editor_plugin.o: CXX $
+    tools/editor/plugins/shader_editor_plugin.cpp
+  depfile = tools/editor/plugins/shader_editor_plugin.o.d
+
+build tools/editor/plugins/shader_graph_editor_plugin.o: CXX $
+    tools/editor/plugins/shader_graph_editor_plugin.cpp
+  depfile = tools/editor/plugins/shader_graph_editor_plugin.o.d
+
+build tools/editor/plugins/spatial_editor_plugin.o: CXX $
+    tools/editor/plugins/spatial_editor_plugin.cpp
+  depfile = tools/editor/plugins/spatial_editor_plugin.o.d
+
+build tools/editor/plugins/sprite_frames_editor_plugin.o: CXX $
+    tools/editor/plugins/sprite_frames_editor_plugin.cpp
+  depfile = tools/editor/plugins/sprite_frames_editor_plugin.o.d
+
+build tools/editor/plugins/sprite_region_editor_plugin.o: CXX $
+    tools/editor/plugins/sprite_region_editor_plugin.cpp
+  depfile = tools/editor/plugins/sprite_region_editor_plugin.o.d
+
+build tools/editor/plugins/stream_editor_plugin.o: CXX $
+    tools/editor/plugins/stream_editor_plugin.cpp
+  depfile = tools/editor/plugins/stream_editor_plugin.o.d
+
+build tools/editor/plugins/style_box_editor_plugin.o: CXX $
+    tools/editor/plugins/style_box_editor_plugin.cpp
+  depfile = tools/editor/plugins/style_box_editor_plugin.o.d
+
+build tools/editor/plugins/theme_editor_plugin.o: CXX $
+    tools/editor/plugins/theme_editor_plugin.cpp
+  depfile = tools/editor/plugins/theme_editor_plugin.o.d
+
+build tools/editor/plugins/tile_map_editor_plugin.o: CXX $
+    tools/editor/plugins/tile_map_editor_plugin.cpp
+  depfile = tools/editor/plugins/tile_map_editor_plugin.o.d
+
+build tools/editor/plugins/tile_set_editor_plugin.o: CXX $
+    tools/editor/plugins/tile_set_editor_plugin.cpp
+  depfile = tools/editor/plugins/tile_set_editor_plugin.o.d
+
+build tools/editor/progress_dialog.o: CXX tools/editor/progress_dialog.cpp
+  depfile = tools/editor/progress_dialog.o.d
+
+build tools/editor/project_export.o: CXX tools/editor/project_export.cpp
+  depfile = tools/editor/project_export.o.d
+
+build tools/editor/project_manager.o: CXX tools/editor/project_manager.cpp
+  depfile = tools/editor/project_manager.o.d
+
+build tools/editor/project_settings.o: CXX tools/editor/project_settings.cpp
+  depfile = tools/editor/project_settings.o.d
+
+build tools/editor/property_editor.o: CXX tools/editor/property_editor.cpp
+  depfile = tools/editor/property_editor.o.d
+
+build tools/editor/pvrtc_compress.o: CXX tools/editor/pvrtc_compress.cpp
+  depfile = tools/editor/pvrtc_compress.o.d
+
+build tools/editor/quick_open.o: CXX tools/editor/quick_open.cpp
+  depfile = tools/editor/quick_open.o.d
+
+build tools/editor/register_exporters.o: CXX $
+    tools/editor/register_exporters.cpp
+  depfile = tools/editor/register_exporters.o.d
+
+build tools/editor/reparent_dialog.o: CXX tools/editor/reparent_dialog.cpp
+  depfile = tools/editor/reparent_dialog.o.d
+
+build tools/editor/resources_dock.o: CXX tools/editor/resources_dock.cpp
+  depfile = tools/editor/resources_dock.o.d
+
+build tools/editor/run_settings_dialog.o: CXX $
+    tools/editor/run_settings_dialog.cpp
+  depfile = tools/editor/run_settings_dialog.o.d
+
+build tools/editor/scene_tree_dock.o: CXX tools/editor/scene_tree_dock.cpp
+  depfile = tools/editor/scene_tree_dock.o.d
+
+build tools/editor/scene_tree_editor.o: CXX tools/editor/scene_tree_editor.cpp
+  depfile = tools/editor/scene_tree_editor.o.d
+
+build tools/editor/scenes.o: CXX tools/editor/scenes.cpp
+  depfile = tools/editor/scenes.o.d
+
+build tools/editor/scenes_dock.o: CXX tools/editor/scenes_dock.cpp
+  depfile = tools/editor/scenes_dock.o.d
+
+build tools/editor/script_create_dialog.o: CXX $
+    tools/editor/script_create_dialog.cpp
+  depfile = tools/editor/script_create_dialog.o.d
+
+build tools/editor/script_editor_debugger.o: CXX $
+    tools/editor/script_editor_debugger.cpp
+  depfile = tools/editor/script_editor_debugger.o.d
+
+build tools/editor/settings_config_dialog.o: CXX $
+    tools/editor/settings_config_dialog.cpp
+  depfile = tools/editor/settings_config_dialog.o.d
+
+build tools/editor/spatial_editor_gizmos.o: CXX $
+    tools/editor/spatial_editor_gizmos.cpp
+  depfile = tools/editor/spatial_editor_gizmos.o.d
+
+build tools/pck/pck_packer.o: CXX tools/pck/pck_packer.cpp
+  depfile = tools/pck/pck_packer.o.d
+
+build platform/windows/export/export.o: CXX platform/windows/export/export.cpp
+  depfile = platform/windows/export/export.o.d
+
+build platform/android/export/export.o: CXX platform/android/export/export.cpp
+  depfile = platform/android/export/export.o.d
+
+build platform/x11/export/export.o: CXX platform/x11/export/export.cpp
+  depfile = platform/x11/export/export.o.d
+
+build platform/bb10/export/export.o: CXX platform/bb10/export/export.cpp
+  depfile = platform/bb10/export/export.o.d
+
+build platform/osx/export/export.o: CXX platform/osx/export/export.cpp
+  depfile = platform/osx/export/export.o.d
+
+build platform/javascript/export/export.o: CXX $
+    platform/javascript/export/export.cpp
+  depfile = platform/javascript/export/export.o.d
+
+build tools/editor/editor_icons.o: CXX tools/editor/editor_icons.cpp
+  depfile = tools/editor/editor_icons.o.d
+
+build tools/tool.a: STATIC_LIBRARY platform/windows/export/export.o $
+    platform/android/export/export.o platform/x11/export/export.o $
+    platform/bb10/export/export.o platform/osx/export/export.o $
+    platform/javascript/export/export.o tools/editor/array_property_edit.o $
+    tools/editor/dependency_editor.o tools/editor/project_settings.o $
+    tools/editor/editor_reimport_dialog.o tools/editor/register_exporters.o $
+    tools/editor/reparent_dialog.o tools/editor/editor_node.o $
+    tools/editor/editor_help.o tools/editor/project_manager.o $
+    tools/editor/code_editor.o tools/editor/settings_config_dialog.o $
+    tools/editor/create_dialog.o tools/editor/default_saver.o $
+    tools/editor/multi_node_edit.o tools/editor/editor_run.o $
+    tools/editor/resources_dock.o tools/editor/editor_fonts.o $
+    tools/editor/editor_log.o tools/editor/editor_resource_preview.o $
+    tools/editor/editor_run_script.o tools/editor/editor_file_dialog.o $
+    tools/editor/spatial_editor_gizmos.o tools/editor/inspector_dock.o $
+    tools/editor/script_create_dialog.o tools/editor/output_strings.o $
+    tools/editor/scenes_dock.o tools/editor/script_editor_debugger.o $
+    tools/editor/editor_selection.o tools/editor/property_editor.o $
+    tools/editor/editor_run_native.o tools/editor/editor_plugin.o $
+    tools/editor/scene_tree_editor.o tools/editor/editor_sub_scene.o $
+    tools/editor/editor_settings.o tools/editor/editor_path.o $
+    tools/editor/project_export.o tools/editor/import_settings.o $
+    tools/editor/optimized_save_dialog.o tools/editor/pane_drag.o $
+    tools/editor/groups_editor.o tools/editor/file_type_cache.o $
+    tools/editor/pvrtc_compress.o tools/editor/animation_editor.o $
+    tools/editor/call_dialog.o tools/editor/editor_dir_dialog.o $
+    tools/editor/scenes.o tools/editor/editor_file_system.o $
+    tools/editor/editor_import_export.o tools/editor/editor_data.o $
+    tools/editor/quick_open.o tools/editor/connections_dialog.o $
+    tools/editor/editor_vu.o tools/editor/progress_dialog.o $
+    tools/editor/console.o tools/editor/run_settings_dialog.o $
+    tools/editor/scene_tree_dock.o tools/editor/editor_icons.o $
+    tools/editor/plugins/shader_graph_editor_plugin.o $
+    tools/editor/plugins/stream_editor_plugin.o $
+    tools/editor/plugins/sample_editor_plugin.o $
+    tools/editor/plugins/light_occluder_2d_editor_plugin.o $
+    tools/editor/plugins/control_editor_plugin.o $
+    tools/editor/plugins/color_ramp_editor_plugin.o $
+    tools/editor/plugins/baked_light_baker.o $
+    tools/editor/plugins/animation_data_editor_plugin.o $
+    tools/editor/plugins/camera_editor_plugin.o $
+    tools/editor/plugins/collision_polygon_2d_editor_plugin.o $
+    tools/editor/plugins/mesh_editor_plugin.o $
+    tools/editor/plugins/cube_grid_theme_editor_plugin.o $
+    tools/editor/plugins/sprite_region_editor_plugin.o $
+    tools/editor/plugins/rich_text_editor_plugin.o $
+    tools/editor/plugins/collision_polygon_editor_plugin.o $
+    tools/editor/plugins/path_2d_editor_plugin.o $
+    tools/editor/plugins/particles_editor_plugin.o $
+    tools/editor/plugins/particles_2d_editor_plugin.o $
+    tools/editor/plugins/tile_map_editor_plugin.o $
+    tools/editor/plugins/baked_light_editor_plugin.o $
+    tools/editor/plugins/theme_editor_plugin.o $
+    tools/editor/plugins/animation_player_editor_plugin.o $
+    tools/editor/plugins/editor_preview_plugins.o $
+    tools/editor/plugins/animation_tree_editor_plugin.o $
+    tools/editor/plugins/tile_set_editor_plugin.o $
+    tools/editor/plugins/spatial_editor_plugin.o $
+    tools/editor/plugins/style_box_editor_plugin.o $
+    tools/editor/plugins/multimesh_editor_plugin.o $
+    tools/editor/plugins/baked_light_baker_cmpxchg.o $
+    tools/editor/plugins/polygon_2d_editor_plugin.o $
+    tools/editor/plugins/sprite_frames_editor_plugin.o $
+    tools/editor/plugins/path_editor_plugin.o $
+    tools/editor/plugins/shader_editor_plugin.o $
+    tools/editor/plugins/sample_library_editor_plugin.o $
+    tools/editor/plugins/navigation_polygon_editor_plugin.o $
+    tools/editor/plugins/collision_shape_2d_editor_plugin.o $
+    tools/editor/plugins/resource_preloader_editor_plugin.o $
+    tools/editor/plugins/canvas_item_editor_plugin.o $
+    tools/editor/plugins/sample_player_editor_plugin.o $
+    tools/editor/plugins/script_editor_plugin.o $
+    tools/editor/plugins/item_list_editor_plugin.o $
+    tools/editor/fileserver/editor_file_server.o $
+    tools/editor/io_plugins/editor_import_collada.o $
+    tools/editor/io_plugins/editor_scene_import_plugin.o $
+    tools/editor/io_plugins/editor_font_import_plugin.o $
+    tools/editor/io_plugins/editor_sample_import_plugin.o $
+    tools/editor/io_plugins/editor_translation_import_plugin.o $
+    tools/editor/io_plugins/editor_mesh_import_plugin.o $
+    tools/editor/io_plugins/editor_texture_import_plugin.o $
+    tools/editor/io_plugins/editor_atlas.o $
+    tools/editor/io_plugins/editor_scene_importer_fbxconv.o $
+    tools/collada/collada.o tools/docdump/doc_dump.o tools/doc/doc_data.o $
+    tools/pck/pck_packer.o
+
+build platform/wayland/godot_wayland.o: CXX platform/wayland/godot_wayland.cpp
+  depfile = platform/wayland/godot_wayland.o.d
+
+build platform/wayland/context_gl_wayland.o: CXX $
+    platform/wayland/context_gl_wayland.cpp
+  depfile = platform/wayland/context_gl_wayland.o.d
+
+build platform/wayland/os_wayland.o: CXX platform/wayland/os_wayland.cpp
+  depfile = platform/wayland/os_wayland.o.d
+
+build bin/godot: CXX_PROG platform/wayland/godot_wayland.o $
+    platform/wayland/context_gl_wayland.o platform/wayland/os_wayland.o $
+    main/main.a bin/tests/tests.a modules/modules.a drivers/drivers.a $
+    drivers/drivers0.a drivers/drivers1.a drivers/drivers2.a $
+    drivers/drivers3.a tools/tool.a scene/scene.a servers/servers.a $
+    core/core.a 

@@ -387,6 +387,11 @@ if selected_platform in platform_list:
 								buildtarget = targets, 
 								auto_build_solution=1, 
 								variant = variants) 		
+	#print env.Dump()
+
+	if 'ninja' in env:
+		if env['ninja'] == 'yes' :
+			env['ninja_begin'](env)
 
 else:
 

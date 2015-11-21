@@ -49,6 +49,7 @@ def get_opts():
 	('use_leak_sanitizer','Use llvm compiler sanitize memory leaks','no'),
 	('pulseaudio','Detect & Use pulseaudio','yes'),
 	('debug_release', 'Add debug symbols to release version','no'),
+	('ninja', 'Generate ninja buildfile', 'no'),
 	]
   
 def get_flags():
@@ -57,8 +58,14 @@ def get_flags():
 	('builtin_zlib', 'no'),
 	("theora","no"),
         ]
-			
 
+			
+def create(env):
+	if env['ninja'] == 'yes':
+		import ninja
+		return ninja.environment(env)		
+	else:
+		return env.Clone()					
 
 def configure(env):
 
