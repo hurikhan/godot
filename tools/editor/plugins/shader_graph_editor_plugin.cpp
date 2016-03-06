@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -2542,7 +2542,7 @@ void ShaderGraphView::_notification(int p_what) {
 
 void ShaderGraphView::add_node(int p_type, const Vector2 &location) {
 
-	if ((p_type==ShaderGraph::NODE_INPUT||p_type==ShaderGraph::NODE_INPUT) && graph->node_count(type, p_type)>0)
+	if (p_type==ShaderGraph::NODE_INPUT && graph->node_count(type, p_type)>0)
 		return;
 
 	List<int> existing;
@@ -2658,13 +2658,13 @@ void ShaderGraphEditor::edit(Ref<ShaderGraph> p_shader) {
 void ShaderGraphEditor::_add_node(int p_type) {
 
 	ShaderGraph::ShaderType shader_type=ShaderGraph::ShaderType(tabs->get_current_tab());
-
 	graph_edits[shader_type]->add_node(p_type, next_location);
 }
 
 void ShaderGraphEditor::_popup_requested(const Vector2 &p_position)
 {
-	next_location = get_local_mouse_pos();
+	Vector2 scroll_ofs=graph_edits[tabs->get_current_tab()]->get_graph_edit()->get_scroll_ofs();
+	next_location = get_local_mouse_pos() + scroll_ofs;
 	popup->set_global_pos(p_position);
 	popup->set_size( Size2( 200, 0) );
 	popup->popup();

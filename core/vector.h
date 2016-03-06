@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -42,7 +42,7 @@
 template<class T>
 class Vector {
 
-	mutable void* _ptr;
+	mutable T* _ptr;
  
  	// internal helpers
  
@@ -51,28 +51,43 @@ class Vector {
 		if (!_ptr)
  			return NULL;
  			
-		return reinterpret_cast<SafeRefCount*>(_ptr);
+		return reinterpret_cast<SafeRefCount*>((uint8_t*)_ptr-sizeof(int)-sizeof(SafeRefCount));
  	}
  	
 	_FORCE_INLINE_ int* _get_size() const  {
  	
 		if (!_ptr)
  			return NULL;
-		return reinterpret_cast<int*>(((uint8_t*)(_ptr))+sizeof(SafeRefCount));
+		return reinterpret_cast<int*>((uint8_t*)_ptr-sizeof(int));
  		
  	}
 	_FORCE_INLINE_ T* _get_data() const {
  	
 		if (!_ptr)
  			return NULL;
-		return reinterpret_cast<T*>(((uint8_t*)(_ptr))+sizeof(SafeRefCount)+sizeof(int));
+		return reinterpret_cast<T*>(_ptr);
  		
  	}
- 	
-	_FORCE_INLINE_ int _get_alloc_size(int p_elements) const {
- 	
- 		return  nearest_power_of_2(p_elements*sizeof(T)+sizeof(SafeRefCount)+sizeof(int));
- 	}
+
+	_FORCE_INLINE_ size_t _get_alloc_size(size_t p_elements) const {
+		return nearest_power_of_2_templated(p_elements*sizeof(T)+sizeof(SafeRefCount)+sizeof(int));
+	}
+
+	_FORCE_INLINE_ bool _get_alloc_size_checked(size_t p_elements, size_t *out) const {
+#if defined(_add_overflow) && defined(_mul_overflow)
+		size_t o;
+		size_t p;
+		if (_mul_overflow(p_elements, sizeof(T), &o)) return false;
+		if (_add_overflow(o, sizeof(SafeRefCount)+sizeof(int), &p)) return false;
+		*out = nearest_power_of_2_templated(p);
+		return true;
+#else
+		// Speed is more important than correctness here, do the operations unchecked
+		// and hope the best
+		*out = _get_alloc_size(p_elements);
+		return true;
+#endif
+	}
  	
 	void _unref(void *p_data);
 	
@@ -88,11 +103,11 @@ public:
 	_FORCE_INLINE_ void clear() { resize(0); }
 	
 	_FORCE_INLINE_ int size() const {
-		
-		if (!_ptr)
-			return 0;
+		int* size = _get_size();
+		if (size)
+			return *size;
 		else		
-			return *reinterpret_cast<int*>(((uint8_t*)(_ptr))+sizeof(SafeRefCount));
+			return 0;
 	}
 	_FORCE_INLINE_ bool empty() const { return _ptr == 0; }
 	Error resize(int p_size);
@@ -174,7 +189,7 @@ void Vector<T>::_unref(void *p_data) {
 	if (!p_data)
 		return;
 		
-	SafeRefCount *src = reinterpret_cast<SafeRefCount*>(p_data);
+	SafeRefCount *src = reinterpret_cast<SafeRefCount*>((uint8_t*)p_data-sizeof(int)-sizeof(SafeRefCount));
 	
 	if (!src->unref())
 		return; // still in use
@@ -189,7 +204,7 @@ void Vector<T>::_unref(void *p_data) {
 	}
 	
 	// free mem
-	memfree(p_data);
+	memfree((uint8_t*)p_data-sizeof(int)-sizeof(SafeRefCount));
 
 }
 
@@ -201,7 +216,8 @@ void Vector<T>::_copy_on_write() {
 	
 	if (_get_refcount()->get() > 1 ) {
 		/* in use by more than me */
-		SafeRefCount *src_new=(SafeRefCount *)memalloc(_get_alloc_size(*_get_size()));
+		void* mem_new = memalloc(_get_alloc_size(*_get_size()));
+		SafeRefCount *src_new=(SafeRefCount *)mem_new;
 		src_new->init();
 		int * _size = (int*)(src_new+1);
 		*_size=*_get_size();
@@ -215,7 +231,7 @@ void Vector<T>::_copy_on_write() {
 		}
 		
 		_unref(_ptr);
-		_ptr=src_new;
+		_ptr=_data;
 	}
 
 }
@@ -256,20 +272,23 @@ Error Vector<T>::resize(int p_size) {
 	// possibly changing size, copy on write
 	_copy_on_write();
 	
+	size_t alloc_size;
+	ERR_FAIL_COND_V(!_get_alloc_size_checked(p_size, &alloc_size), ERR_OUT_OF_MEMORY);
+
 	if (p_size>size()) {
 
 		if (size()==0) {
 			// alloc from scratch
-			_ptr = (T*)memalloc(_get_alloc_size(p_size));
-			ERR_FAIL_COND_V( !_ptr ,ERR_OUT_OF_MEMORY);
+			void* ptr=memalloc(alloc_size);
+			ERR_FAIL_COND_V( !ptr ,ERR_OUT_OF_MEMORY);
+			_ptr=(T*)((uint8_t*)ptr+sizeof(int)+sizeof(SafeRefCount));
 			_get_refcount()->init(); // init refcount
 			*_get_size()=0; // init size (currently, none)
 
 		} else {
-			
-			void *_ptrnew = (T*)memrealloc(_ptr,_get_alloc_size(p_size));
+			void *_ptrnew = (T*)memrealloc((uint8_t*)_ptr-sizeof(int)-sizeof(SafeRefCount), alloc_size);
 			ERR_FAIL_COND_V( !_ptrnew ,ERR_OUT_OF_MEMORY);
-			_ptr=_ptrnew;
+			_ptr=(T*)((uint8_t*)_ptrnew+sizeof(int)+sizeof(SafeRefCount));
 		}
 
 		// construct the newly created elements
@@ -291,10 +310,10 @@ Error Vector<T>::resize(int p_size) {
 			t->~T();
 		}
 
-		void *_ptrnew = (T*)memrealloc(_ptr,_get_alloc_size(p_size));
+		void *_ptrnew = (T*)memrealloc((uint8_t*)_ptr-sizeof(int)-sizeof(SafeRefCount), alloc_size);
 		ERR_FAIL_COND_V( !_ptrnew ,ERR_OUT_OF_MEMORY);
 		
-		_ptr=_ptrnew;
+		_ptr=(T*)((uint8_t*)_ptrnew+sizeof(int)+sizeof(SafeRefCount));
 		
 		*_get_size()=p_size;
 				

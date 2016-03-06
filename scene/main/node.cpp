@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -33,6 +33,7 @@
 #include "scene/resources/packed_scene.h"
 #include "io/resource_loader.h"
 #include "viewport.h"
+#include "instance_placeholder.h"
 
 VARIANT_ENUM_CAST(Node::PauseMode);
 
@@ -628,11 +629,11 @@ String Node::validate_child_name(const String& p_name) const {
 
 }
 
-void Node::_validate_child_name(Node *p_child) {
+void Node::_validate_child_name(Node *p_child, bool p_force_human_readable) {
 
 	/* Make sure the name is unique */
 
-	if (node_hrcr) {
+	if (node_hrcr || p_force_human_readable) {
 
 		//this approach to autoset node names is human readable but very slow
 		//it's turned on while running in the editor
@@ -700,11 +701,7 @@ void Node::_validate_child_name(Node *p_child) {
 		if (!unique) {
 
 			node_hrcr_count.ref();
-#ifdef DEBUG_ENABLED
-			String name = "@"+String(p_child->get_type_name())+itos(node_hrcr_count.get());
-#else
-			String name = "@"+itos(node_hrcr_count.get());
-#endif
+			String name = "@"+String(p_child->get_name())+"@"+itos(node_hrcr_count.get());
 			p_child->data.name=name;
 		}
 	}
@@ -732,23 +729,26 @@ void Node::_add_child_nocheck(Node* p_child,const StringName& p_name) {
 }
 
 
-void Node::add_child(Node *p_child) {
+void Node::add_child(Node *p_child, bool p_legible_unique_name) {
 
 	ERR_FAIL_NULL(p_child);
 	/* Fail if node has a parent */
-	ERR_EXPLAIN("Can't add child "+p_child->get_name()+" to itself.")
-	ERR_FAIL_COND( p_child==this ); // adding to itself!
+	if (p_child==this) {
+		ERR_EXPLAIN("Can't add child "+p_child->get_name()+" to itself.")
+		ERR_FAIL_COND( p_child==this ); // adding to itself!
+	}
 	ERR_EXPLAIN("Can't add child, already has a parent");
 	ERR_FAIL_COND( p_child->data.parent );
 	ERR_EXPLAIN("Can't add child while a notification is happening");
 	ERR_FAIL_COND( data.blocked > 0 );
 		
 	/* Validate name */
-	_validate_child_name(p_child);
+	_validate_child_name(p_child,p_legible_unique_name);
 
 	_add_child_nocheck(p_child,p_child->data.name);
 	
 }
+
 
 void Node::_propagate_validate_owner() {
 
@@ -803,6 +803,7 @@ void Node::remove_child(Node *p_child) {
 	}
 	
 	ERR_FAIL_COND( idx==-1 );
+	//ERR_FAIL_COND( p_child->data.blocked > 0 );
 
 	
 	//if (data.scene) { does not matter
@@ -857,7 +858,10 @@ Node *Node::_get_child_by_name(const StringName& p_name) const {
 
 Node *Node::_get_node(const NodePath& p_path) const {
 
-	ERR_FAIL_COND_V( !data.inside_tree && p_path.is_absolute(), NULL );
+	if (!data.inside_tree && p_path.is_absolute()) {
+		ERR_EXPLAIN("Can't use get_node() with absolute paths from outside the active scene tree.");
+		ERR_FAIL_V(NULL);
+	}
 	
 	Node *current=NULL;	
 	Node *root=NULL;
@@ -1468,7 +1472,14 @@ Node *Node::duplicate(bool p_use_instancing) const {
 
 	bool instanced=false;
 
-	if (p_use_instancing && get_filename()!=String()) {
+	if (cast_to<InstancePlaceholder>()) {
+
+		const InstancePlaceholder *ip = cast_to<const InstancePlaceholder>();
+		InstancePlaceholder *nip = memnew( InstancePlaceholder );
+		nip->set_instance_path( ip->get_instance_path() );
+		node=nip;
+
+	} else if (p_use_instancing && get_filename()!=String()) {
 
 		Ref<PackedScene> res = ResourceLoader::load(get_filename());
 		ERR_FAIL_COND_V(res.is_null(),NULL);
@@ -1506,6 +1517,15 @@ Node *Node::duplicate(bool p_use_instancing) const {
 	}
 
 	node->set_name(get_name());
+
+	List<GroupInfo> gi;
+	get_groups(&gi);
+	for (List<GroupInfo>::Element *E=gi.front();E;E=E->next()) {
+
+		node->add_to_group(E->get().name, E->get().persistent);
+	}
+
+	_duplicate_signals(this, node);
 
 	for(int i=0;i<get_child_count();i++) {
 
@@ -1984,7 +2004,7 @@ void Node::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("set_name","name"),&Node::set_name);
 	ObjectTypeDB::bind_method(_MD("get_name"),&Node::get_name);
-	ObjectTypeDB::bind_method(_MD("add_child","node:Node"),&Node::add_child);
+	ObjectTypeDB::bind_method(_MD("add_child","node:Node","legible_unique_name"),&Node::add_child,DEFVAL(false));
 	ObjectTypeDB::bind_method(_MD("remove_child","node:Node"),&Node::remove_child);
 	//ObjectTypeDB::bind_method(_MD("remove_and_delete_child","node:Node"),&Node::remove_and_delete_child);
 	ObjectTypeDB::bind_method(_MD("get_child_count"),&Node::get_child_count);
@@ -2002,7 +2022,7 @@ void Node::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("is_greater_than","node:Node"),&Node::is_greater_than);
 	ObjectTypeDB::bind_method(_MD("get_path"),&Node::get_path);
 	ObjectTypeDB::bind_method(_MD("get_path_to","node:Node"),&Node::get_path_to);
-	ObjectTypeDB::bind_method(_MD("add_to_group","group"),&Node::add_to_group,DEFVAL(false));
+	ObjectTypeDB::bind_method(_MD("add_to_group","group","persistent"),&Node::add_to_group,DEFVAL(false));
 	ObjectTypeDB::bind_method(_MD("remove_from_group","group"),&Node::remove_from_group);
 	ObjectTypeDB::bind_method(_MD("is_in_group","group"),&Node::is_in_group);
 	ObjectTypeDB::bind_method(_MD("move_child","child_node:Node","to_pos"),&Node::move_child);
@@ -2039,6 +2059,10 @@ void Node::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("duplicate:Node","use_instancing"),&Node::duplicate,DEFVAL(false));
 	ObjectTypeDB::bind_method(_MD("replace_by","node:Node","keep_data"),&Node::replace_by,DEFVAL(false));
 
+	ObjectTypeDB::bind_method(_MD("set_scene_instance_load_placeholder","load_placeholder"),&Node::set_scene_instance_load_placeholder);
+	ObjectTypeDB::bind_method(_MD("get_scene_instance_load_placeholder"),&Node::get_scene_instance_load_placeholder);
+
+
 	ObjectTypeDB::bind_method(_MD("get_viewport"),&Node::get_viewport);
 
 	ObjectTypeDB::bind_method(_MD("queue_free"),&Node::queue_delete);
@@ -2060,6 +2084,8 @@ void Node::_bind_methods() {
 	BIND_CONSTANT( NOTIFICATION_UNPARENTED );
 	BIND_CONSTANT( NOTIFICATION_PAUSED );
 	BIND_CONSTANT( NOTIFICATION_UNPAUSED );
+	BIND_CONSTANT( NOTIFICATION_INSTANCED );
+
 
 
 	BIND_CONSTANT( PAUSE_MODE_INHERIT );

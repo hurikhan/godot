@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -149,7 +149,7 @@ class ShaderGraphView : public Node {
 	void _end_node_move();
 	void _move_node(int p_id,const Vector2& p_to);
 	void _duplicate_nodes_request();
-    void _duplicate_nodes(const Array &p_nodes);
+	void _duplicate_nodes(const Array &p_nodes);
 	void _delete_nodes_request();
 
 

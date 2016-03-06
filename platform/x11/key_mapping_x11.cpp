@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -97,7 +97,7 @@ static _XTranslatePair _xkeysym_to_keycode[]={
 	{ XK_KP_Enter,		      KEY_KP_ENTER },
 	{ XK_KP_Multiply,	      KEY_KP_MULTIPLY},
 	{ XK_KP_Divide,		     KEY_KP_DIVIDE},
-	{ XK_KP_Subtract,		KEY_KP_SUBSTRACT},
+	{ XK_KP_Subtract,		KEY_KP_SUBTRACT},
 	{ XK_KP_Add,		KEY_KP_ADD},
 	{ XK_KP_0,		KEY_KP_0},
 	{ XK_KP_1,		KEY_KP_1},

@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -39,6 +39,7 @@
 #include "scene/gui/texture_frame.h"
 #include "scene/gui/text_edit.h"
 #include "scene/gui/check_button.h"
+#include "scene/gui/split_container.h"
 #include "scene_tree_editor.h"
 
 /**
@@ -113,6 +114,7 @@ class CustomPropertyEditor : public Popup {
 	void _action_pressed(int p_which);
 	void _type_create_selected(int p_idx);
 
+
 	void _color_changed(const Color& p_color);
 	void _draw_easing();
 	void _menu_option(int p_which);
@@ -147,6 +149,7 @@ class PropertyEditor : public Control {
 	Tree *tree;
 	Label *top_label;
 	//Object *object;
+	LineEdit *search_box;
 
 	Object* obj;
 
@@ -160,8 +163,11 @@ class PropertyEditor : public Control {
 	bool keying;
 	bool read_only;
 	bool show_categories;
+	bool show_type_icons;
 	float refresh_countdown;
 	bool use_doc_hints;
+	bool use_filter;
+	bool subsection_selectable;
 
 	HashMap<String,String> pending;
 	String selected_property;
@@ -187,6 +193,7 @@ class PropertyEditor : public Control {
 	virtual void _changed_callback(Object *p_changed,const char * p_what);
 	virtual void _changed_callbacks(Object *p_changed,const String& p_callback);
 
+	void _check_reload_status(const String&p_name,TreeItem* item);
 
 	void _edit_button(Object *p_item, int p_column, int p_button);
 
@@ -200,6 +207,8 @@ class PropertyEditor : public Control {
 
 	void _refresh_item(TreeItem *p_item);
 	void _set_range_def(Object *p_item, String prop, float p_frame);
+
+	void _filter_changed(const String& p_text);
 
 	UndoRedo *undo_redo;
 protected:
@@ -230,10 +239,48 @@ public:
 
 	void set_show_categories(bool p_show);
 	void set_use_doc_hints(bool p_enable) { use_doc_hints=p_enable; }
-	
+
+	void set_use_filter(bool p_use);
+	void register_text_enter(Node *p_line_edit);
+
+	void set_subsection_selectable(bool p_selectable);
+
 	PropertyEditor();	
 	~PropertyEditor();
 
+};
+
+
+class SectionedPropertyEditorFilter;
+
+class SectionedPropertyEditor : public HBoxContainer {
+
+
+	OBJ_TYPE(SectionedPropertyEditor,HBoxContainer);
+
+	ObjectID obj;
+
+	ItemList *sections;
+	SectionedPropertyEditorFilter *filter;
+	PropertyEditor *editor;
+
+
+	static void _bind_methods();
+	void _section_selected(int p_which);
+
+public:
+
+	PropertyEditor *get_property_editor();
+	void edit(Object* p_object);
+	String get_full_item_path(const String& p_item);
+
+	void set_current_section(const String& p_section);
+	String get_current_section() const;
+
+	void update_category_list();
+
+	SectionedPropertyEditor();
+	~SectionedPropertyEditor();
 };
 
 #endif

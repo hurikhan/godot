@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -472,7 +472,7 @@ bool test_26() {
 	{
 		printf("%ls\n", regexp.get_capture(i).c_str());
 	}
-	return res;
+	return (res>=0);
 };
 
 struct test_27_data {
@@ -904,7 +904,7 @@ MainLoop* test() {
 	OS::get_singleton()->print("***TOTALS!***\n");
 	OS::get_singleton()->print("*************\n");
 	
-	OS::get_singleton()->print("Passed %i of %i tests\n",count,passed);
+	OS::get_singleton()->print("Passed %i of %i tests\n", passed, count);
 	
 	return NULL;
 }

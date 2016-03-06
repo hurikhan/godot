@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -172,11 +172,8 @@ ShaderTextEditor::ShaderTextEditor() {
 
 void ShaderEditor::_menu_option(int p_option) {
 
-	int selected = tab_container->get_current_tab();
-	if (selected<0 || selected>=tab_container->get_child_count())
-		return;
 
-	ShaderTextEditor *current = tab_container->get_child(selected)->cast_to<ShaderTextEditor>();
+	ShaderTextEditor *current = tab_container->get_current_tab_control()->cast_to<ShaderTextEditor>();
 	if (!current)
 		return;
 
@@ -234,6 +231,11 @@ void ShaderEditor::_menu_option(int p_option) {
 }
 
 void ShaderEditor::_tab_changed(int p_which) {
+
+	ShaderTextEditor *shader_editor = tab_container->get_tab_control(p_which)->cast_to<ShaderTextEditor>();
+
+	if (shader_editor && is_inside_tree())
+		shader_editor->get_text_edit()->grab_focus();
 
 	ensure_select_current();
 }
@@ -576,9 +578,9 @@ ShaderEditorPlugin::ShaderEditorPlugin(EditorNode *p_node, bool p_2d) {
 	shader_editor = memnew( ShaderEditor );
 	_2d=p_2d;
 	if (p_2d)
-		add_custom_control(CONTAINER_CANVAS_EDITOR_BOTTOM,shader_editor);
+		add_control_to_container(CONTAINER_CANVAS_EDITOR_BOTTOM,shader_editor);
 	else
-		add_custom_control(CONTAINER_SPATIAL_EDITOR_BOTTOM,shader_editor);
+		add_control_to_container(CONTAINER_SPATIAL_EDITOR_BOTTOM,shader_editor);
 //	editor->get_viewport()->add_child(shader_editor);
 //	shader_editor->set_area_as_parent_rect();
 

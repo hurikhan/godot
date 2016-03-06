@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -40,6 +40,12 @@
 class EditorNode;
 class Spatial;
 class Camera;
+class EditorSelection;
+class EditorImportExport;
+class EditorSettings;
+class SpatialEditorGizmo;
+class EditorImportPlugin;
+class EditorExportPlugin;
 
 class EditorPlugin : public Node {
 	
@@ -70,11 +76,27 @@ public:
 		CONTAINER_CANVAS_EDITOR_BOTTOM
 	};
 
+	enum DockSlot {
+		DOCK_SLOT_LEFT_UL,
+		DOCK_SLOT_LEFT_BL,
+		DOCK_SLOT_LEFT_UR,
+		DOCK_SLOT_LEFT_BR,
+		DOCK_SLOT_RIGHT_UL,
+		DOCK_SLOT_RIGHT_BL,
+		DOCK_SLOT_RIGHT_UR,
+		DOCK_SLOT_RIGHT_BR,
+		DOCK_SLOT_MAX
+	};
+
 	//TODO: send a resoucre for editing to the editor node?
 
-	void add_custom_control(CustomControlContainer p_location,Control *p_control);
+	void add_control_to_container(CustomControlContainer p_location, Control *p_control);
+	void add_control_to_bottom_panel(Control *p_control, const String &p_title);
+	void add_control_to_dock(DockSlot p_slot,Control *p_control);
+	void remove_control_from_docks(Control *p_control);
+	void remove_control_from_bottom_panel(Control *p_control);
 
-	virtual bool create_spatial_gizmo(Spatial* p_spatial);
+	virtual Ref<SpatialEditorGizmo> create_spatial_gizmo(Spatial* p_spatial);
 	virtual bool forward_input_event(const InputEvent& p_event);
 	virtual bool forward_spatial_input_event(Camera* p_camera,const InputEvent& p_event);
 	virtual String get_name() const;
@@ -92,6 +114,20 @@ public:
 	virtual bool get_remove_list(List<Node*> *p_list);
 	virtual void set_window_layout(Ref<ConfigFile> p_layout);
 	virtual void get_window_layout(Ref<ConfigFile> p_layout);
+	virtual void edited_scene_changed(){}; // if changes are pending in editor, apply them
+
+
+	Control *get_base_control();
+
+	void add_import_plugin(const Ref<EditorImportPlugin>& p_editor_import);
+	void remove_import_plugin(const Ref<EditorImportPlugin>& p_editor_import);
+
+	void add_export_plugin(const Ref<EditorExportPlugin>& p_editor_export);
+	void remove_export_plugin(const Ref<EditorExportPlugin>& p_editor_export);
+
+	EditorSelection* get_selection();
+	//EditorImportExport *get_import_export();
+	EditorSettings *get_editor_settings();
 
 	virtual void restore_global_state();
 	virtual void save_global_state();
@@ -102,6 +138,7 @@ public:
 };
 
 VARIANT_ENUM_CAST( EditorPlugin::CustomControlContainer );
+VARIANT_ENUM_CAST( EditorPlugin::DockSlot );
 
 
 typedef EditorPlugin* (*EditorPluginCreateFunc)(EditorNode *);

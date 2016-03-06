@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -57,11 +57,12 @@ void EditorScenePostImport::_bind_methods() {
 
 }
 
-Error EditorScenePostImport::post_import(Node* p_scene) {
+Node *EditorScenePostImport::post_import(Node* p_scene) {
 
 	if (get_script_instance())
-		return Error(int(get_script_instance()->call("post_import",p_scene)));
-	return OK;
+		return get_script_instance()->call("post_import",p_scene);
+
+	return p_scene;
 }
 
 EditorScenePostImport::EditorScenePostImport() {
@@ -1814,8 +1815,8 @@ Node* EditorSceneImportPlugin::_fix_node(Node *p_node,Node *p_root,Map<Ref<Mesh>
 
 			for(int i=0;i<portal_points.size()-1;i++) {
 
-				float a = portal_points[i].atan2();
-				float b = portal_points[i+1].atan2();
+				float a = portal_points[i].angle();
+				float b = portal_points[i+1].angle();
 
 				if (a>b) {
 					SWAP( portal_points[i], portal_points[i+1] );
@@ -2748,8 +2749,8 @@ Error EditorSceneImportPlugin::import2(Node *scene, const String& p_dest_path, c
 
 
 	if (post_import_script.is_valid()) {
-		err = post_import_script->post_import(scene);
-		if (err) {
+		scene = post_import_script->post_import(scene);
+		if (!scene) {
 			EditorNode::add_io_error("Error running Post-Import script: '"+post_import_script_path);
 			return err;
 		}

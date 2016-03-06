@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -218,7 +218,8 @@ struct _TileMapEditorCopyData {
 
 bool TileMapEditor::forward_input_event(const InputEvent& p_event) {
 
-	if (!node || !node->get_tileset().is_valid())
+
+	if (!node || !node->get_tileset().is_valid() || !node->is_visible())
 		return false;
 
 	Matrix32 xform = CanvasItemEditor::get_singleton()->get_canvas_transform() * node->get_global_transform();
@@ -532,6 +533,8 @@ void TileMapEditor::_canvas_draw() {
 
 		if (node->get_half_offset()!=TileMap::HALF_OFFSET_X) {
 
+			int max_lines=2000; //avoid crash if size too smal
+
 			for(int i=(si.pos.x)-1;i<=(si.pos.x+si.size.x);i++) {
 
 				Vector2 from = xform.xform(node->map_to_world(Vector2(i,si.pos.y)));
@@ -539,10 +542,12 @@ void TileMapEditor::_canvas_draw() {
 
 				Color col=i==0?Color(1,0.8,0.2,0.5):Color(1,0.3,0.1,0.2);
 				canvas_item_editor->draw_line(from,to,col,1);
-
+				if (max_lines--==0)
+					break;
 			}
 		} else {
 
+			int max_lines=10000; //avoid crash if size too smal
 
 			for(int i=(si.pos.x)-1;i<=(si.pos.x+si.size.x);i++) {
 
@@ -557,10 +562,16 @@ void TileMapEditor::_canvas_draw() {
 					Vector2 to = xform.xform(node->map_to_world(Vector2(i,j+1),true)+ofs);
 					Color col=i==0?Color(1,0.8,0.2,0.5):Color(1,0.3,0.1,0.2);
 					canvas_item_editor->draw_line(from,to,col,1);
+
+					if (max_lines--==0)
+						break;
+
 				}
 
 			}
 		}
+
+		int max_lines=10000; //avoid crash if size too smal
 
 		if (node->get_half_offset()!=TileMap::HALF_OFFSET_Y) {
 
@@ -571,6 +582,9 @@ void TileMapEditor::_canvas_draw() {
 
 				Color col=i==0?Color(1,0.8,0.2,0.5):Color(1,0.3,0.1,0.2);
 				canvas_item_editor->draw_line(from,to,col,1);
+
+				if (max_lines--==0)
+					break;
 
 			}
 		} else {
@@ -589,6 +603,10 @@ void TileMapEditor::_canvas_draw() {
 					Vector2 to = xform.xform(node->map_to_world(Vector2(j+1,i),true)+ofs);
 					Color col=i==0?Color(1,0.8,0.2,0.5):Color(1,0.3,0.1,0.2);
 					canvas_item_editor->draw_line(from,to,col,1);
+
+					if (max_lines--==0)
+						break;
+
 				}
 
 			}
@@ -675,12 +693,9 @@ void TileMapEditor::_canvas_draw() {
 					Ref<Texture> t = ts->tile_get_texture(st);
 					if (t.is_valid()) {
 						Vector2 from = node->map_to_world(over_tile)+node->get_cell_draw_offset();
+						Vector2 tile_ofs = ts->tile_get_texture_offset(st);
 						Rect2 r = ts->tile_get_region(st);
 						Size2 sc = xform.get_scale();
-						if (mirror_x->is_pressed())
-							sc.x*=-1.0;
-						if (mirror_y->is_pressed())
-							sc.y*=-1.0;
 
 						Rect2 rect;
 						if (r==Rect2()) {
@@ -690,23 +705,47 @@ void TileMapEditor::_canvas_draw() {
 							rect=Rect2(from,r.get_size());
 						}
 
+						bool transp = transpose->is_pressed();
+						bool flip_h = mirror_x->is_pressed();
+						bool flip_v = mirror_y->is_pressed();
+
+						if (rect.size.y > rect.size.x) {
+							if ((flip_h && (flip_v || transp)) || (flip_v && !transp))
+								tile_ofs.y += rect.size.y - rect.size.x;
+						} else if (rect.size.y < rect.size.x) {
+							if ((flip_v && (flip_h || transp)) || (flip_h && !transp))
+								tile_ofs.x += rect.size.x - rect.size.y;
+						}
+
+						if (transp) {
+							SWAP(tile_ofs.x, tile_ofs.y);
+						}
+
+						if (flip_h) {
+							sc.x*=-1.0;
+							tile_ofs.x*=-1.0;
+						}
+						if (flip_v) {
+							sc.y*=-1.0;
+							tile_ofs.y*=-1.0;
+						}
 
 						if (node->get_tile_origin()==TileMap::TILE_ORIGIN_TOP_LEFT) {
-							rect.pos+=ts->tile_get_texture_offset(st);
+							rect.pos+=tile_ofs;
 
 						} else if (node->get_tile_origin()==TileMap::TILE_ORIGIN_CENTER) {
 							rect.pos+=node->get_cell_size()/2;
 							Vector2 s = r.size;
 
-							Vector2 center = (s/2) - ts->tile_get_texture_offset(st);
+							Vector2 center = (s/2) - tile_ofs;
 
 
-							if (mirror_x->is_pressed())
+							if (flip_h)
 								rect.pos.x-=s.x-center.x;
 							else
 								rect.pos.x-=center.x;
 
-							if (mirror_y->is_pressed())
+							if (flip_v)
 								rect.pos.y-=s.y-center.y;
 							else
 								rect.pos.y-=center.y;
@@ -717,10 +756,10 @@ void TileMapEditor::_canvas_draw() {
 
 						if (r==Rect2()) {
 
-							canvas_item_editor->draw_texture_rect(t,rect,false,Color(1,1,1,0.5),transpose->is_pressed());
+							canvas_item_editor->draw_texture_rect(t,rect,false,Color(1,1,1,0.5),transp);
 						} else {
 
-							canvas_item_editor->draw_texture_rect_region(t,rect,r,Color(1,1,1,0.5),transpose->is_pressed());
+							canvas_item_editor->draw_texture_rect_region(t,rect,r,Color(1,1,1,0.5),transp);
 						}
 					}
 				}

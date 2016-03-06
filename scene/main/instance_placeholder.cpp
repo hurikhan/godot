@@ -14,20 +14,33 @@ bool InstancePlaceholder::_set(const StringName& p_name, const Variant& p_value)
 
 bool InstancePlaceholder::_get(const StringName& p_name,Variant &r_ret) const{
 
+	for (const List<PropSet>::Element *E=stored_values.front();E;E=E->next()) {
+		if (E->get().name==p_name) {
+			r_ret=E->get().value;
+			return true;
+		}
+	}
 	return false;
 }
 void InstancePlaceholder::_get_property_list( List<PropertyInfo> *p_list) const{
 
+	for (const List<PropSet>::Element *E=stored_values.front();E;E=E->next()) {
+		PropertyInfo pi;
+		pi.name=E->get().name;
+		pi.type=E->get().value.get_type();
+		pi.usage=PROPERTY_USAGE_STORAGE;
 
+		p_list->push_back(pi);
+	}
 }
 
 
-void InstancePlaceholder::set_path(const String& p_name) {
+void InstancePlaceholder::set_instance_path(const String& p_name) {
 
 	path=p_name;
 }
 
-String InstancePlaceholder::get_path() const {
+String InstancePlaceholder::get_instance_path() const {
 
 	return path;
 }
@@ -66,6 +79,7 @@ void InstancePlaceholder::replace_by_instance(const Ref<PackedScene> &p_custom_s
 void InstancePlaceholder::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("replace_by_instance","custom_scene:PackedScene"),&InstancePlaceholder::replace_by_instance,DEFVAL(Variant()));
+	ObjectTypeDB::bind_method(_MD("get_instance_path"),&InstancePlaceholder::get_instance_path);
 }
 
 InstancePlaceholder::InstancePlaceholder() {

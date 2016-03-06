@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -56,6 +56,9 @@
 #import "Appirater.h"
 #endif
 
+Error _shell_open(String);
+void _set_keep_screen_on(bool p_enabled);
+
 Error _shell_open(String p_uri) {
 	NSString* url = [[NSString alloc] initWithUTF8String:p_uri.utf8().get_data()];
 
@@ -66,6 +69,10 @@ Error _shell_open(String p_uri) {
 	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
 	[url release];
 	return OK;
+};
+
+void _set_keep_screen_on(bool p_enabled) {
+	[[UIApplication sharedApplication] setIdleTimerDisabled:(BOOL)p_enabled];
 };
 
 @implementation AppDelegate
@@ -210,8 +217,8 @@ static int frame_count = 0;
 
 	[application setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
 	// disable idle timer
-	application.idleTimerDisabled = YES;
-
+	//application.idleTimerDisabled = YES;
+    
 	//Create a full-screen window
 	window = [[UIWindow alloc] initWithFrame:rect];
 	//window.autoresizesSubviews = YES;
@@ -236,6 +243,7 @@ static int frame_count = 0;
 	view_controller.view = glView;
 	window.rootViewController = view_controller;
 
+	_set_keep_screen_on(bool(GLOBAL_DEF("display/keep_screen_on",true)) ? YES : NO);
 	glView.useCADisplayLink = bool(GLOBAL_DEF("display.iOS/use_cadisplaylink",true)) ? YES : NO;
 	printf("cadisaplylink: %d", glView.useCADisplayLink);
 	glView.animationInterval = 1.0 / kRenderingFrequency;

@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -481,10 +481,10 @@ Error EditorSampleImportPlugin::import(const String& p_path, const Ref<ResourceI
 				float mu = pos-Math::floor(pos);
 				int ipos = int(Math::floor(pos));
 
-				float y0=data[MAX(0,ipos-i)];
-				float y1=data[ipos];
-				float y2=data[MIN(len-1,ipos+1)];
-				float y3=data[MIN(len-1,ipos+2)];
+				float y0=data[MAX(0,ipos-1)*chans+c];
+				float y1=data[ipos*chans+c];
+				float y2=data[MIN(len-1,ipos+1)*chans+c];
+				float y3=data[MIN(len-1,ipos+2)*chans+c];
 
 				float mu2 = mu*mu;
 				float a0 = y3 - y2 - y0 + y1;
@@ -859,7 +859,7 @@ Vector<uint8_t> EditorSampleExportPlugin::custom_export(String& p_path,const Ref
 
 	ERR_FAIL_COND_V(err!=OK,Vector<uint8_t>());
 
-	p_path=p_path.basename()+".smp";
+	p_path=p_path.basename()+".converted.smp";
 	return FileAccess::get_file_as_array(savepath);
 
 }

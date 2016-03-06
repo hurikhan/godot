@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -58,7 +58,7 @@ void StreamPlayer::sp_set_mix_rate(int p_rate){
 
 bool StreamPlayer::sp_mix(int32_t *p_buffer,int p_frames) {
 
-	if (resampler.is_ready()) {
+	if (resampler.is_ready() && !paused) {
 		return resampler.mix(p_buffer,p_frames);
 	}
 
@@ -75,7 +75,10 @@ void StreamPlayer::sp_update() {
 			//check that all this audio has been flushed before stopping the stream
 			int to_mix = resampler.get_total() - resampler.get_todo();
 			if (to_mix==0) {
-				stop();
+				if (!stop_request) {
+					stop_request=true;
+					call_deferred("stop");
+				}
 				return;
 			}
 
@@ -97,11 +100,22 @@ void StreamPlayer::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 
 			//set_idle_process(false); //don't annoy
-			if (stream.is_valid() && autoplay && !get_tree()->is_editor_hint())
-				play();
+			if (stream.is_valid() && !get_tree()->is_editor_hint()) {
+				if (resume_pos>=0) {
+					play(resume_pos);
+					resume_pos=-1;
+				} else if (autoplay) {
+					play();
+					autoplay = false; //this line fix autoplay issues
+				}
+			}
+
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 
+			if (is_playing()) {
+				resume_pos=get_pos();
+			}
 			stop(); //wathever it may be doing, stop
 		} break;
 	}
@@ -164,8 +178,10 @@ void StreamPlayer::stop() {
 
 	//_THREAD_SAFE_METHOD_
 	AudioServer::get_singleton()->stream_set_active(stream_rid,false);
+	stop_request=false;
 	playback->stop();
 	resampler.flush();
+	emit_signal("finished");
 
 	//set_idle_process(false);
 }
@@ -329,7 +345,7 @@ void StreamPlayer::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("set_stream","stream:Stream"),&StreamPlayer::set_stream);
 	ObjectTypeDB::bind_method(_MD("get_stream:Stream"),&StreamPlayer::get_stream);
 
-	ObjectTypeDB::bind_method(_MD("play"),&StreamPlayer::play,DEFVAL(0));
+	ObjectTypeDB::bind_method(_MD("play","offset"),&StreamPlayer::play,DEFVAL(0));
 	ObjectTypeDB::bind_method(_MD("stop"),&StreamPlayer::stop);
 
 	ObjectTypeDB::bind_method(_MD("is_playing"),&StreamPlayer::is_playing);
@@ -374,6 +390,8 @@ void StreamPlayer::_bind_methods() {
 	ADD_PROPERTY( PropertyInfo(Variant::BOOL, "stream/paused"), _SCS("set_paused"), _SCS("is_paused") );
 	ADD_PROPERTY( PropertyInfo(Variant::INT, "stream/loop_restart_time"), _SCS("set_loop_restart_time"), _SCS("get_loop_restart_time") );
 	ADD_PROPERTY( PropertyInfo(Variant::INT, "stream/buffering_ms"), _SCS("set_buffering_msec"), _SCS("get_buffering_msec") );
+
+	ADD_SIGNAL(MethodInfo("finished"));
 }
 
 
@@ -389,6 +407,8 @@ StreamPlayer::StreamPlayer() {
 	stream_rid=AudioServer::get_singleton()->audio_stream_create(&internal_stream);
 	buffering_ms=500;
 	loop_point=0;
+	stop_request=false;
+	resume_pos=-1;
 
 }
 

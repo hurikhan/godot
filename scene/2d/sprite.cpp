@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -188,13 +188,15 @@ bool Sprite::is_region() const{
 
 void Sprite::set_region_rect(const Rect2& p_region_rect) {
 
-	bool changed=region_rect!=p_region_rect;
+	if (region_rect==p_region_rect)
+		return;
+
 	region_rect=p_region_rect;
-	if (region && changed) {
-		update();
+
+	if (region)
 		item_rect_changed();
-		_change_notify("region_rect");
-	}
+
+	_change_notify("region_rect");
 }
 
 Rect2 Sprite::get_region_rect() const {

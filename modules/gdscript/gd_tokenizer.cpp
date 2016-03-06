@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -88,6 +88,7 @@ const char* GDTokenizer::token_names[TK_MAX]={
 "func",
 "class",
 "extends",
+"onready",
 "tool",
 "static",
 "export",
@@ -98,6 +99,7 @@ const char* GDTokenizer::token_names[TK_MAX]={
 "assert",
 "yield",
 "signal",
+"breakpoint",
 "'['",
 "']'",
 "'{'",
@@ -110,6 +112,7 @@ const char* GDTokenizer::token_names[TK_MAX]={
 "'?'",
 "':'",
 "'\\n'",
+"PI",
 "Error",
 "EOF",
 "Cursor"};
@@ -259,6 +262,7 @@ void GDTokenizerText::_advance() {
 				}
 
 				INCPOS(1);
+				line++;
 
 				while(GETCHAR(0)==' ' || GETCHAR(0)=='\t') {
 					INCPOS(1);
@@ -774,20 +778,15 @@ void GDTokenizerText::_advance() {
 							{Variant::INT,"int"},
 							{Variant::REAL,"float"},
 							{Variant::STRING,"String"},
-							{Variant::VECTOR2,"vec2"},
 							{Variant::VECTOR2,"Vector2"},
 							{Variant::RECT2,"Rect2"},
 							{Variant::MATRIX32,"Matrix32"},
-							{Variant::MATRIX32,"mat32"},
-							{Variant::VECTOR3,"vec3"},
 							{Variant::VECTOR3,"Vector3"},
 							{Variant::_AABB,"AABB"},
 							{Variant::_AABB,"Rect3"},
 							{Variant::PLANE,"Plane"},
 							{Variant::QUAT,"Quat"},
-							{Variant::MATRIX3,"mat3"},
 							{Variant::MATRIX3,"Matrix3"},
-							{Variant::TRANSFORM,"trn"},
 							{Variant::TRANSFORM,"Transform"},
 							{Variant::COLOR,"Color"},
 							{Variant::IMAGE,"Image"},
@@ -795,7 +794,6 @@ void GDTokenizerText::_advance() {
 							{Variant::OBJECT,"Object"},
 							{Variant::INPUT_EVENT,"InputEvent"},
 							{Variant::NODE_PATH,"NodePath"},
-							{Variant::DICTIONARY,"dict"},
 							{Variant::DICTIONARY,"Dictionary"},
 							{Variant::ARRAY,"Array"},
 							{Variant::RAW_ARRAY,"RawArray"},
@@ -854,9 +852,9 @@ void GDTokenizerText::_advance() {
 								{TK_OP_AND,"and"},
 								//func
 								{TK_PR_FUNCTION,"func"},
-								{TK_PR_FUNCTION,"function"},
 								{TK_PR_CLASS,"class"},
 								{TK_PR_EXTENDS,"extends"},
+								{TK_PR_ONREADY,"onready"},
 								{TK_PR_TOOL,"tool"},
 								{TK_PR_STATIC,"static"},
 								{TK_PR_EXPORT,"export"},
@@ -866,6 +864,7 @@ void GDTokenizerText::_advance() {
 								{TK_PR_ASSERT,"assert"},
 								{TK_PR_YIELD,"yield"},
 								{TK_PR_SIGNAL,"signal"},
+								{TK_PR_BREAKPOINT,"breakpoint"},
 								{TK_PR_CONST,"const"},
 								//controlflow
 								{TK_CF_IF,"if"},
@@ -880,6 +879,7 @@ void GDTokenizerText::_advance() {
 								{TK_CF_RETURN,"return"},
 								{TK_CF_PASS,"pass"},
 								{TK_SELF,"self"},
+								{TK_CONST_PI,"PI"},
 								{TK_ERROR,NULL}
 							};
 
@@ -1046,7 +1046,7 @@ void GDTokenizerText::advance(int p_amount) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define BYTECODE_VERSION 5
+#define BYTECODE_VERSION 10
 
 Error GDTokenizerBuffer::set_code_buffer(const Vector<uint8_t> & p_buffer) {
 

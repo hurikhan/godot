@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -39,12 +39,8 @@
 Node *SceneTreeEditor::get_scene_node() {
 
 	ERR_FAIL_COND_V(!is_inside_tree(),NULL);
-	if (get_tree()->get_root()->get_child_count() && get_tree()->get_root()->get_child(0)->cast_to<EditorNode>())
-		return get_tree()->get_root()->get_child(0)->cast_to<EditorNode>()->get_edited_scene();
-	else
-		return get_tree()->get_root();
 
-	return NULL;
+	return get_tree()->get_edited_scene_root();
 }
 
 
@@ -234,7 +230,7 @@ void SceneTreeEditor::_add_nodes(Node *p_node,TreeItem *p_parent) {
 			return;
 		}
 	} else {
-		part_of_subscene = get_scene_node()->get_scene_inherited_state().is_valid() && get_scene_node()->get_scene_inherited_state()->find_node_by_path(get_scene_node()->get_path_to(p_node))>=0;
+		part_of_subscene = p_node!=get_scene_node() && get_scene_node()->get_scene_inherited_state().is_valid() && get_scene_node()->get_scene_inherited_state()->find_node_by_path(get_scene_node()->get_path_to(p_node))>=0;
 	}
 
 	TreeItem *item = tree->create_item(p_parent);
@@ -565,7 +561,6 @@ void SceneTreeEditor::_notification(int p_what) {
 		get_tree()->disconnect("node_removed",this,"_node_removed");
 		tree->disconnect("item_collapsed",this,"_cell_collapsed");
 		clear_inherit_confirm->disconnect("confirmed",this,"_subscene_option");
-		_update_tree();
 	}
 
 }
@@ -649,20 +644,31 @@ void SceneTreeEditor::_rename_node(ObjectID p_node,const String& p_name) {
 void SceneTreeEditor::_renamed() {
 
 	TreeItem *which=tree->get_edited();
-	
+
 	ERR_FAIL_COND(!which);
 	NodePath np = which->get_metadata(0);
 	Node *n=get_node(np);
 	ERR_FAIL_COND(!n);
 
+	String new_name=which->get_text(0);
+	if (new_name.find(".") != -1 || new_name.find("/") != -1) {
+
+		error->set_text("Invalid node name, the following characters are not allowed:\n  \".\", \"/\"");
+		error->popup_centered_minsize();
+		new_name=n->get_name();
+	}
+
+	if (new_name==n->get_name())
+		return;
+
 	if (!undo_redo) {
-		n->set_name( which->get_text(0) );
+		n->set_name( new_name );
 		which->set_metadata(0,n->get_path());
 		emit_signal("node_renamed");
 	} else {
 		undo_redo->create_action("Rename Node");
-		emit_signal("node_prerename",n,which->get_text(0));
-		undo_redo->add_do_method(this,"_rename_node",n->get_instance_ID(),which->get_text(0));
+		emit_signal("node_prerename",n,new_name);
+		undo_redo->add_do_method(this,"_rename_node",n->get_instance_ID(),new_name);
 		undo_redo->add_undo_method(this,"_rename_node",n->get_instance_ID(),n->get_name());
 		undo_redo->commit_action();
 	}
@@ -717,6 +723,9 @@ void SceneTreeEditor::_update_selection(TreeItem *item) {
 	ERR_FAIL_COND(!item);
 
 	NodePath np = item->get_metadata(0);
+
+	if (!has_node(np))
+		return;
 
 	Node *n=get_node(np);
 
@@ -838,7 +847,7 @@ SceneTreeEditor::SceneTreeEditor(bool p_label,bool p_can_rename, bool p_can_open
 	add_child( tree );
 		
 	tree->connect("cell_selected", this,"_selected_changed");
-	tree->connect("item_edited", this,"_renamed");
+	tree->connect("item_edited", this,"_renamed",varray(),CONNECT_DEFERRED);
 	tree->connect("multi_selected",this,"_cell_multi_selected");
 	tree->connect("button_pressed",this,"_cell_button_pressed");
 //	tree->connect("item_edited", this,"_renamed",Vector<Variant>(),true);
@@ -921,7 +930,7 @@ void SceneTreeDialog::_cancel() {
 void SceneTreeDialog::_select() {
 
 	if (tree->get_selected()) {
-	        emit_signal("selected",tree->get_selected()->get_path());
+		emit_signal("selected",tree->get_selected()->get_path());
 		hide();
 	}
 }
@@ -931,7 +940,6 @@ void SceneTreeDialog::_bind_methods() {
 	ObjectTypeDB::bind_method("_select",&SceneTreeDialog::_select);
 	ObjectTypeDB::bind_method("_cancel",&SceneTreeDialog::_cancel);
 	ADD_SIGNAL( MethodInfo("selected",PropertyInfo(Variant::NODE_PATH,"path")));
-
 
 }
 
@@ -944,7 +952,7 @@ SceneTreeDialog::SceneTreeDialog() {
 	add_child(tree);
 	set_child_rect(tree);
 
-
+	tree->get_scene_tree()->connect("item_activated",this,"_select");
 
 }
 

@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -207,6 +207,11 @@ extern bool _err_error_exists;
 		_err_error_exists=false;\
 	} \
 
+#define ERR_PRINTS(m_string) \
+	{ \
+		_err_print_error(FUNCTION_STR,__FILE__,__LINE__,String(m_string).utf8().get_data());	\
+		_err_error_exists=false;\
+	} \
 
 /** Print a warning string.
  */
@@ -218,5 +223,10 @@ extern bool _err_error_exists;
 	} \
 
 
+#define WARN_PRINTS(m_string) \
+	{ \
+		_err_print_error(FUNCTION_STR,__FILE__,__LINE__,String(m_string).utf8().get_data(),ERR_HANDLER_WARNING);	\
+		_err_error_exists=false;\
+	} \
 
 #endif

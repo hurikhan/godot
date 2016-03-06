@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -56,7 +56,7 @@
 #include "tools/editor/editor_run.h"
 
 #include "tools/editor/pane_drag.h"
-#include "tools/editor/animation_editor.h"
+
 #include "tools/editor/script_create_dialog.h"
 #include "tools/editor/run_settings_dialog.h"
 #include "tools/editor/project_settings.h"
@@ -76,6 +76,7 @@
 #include "editor_reimport_dialog.h"
 #include "import_settings.h"
 #include "tools/editor/editor_plugin.h"
+#include "tools/editor/editor_name_dialog.h"
 
 #include "fileserver/editor_file_server.h"
 #include "editor_resource_preview.h"
@@ -99,13 +100,25 @@ typedef void (*EditorNodeInitCallback)();
 class EditorNode : public Node {
 
 	OBJ_TYPE( EditorNode, Node );
-	
-	enum {
-		
-		HISTORY_SIZE=64	
+
+public:
+	enum DockSlot {
+		DOCK_SLOT_LEFT_UL,
+		DOCK_SLOT_LEFT_BL,
+		DOCK_SLOT_LEFT_UR,
+		DOCK_SLOT_LEFT_BR,
+		DOCK_SLOT_RIGHT_UL,
+		DOCK_SLOT_RIGHT_BL,
+		DOCK_SLOT_RIGHT_UR,
+		DOCK_SLOT_RIGHT_BR,
+		DOCK_SLOT_MAX
 	};
+private:
+	enum {
+		HISTORY_SIZE=64
+	};
+
 	enum MenuOptions {
-	
 		FILE_NEW_SCENE,
 		FILE_NEW_INHERITED_SCENE,
 		FILE_OPEN_SCENE,
@@ -118,7 +131,6 @@ class EditorNode : public Node {
 		FILE_EXPORT_MESH_LIBRARY,
 		FILE_EXPORT_TILESET,
 		FILE_SAVE_OPTIMIZED,
-		FILE_SAVE_SUBSCENE,
 		FILE_DUMP_STRINGS,
 		FILE_OPEN_RECENT,
 		FILE_OPEN_OLD_SCENE,
@@ -133,6 +145,7 @@ class EditorNode : public Node {
 		EDIT_UNDO,
 		EDIT_REDO,
 		EDIT_REVERT,
+		TOOLS_ORPHAN_RESOURCES,
 		RESOURCE_NEW,
 		RESOURCE_LOAD,
 		RESOURCE_SAVE,
@@ -166,30 +179,22 @@ class EditorNode : public Node {
 		SETTINGS_EXPORT_PREFERENCES,
 		SETTINGS_PREFERENCES,
 		SETTINGS_OPTIMIZED_PRESETS,
-		SETTINGS_SHOW_ANIMATION,
+		SETTINGS_LAYOUT_SAVE,
+		SETTINGS_LAYOUT_DELETE,
+		SETTINGS_LAYOUT_DEFAULT,
 		SETTINGS_LOAD_EXPORT_TEMPLATES,
 		SETTINGS_HELP,
 		SETTINGS_ABOUT,
 		SOURCES_REIMPORT,
 		DEPENDENCY_LOAD_CHANGED_IMAGES,
 		DEPENDENCY_UPDATE_IMPORTED,
+		SCENE_TAB_CLOSE,
 
 		IMPORT_PLUGIN_BASE=100,
 
 		OBJECT_METHOD_BASE=500
 	};
 
-	enum DockSlot {
-		DOCK_SLOT_LEFT_UL,
-		DOCK_SLOT_LEFT_BL,
-		DOCK_SLOT_LEFT_UR,
-		DOCK_SLOT_LEFT_BR,
-		DOCK_SLOT_RIGHT_UL,
-		DOCK_SLOT_RIGHT_BL,
-		DOCK_SLOT_RIGHT_UR,
-		DOCK_SLOT_RIGHT_BR,
-		DOCK_SLOT_MAX
-	};
 
 
 	//Node *edited_scene; //scene being edited
@@ -217,6 +222,7 @@ class EditorNode : public Node {
 	//main tabs
 
 	Tabs *scene_tabs;
+	int tab_closing;
 
 
 	int old_split_ofs;
@@ -225,7 +231,6 @@ class EditorNode : public Node {
 	Control *vp_base;
 	PaneDrag *pd;
 	//PaneDrag *pd_anim;
-	TextureButton *anim_close;
 	Panel *menu_panel;
 
 
@@ -235,6 +240,7 @@ class EditorNode : public Node {
 	Control *viewport;
 	MenuButton *file_menu;
 	MenuButton *import_menu;
+	MenuButton *tool_menu;
 	ToolButton *export_button;
 	ToolButton *prev_scene;
 	MenuButton *object_menu;
@@ -244,17 +250,17 @@ class EditorNode : public Node {
 	ToolButton *pause_button;
 	ToolButton *stop_button;
 	ToolButton *run_settings_button;
-	ToolButton *animation_menu;
 	ToolButton *play_scene_button;
 	ToolButton *play_custom_scene_button;
 	MenuButton *debug_button;
+	ToolButton *search_button;
 	TextureProgress *audio_vu;
 	//MenuButton *fileserver_menu;
 
 	TextEdit *load_errors;
 	AcceptDialog *load_error_dialog;
 
-	Control *scene_root_base;
+	//Control *scene_root_base;
 	Ref<Theme> theme;
 
 	PopupMenu *recent_scenes;
@@ -266,6 +272,9 @@ class EditorNode : public Node {
 	ScenesDock *scenes_dock;
 	EditorRunNative *run_native;
 
+	HBoxContainer *search_bar;
+	LineEdit *search_box;
+
 	CreateDialog *create_dialog;
 
 	CallDialog *call_dialog;
@@ -275,6 +284,11 @@ class EditorNode : public Node {
 	AcceptDialog *accept;
 	AcceptDialog *about;
 	AcceptDialog *warning;
+
+	int overridden_default_layout;
+	Ref<ConfigFile> default_layout;
+	PopupMenu *editor_layouts;
+	EditorNameDialog *layout_dialog;
 
 	//OptimizedPresetsDialog *optimized_presets;
 	EditorSettingsDialog *settings_config_dialog;
@@ -301,20 +315,19 @@ class EditorNode : public Node {
 	String defer_export_platform;
 	bool defer_export_debug;
 	Node *_last_instanced_scene;
-	PanelContainer *animation_panel;
-	HBoxContainer *animation_panel_hb;
-	VBoxContainer *animation_vb;
 	EditorPath *editor_path;
 	ToolButton *resource_new_button;
 	ToolButton *resource_load_button;
 	MenuButton *resource_save_button;
 	MenuButton *editor_history_menu;
-	AnimationKeyEditor *animation_editor;
+
 	EditorLog *log;
 	CenterContainer *tabs_center;
 	EditorQuickOpen *quick_open;
 	EditorQuickOpen *quick_run;
-	Tabs *main_editor_tabs;
+
+	HBoxContainer *main_editor_button_vb;
+	Vector<ToolButton*> main_editor_buttons;
 	Vector<EditorPlugin*> editor_table;
 
 	EditorReImportDialog *reimport_dialog;
@@ -325,6 +338,7 @@ class EditorNode : public Node {
 
 	DependencyErrorDialog *dependency_error;
 	DependencyEditor *dependency_fixer;
+	OrphanResourcesDialog *orphan_resources;
 
 	TabContainer *dock_slot[DOCK_SLOT_MAX];
 	Rect2 dock_select_rect[DOCK_SLOT_MAX];
@@ -343,6 +357,7 @@ class EditorNode : public Node {
 	Object *current;
 
 	bool _playing_edited;
+	String run_custom_filename;
 	bool reference_resource_mem;
 	bool save_external_resources_mem;
 	uint64_t saved_version;
@@ -368,6 +383,21 @@ class EditorNode : public Node {
 	EditorResourcePreview *resource_preview;
 
 	EditorFileServer *file_server;
+
+
+	struct BottomPanelItem {
+		String name;
+		Control *control;
+		ToolButton *button;
+	};
+
+	Vector<BottomPanelItem> bottom_panel_items;
+
+	PanelContainer *bottom_panel;
+	HBoxContainer *bottom_panel_hb;
+	VBoxContainer *bottom_panel_vb;
+
+	void _bottom_panel_switch(bool p_enable, int p_idx);
 
 	String external_file;
 	List<String> previous_scenes;
@@ -400,8 +430,8 @@ class EditorNode : public Node {
 
 	void _node_renamed();
 	void _editor_select(int p_which);
-	void _set_scene_metadata();
-	void _get_scene_metadata();
+	void _set_scene_metadata(const String &p_file);
+	void _get_scene_metadata(const String& p_file);
 	void _update_title();
 	void _update_scene_tabs();
 	void _close_messages();
@@ -418,10 +448,9 @@ class EditorNode : public Node {
 	void _property_keyed(const String& p_keyed, const Variant& p_value, bool p_advance);
 	void _transform_keyed(Object *sp,const String& p_sub,const Transform& p_key);
 
-	void _update_keying();
 	void _hide_top_editors();
-	void _quick_opened(const String& p_resource);
-	void _quick_run(const String& p_resource);
+	void _quick_opened();
+	void _quick_run();
 
 	void _run(bool p_current=false, const String &p_custom="");
 
@@ -451,6 +480,10 @@ class EditorNode : public Node {
 	Set<EditorFileDialog*> editor_file_dialogs;
 
 	Map<String,Ref<Texture> > icon_type_cache;
+
+	bool _initializing_addons;
+	Map<String,EditorPlugin*> plugin_addons;
+
 
 	static Ref<Texture> _file_dialog_get_icon(const String& p_path);
 	static void _file_dialog_register(FileDialog *p_dialog);
@@ -508,13 +541,35 @@ class EditorNode : public Node {
 	Dictionary _get_main_scene_state();
 	void _set_main_scene_state(Dictionary p_state);
 
+	int _get_current_main_editor();
+
 	void _save_docks();
 	void _load_docks();
+	void _save_docks_to_config(Ref<ConfigFile> p_layout, const String& p_section);
+	void _load_docks_from_config(Ref<ConfigFile> p_layout, const String& p_section);
+	void _update_dock_slots_visibility();
+
+
+	void _update_layouts_menu();
+	void _layout_menu_option(int p_idx);
+
+	void _toggle_search_bar(bool p_pressed);
+	void _clear_search_box();
+	void _clear_undo_history();
+
+	void _update_addon_config();
+
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();		
+	static void _bind_methods();
 public:
+
+	enum EditorTable {
+		EDITOR_2D = 0,
+		EDITOR_3D,
+		EDITOR_SCRIPT
+	};
 
 	static EditorNode* get_singleton() { return singleton; }
 
@@ -526,9 +581,14 @@ public:
 	static void add_editor_plugin(EditorPlugin *p_editor);
 	static void remove_editor_plugin(EditorPlugin *p_editor);
 
+	void add_control_to_dock(DockSlot p_slot,Control* p_control);
+	void remove_control_from_dock(Control* p_control);
+
 	void add_editor_import_plugin(const Ref<EditorImportPlugin>& p_editor_import);
 	void remove_editor_import_plugin(const Ref<EditorImportPlugin>& p_editor_import);
 
+	void set_addon_plugin_enabled(const String& p_addon,bool p_enabled);
+	bool is_addon_plugin_enabled(const String &p_addon) const;
 
 	void edit_node(Node *p_node);
 	void edit_resource(const Ref<Resource>& p_resource);
@@ -551,13 +611,10 @@ public:
 
 	static EditorLog *get_log() { return singleton->log; }
 	Control* get_viewport();
-	AnimationKeyEditor *get_animation_editor() const { return animation_editor; }
-	Control *get_animation_panel() { return animation_vb; }
-	HBoxContainer *get_animation_panel_hb() { return animation_panel_hb; }
 
-	void animation_editor_make_visible(bool p_visible);
-	void hide_animation_player_editors();
-	void animation_panel_make_visible(bool p_visible);
+	//void animation_editor_make_visible(bool p_visible);
+	//void hide_animation_player_editors();
+	//void animation_panel_make_visible(bool p_visible);
 
 	void set_edited_scene(Node *p_scene);
 
@@ -577,6 +634,7 @@ public:
 	void set_current_scene(int p_idx);
 
 	static EditorData& get_editor_data() { return singleton->editor_data; }
+	EditorHistory * get_editor_history() { return &editor_history; }
 
 	static VSplitContainer *get_top_split() { return singleton->top_split; }
 
@@ -610,7 +668,7 @@ public:
 	static void add_io_error(const String& p_error);
 
 	static void progress_add_task(const String& p_task,const String& p_label, int p_steps);
-	static void progress_task_step(const String& p_task,const String& p_state, int p_step=-1);
+	static void progress_task_step(const String& p_task,const String& p_state, int p_step=-1,bool p_force_refresh=true);
 	static void progress_end_task(const String& p_task);
 
 	static void progress_add_task_bg(const String& p_task,const String& p_label, int p_steps);
@@ -625,6 +683,16 @@ public:
 
 	void save_layout();
 
+	void update_keying();
+
+
+	ToolButton* add_bottom_panel_item(String p_text,Control *p_item);
+	bool are_bottom_panels_hidden() const;
+	void make_bottom_panel_item_visible(Control *p_item);
+	void raise_bottom_panel_item(Control *p_item);
+	void hide_bottom_panel();
+	void remove_bottom_panel_item(Control *p_item);
+
 	EditorNode();	
 	~EditorNode();
 	void get_singleton(const char* arg1, bool arg2);
@@ -637,7 +705,7 @@ public:
 struct EditorProgress {
 
 	String task;
-	void step(const String& p_state, int p_step=-1) { EditorNode::progress_task_step(task,p_state,p_step); }
+	void step(const String& p_state, int p_step=-1,bool p_force_refresh=true) { EditorNode::progress_task_step(task,p_state,p_step,p_force_refresh); }
 	EditorProgress(const String& p_task,const String& p_label,int p_amount) { EditorNode::progress_add_task(p_task,p_label,p_amount); task=p_task; }
 	~EditorProgress() { EditorNode::progress_end_task(task); }
 };

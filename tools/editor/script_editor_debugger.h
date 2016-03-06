@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -54,6 +54,7 @@ class ScriptEditorDebugger : public Control {
 	AcceptDialog *msgdialog;
 
 
+	Button *debugger_button;
 
 	LineEdit *clicked_ctrl;
 	LineEdit *clicked_ctrl_type;
@@ -71,14 +72,13 @@ class ScriptEditorDebugger : public Control {
 	int error_count;
 	int last_error_count;
 
+	bool hide_on_stop;
 
-
-	TextureButton *tb;
 
 
 	TabContainer *tabs;
 
-	Label *reason;
+	LineEdit *reason;
 	bool log_forced_visible;
 	ScriptEditorDebuggerVariables *variables;
 
@@ -126,7 +126,6 @@ class ScriptEditorDebugger : public Control {
 	void _performance_select(Object *, int, bool);
 	void _stack_dump_frame_selected();
 	void _output_clear();
-	void _hide_request();
 
 	void _scene_tree_request();
 	void _parse_message(const String& p_msg,const Array& p_data);
@@ -182,6 +181,9 @@ public:
 
 	void update_live_edit_root();
 
+	void set_hide_on_stop(bool p_hide);
+
+	void set_tool_button(Button *p_tb) { debugger_button=p_tb; }
 
 	virtual Size2 get_minimum_size() const;
 	ScriptEditorDebugger(EditorNode *p_editor=NULL);

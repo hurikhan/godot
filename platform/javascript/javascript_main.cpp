@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -74,6 +74,15 @@ static void _glut_skey(bool pressed,int key) {
 		case GLUT_KEY_INSERT: ev.key.scancode=KEY_INSERT; break;
 	}
 
+	if (pressed) {
+		if (os->skey_pressed[key])
+			ev.key.echo = true;
+		else
+			os->skey_pressed[key] = true;
+	}
+	else {
+		os->skey_pressed[key] = false;
+	}
 
 	uint32_t m = glutGetModifiers();
 	ev.key.mod.alt=(m&GLUT_ACTIVE_ALT)!=0;
@@ -106,6 +115,16 @@ static void _glut_key(bool pressed,unsigned char key) {
 		case 0x20: ev.key.scancode=KEY_SPACE; ev.key.unicode=key; break;
 		default: {
 			ev.key.unicode=key;
+		}
+
+		if (pressed) {
+			if (os->key_pressed[key])
+				ev.key.echo = true;
+			else
+				os->key_pressed[key] = true;
+		}
+		else {
+			os->key_pressed[key] = false;
 		}
 	}
 

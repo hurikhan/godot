@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -182,7 +182,7 @@ public:
 
 	};
 
-	virtual int intersect_point(const Vector2& p_point,ShapeResult *r_results,int p_result_max,const Set<RID>& p_exclude=Set<RID>(),uint32_t p_layer_mask=0xFFFFFFFF,uint32_t p_object_type_mask=TYPE_MASK_COLLISION)=0;
+	virtual int intersect_point(const Vector2& p_point,ShapeResult *r_results,int p_result_max,const Set<RID>& p_exclude=Set<RID>(),uint32_t p_layer_mask=0xFFFFFFFF,uint32_t p_object_type_mask=TYPE_MASK_COLLISION,bool p_pick_point=false)=0;
 
 	virtual int intersect_shape(const RID& p_shape, const Matrix32& p_xform,const Vector2& p_motion,float p_margin,ShapeResult *r_results,int p_result_max,const Set<RID>& p_exclude=Set<RID>(),uint32_t p_layer_mask=0xFFFFFFFF,uint32_t p_object_type_mask=TYPE_MASK_COLLISION)=0;
 
@@ -325,7 +325,9 @@ public:
 	enum AreaSpaceOverrideMode {
 		AREA_SPACE_OVERRIDE_DISABLED,
 		AREA_SPACE_OVERRIDE_COMBINE,
+		AREA_SPACE_OVERRIDE_COMBINE_REPLACE, // Combines, then discards all subsequent calculations
 		AREA_SPACE_OVERRIDE_REPLACE,
+		AREA_SPACE_OVERRIDE_REPLACE_COMBINE // Discards all previous calculations, then keeps combining
 	};
 
 	virtual void area_set_space_override_mode(RID p_area, AreaSpaceOverrideMode p_mode)=0;

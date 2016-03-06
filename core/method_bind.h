@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -50,6 +50,7 @@ enum MethodFlags {
 	METHOD_FLAG_CONST=8,
 	METHOD_FLAG_REVERSE=16, // used for events
 	METHOD_FLAG_VIRTUAL=32,
+	METHOD_FLAG_FROM_SCRIPT=64,
 	METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
 

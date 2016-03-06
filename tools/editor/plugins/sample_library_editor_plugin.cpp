@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -49,9 +49,13 @@ void SampleLibraryEditor::_notification(int p_what) {
 
 	if (p_what==NOTIFICATION_ENTER_TREE) {
 		play->set_icon( get_icon("Play","EditorIcons") );
+		play->set_tooltip("Play Sample");
 		stop->set_icon( get_icon("Stop","EditorIcons") );
+		stop->set_tooltip("Stop Sample");
 		load->set_icon( get_icon("Folder","EditorIcons") );
+		load->set_tooltip("Open Sample File(s)");
 		_delete->set_icon( get_icon("Del","EditorIcons") );
+		_delete->set_tooltip("Remove Sample");
 	}
 
 	if (p_what==NOTIFICATION_READY) {
@@ -419,11 +423,16 @@ bool SampleLibraryEditorPlugin::handles(Object *p_object) const {
 void SampleLibraryEditorPlugin::make_visible(bool p_visible) {
 
 	if (p_visible) {
-		sample_library_editor->show();
+		//sample_library_editor->show();
+		button->show();
+		editor->make_bottom_panel_item_visible(sample_library_editor);
 //		sample_library_editor->set_process(true);
 	} else {
 
-		sample_library_editor->hide();
+		if (sample_library_editor->is_visible())
+			editor->hide_bottom_panel();
+		button->hide();
+
 //		sample_library_editor->set_process(false);
 	}
 
@@ -433,11 +442,16 @@ SampleLibraryEditorPlugin::SampleLibraryEditorPlugin(EditorNode *p_node) {
 
 	editor=p_node;
 	sample_library_editor = memnew( SampleLibraryEditor );
-	editor->get_viewport()->add_child(sample_library_editor);
-	sample_library_editor->set_area_as_parent_rect();
+
+	//editor->get_viewport()->add_child(sample_library_editor);
+	sample_library_editor->set_custom_minimum_size(Size2(0,250));
+	button=p_node->add_bottom_panel_item("SampleLibrary",sample_library_editor);
+	button->hide();
+
+	//sample_library_editor->set_area_as_parent_rect();
 //	sample_library_editor->set_anchor( MARGIN_TOP, Control::ANCHOR_END);
 //	sample_library_editor->set_margin( MARGIN_TOP, 120 );
-	sample_library_editor->hide();
+	//sample_library_editor->hide();
 
 
 

@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -79,6 +79,8 @@ class BodySW : public CollisionObjectSW {
 	bool omit_force_integration;
 	bool active;
 
+	bool first_integration;
+
 	bool continuous_cd;
 	bool can_sleep;
 	bool first_time_kinematic;
@@ -91,10 +93,11 @@ class BodySW : public CollisionObjectSW {
 	struct AreaCMP {
 
 		AreaSW *area;
+		int refCount;
 		_FORCE_INLINE_ bool operator==(const AreaCMP& p_cmp) const { return area->get_self() == p_cmp.area->get_self();}
 		_FORCE_INLINE_ bool operator<(const AreaCMP& p_cmp) const { return area->get_priority() < p_cmp.area->get_priority();}
 		_FORCE_INLINE_ AreaCMP() {}
-		_FORCE_INLINE_ AreaCMP(AreaSW *p_area) { area=p_area;}
+		_FORCE_INLINE_ AreaCMP(AreaSW *p_area) { area=p_area; refCount=1;}
 	};
 
 	Vector<AreaCMP> areas;
@@ -130,7 +133,7 @@ class BodySW : public CollisionObjectSW {
 	BodySW *island_next;
 	BodySW *island_list_next;
 
-	_FORCE_INLINE_ void _compute_area_gravity(const AreaSW *p_area);
+	_FORCE_INLINE_ void _compute_area_gravity_and_dampenings(const AreaSW *p_area);
 
 	_FORCE_INLINE_ void _update_inertia_tensor();
 
@@ -141,8 +144,23 @@ public:
 
 	void set_force_integration_callback(ObjectID p_id,const StringName& p_method,const Variant& p_udata=Variant());
 
-	_FORCE_INLINE_ void add_area(AreaSW *p_area) { areas.ordered_insert(AreaCMP(p_area)); }
-	_FORCE_INLINE_ void remove_area(AreaSW *p_area) { areas.erase(AreaCMP(p_area)); }
+	_FORCE_INLINE_ void add_area(AreaSW *p_area) {
+		int index = areas.find(AreaCMP(p_area));
+		if( index > -1 ) {
+			areas[index].refCount += 1;
+		} else {
+			areas.ordered_insert(AreaCMP(p_area));
+		}
+	}
+
+	_FORCE_INLINE_ void remove_area(AreaSW *p_area) {
+		int index = areas.find(AreaCMP(p_area));
+		if( index > -1 ) {
+			areas[index].refCount -= 1;
+			if( areas[index].refCount < 1 )
+				areas.remove(index);
+		}
+	}
 
 	_FORCE_INLINE_ void set_max_contacts_reported(int p_size) { contacts.resize(p_size); contact_count=0; if (mode==PhysicsServer::BODY_MODE_KINEMATIC && p_size) set_active(true);}
 	_FORCE_INLINE_ int get_max_contacts_reported() const { return contacts.size(); }

@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2015 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -41,6 +41,7 @@
 
 #include "core/os/dir_access.h"
 #include "core/os/file_access.h"
+#include "core/io/file_access_pack.h"
 #include "core/globals.h"
 
 #include "sem_iphone.h"
@@ -226,6 +227,8 @@ void OSIPhone::mouse_button(int p_idx, int p_x, int p_y, bool p_pressed, bool p_
 		queue_event(ev);
 	};
 
+	mouse_list.pressed[p_idx] = p_pressed;
+
 	if (p_use_as_mouse) {
 
 		InputEvent ev;
@@ -240,12 +243,12 @@ void OSIPhone::mouse_button(int p_idx, int p_x, int p_y, bool p_pressed, bool p_
 		ev.mouse_button.x = ev.mouse_button.global_x = p_x;
 		ev.mouse_button.y = ev.mouse_button.global_y = p_y;
 
+		//mouse_list.pressed[p_idx] = p_pressed;
+
 		input->set_mouse_pos(Point2(ev.mouse_motion.x,ev.mouse_motion.y));
 		ev.mouse_button.button_index = BUTTON_LEFT;
 		ev.mouse_button.doubleclick = p_doubleclick;
 		ev.mouse_button.pressed = p_pressed;
-
-		mouse_list.pressed[p_idx] = p_pressed;
 
 		queue_event(ev);
 	};
@@ -452,6 +455,7 @@ bool OSIPhone::has_virtual_keyboard() const {
 extern void _show_keyboard(String p_existing);
 extern void _hide_keyboard();
 extern Error _shell_open(String p_uri);
+extern void _set_keep_screen_on(bool p_enabled);
 
 void OSIPhone::show_virtual_keyboard(const String& p_existing_text,const Rect2& p_screen_rect) {
 	_show_keyboard(p_existing_text);
@@ -465,6 +469,10 @@ Error OSIPhone::shell_open(String p_uri) {
 	return _shell_open(p_uri);
 };
 
+void OSIPhone::set_keep_screen_on(bool p_enabled) {
+	OS::set_keep_screen_on(p_enabled);
+	_set_keep_screen_on(p_enabled);
+};
 
 void OSIPhone::set_cursor_shape(CursorShape p_shape) {
 
@@ -510,12 +518,25 @@ extern void _focus_out_video();
 Error OSIPhone::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
 	FileAccess* f = FileAccess::open(p_path, FileAccess::READ);
 	bool exists = f && f->is_open();
-	printf("file exists for %ls, %i, %p\n", p_path.c_str(), (int)exists, f);
-	if (f)
-		memdelete(f);
+
+	String tempFile = get_data_dir();
 	if (!exists)
 		return FAILED;
-    if ( _play_video(p_path, p_volume, p_audio_track, p_subtitle_track) )
+	
+	if (p_path.begins_with("res://")) {
+		if (PackedData::get_singleton()->has_path(p_path)) {
+			print("Unable to play %S using the native player as it resides in a .pck file\n", p_path.c_str());
+			return ERR_INVALID_PARAMETER;
+		} else {
+			p_path = p_path.replace("res:/", Globals::get_singleton()->get_resource_path());
+		}
+	} else if (p_path.begins_with("user://"))
+		p_path = p_path.replace("user:/", get_data_dir());
+
+	memdelete(f);
+
+	print("Playing video: %S\n", p_path.c_str());	
+	if (_play_video(p_path, p_volume, p_audio_track, p_subtitle_track) )
 		return OK;
 	return FAILED;
 }
