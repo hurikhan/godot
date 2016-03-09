@@ -589,7 +589,7 @@ static _TranslatePair _keysym_to_keycode[]={
 	{	XKB_KEY_KP_Enter,			KEY_KP_ENTER },
 	{	XKB_KEY_KP_Multiply,		KEY_KP_MULTIPLY },
 	{	XKB_KEY_KP_Divide,			KEY_KP_DIVIDE },
-	{	XKB_KEY_KP_Subtract,		KEY_KP_SUBSTRACT },
+	{	XKB_KEY_KP_Subtract,		KEY_KP_SUBTRACT },
 	{	XKB_KEY_KP_Add,				KEY_KP_ADD },
 	{	XKB_KEY_KP_Decimal,			KEY_KP_PERIOD },
 	{	XKB_KEY_KP_0,				KEY_KP_0 },
