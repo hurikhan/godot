@@ -34,10 +34,13 @@
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
 */
+
+
+
 class PopupMenu : public Popup {
 
 	OBJ_TYPE(PopupMenu, Popup );
-	
+
 	struct Item {
 		Ref<Texture> icon;
 		String text;
@@ -45,16 +48,17 @@ class PopupMenu : public Popup {
 		bool checkable;
 		bool separator;
 		bool disabled;
-		int ID;	
+		int ID;
 		Variant metadata;
 		String submenu;
 		String tooltip;
 		uint32_t accel;
 		int _ofs_cache;
-		
+		Ref<ShortCut> shortcut;
+
 		Item() { checked=false; checkable=false; separator=false; accel=0; disabled=false; _ofs_cache=0; }
 	};
-	
+
 
 	Timer *submenu_timer;
 	List<Rect2> autohide_areas;
@@ -62,9 +66,9 @@ class PopupMenu : public Popup {
 	int mouse_over;
 	int submenu_over;
 	Rect2 parent_rect;
-	String _get_accel_text(uint32_t p_accel) const;
+	String _get_accel_text(int p_item) const;
 	int _get_mouse_over(const Point2& p_over) const;
-	virtual Size2 get_minimum_size() const;	 	
+	virtual Size2 get_minimum_size() const;
 	void _input_event(const InputEvent &p_event);
 	void _activate_submenu(int over);
 	void _submenu_timeout();
@@ -75,24 +79,33 @@ class PopupMenu : public Popup {
 	Array _get_items() const;
 	void _set_items(const Array& p_items);
 
+	Map< Ref<ShortCut>, int> shortcut_refcount;
+
+	void _ref_shortcut(Ref<ShortCut> p_sc);
+	void _unref_shortcut( Ref<ShortCut> p_sc);
 protected:
 
 	virtual bool has_point(const Point2& p_point) const;
 
-friend class MenuButton;	
+friend class MenuButton;
 	void _notification(int p_what);
-	static void _bind_methods();			
+	static void _bind_methods();
 public:
-	
+
 	void add_icon_item(const Ref<Texture>& p_icon,const String& p_label,int p_ID=-1,uint32_t p_accel=0);
 	void add_item(const String& p_label,int p_ID=-1,uint32_t p_accel=0);
 	void add_icon_check_item(const Ref<Texture>& p_icon,const String& p_label,int p_ID=-1,uint32_t p_accel=0);
 	void add_check_item(const String& p_label,int p_ID=-1,uint32_t p_accel=0);
 	void add_submenu_item(const String& p_label,const String& p_submenu, int p_ID=-1);
 
+	void add_icon_shortcut(const Ref<Texture>& p_icon,const Ref<ShortCut>& p_shortcut,int p_ID=-1);
+	void add_shortcut(const Ref<ShortCut>& p_shortcut,int p_ID=-1);
+	void add_icon_check_shortcut(const Ref<Texture>& p_icon,const Ref<ShortCut>& p_shortcut,int p_ID=-1);
+	void add_check_shortcut(const Ref<ShortCut>& p_shortcut,int p_ID=-1);
+
 	void set_item_text(int p_idx,const String& p_text);
 	void set_item_icon(int p_idx,const Ref<Texture>& p_icon);
-	void set_item_checked(int p_idx,bool p_checked);	
+	void set_item_checked(int p_idx,bool p_checked);
 	void set_item_ID(int p_idx,int p_ID);
 	void set_item_accelerator(int p_idx,uint32_t p_accel);
 	void set_item_metadata(int p_idx,const Variant& p_meta);
@@ -101,6 +114,7 @@ public:
 	void set_item_as_separator(int p_idx, bool p_separator);
 	void set_item_as_checkable(int p_idx, bool p_checkable);
 	void set_item_tooltip(int p_idx,const String& p_tooltip);
+	void set_item_shortcut(int p_idx, const Ref<ShortCut>& p_shortcut);
 
 	String get_item_text(int p_idx) const;
 	Ref<Texture> get_item_icon(int p_idx) const;
@@ -110,20 +124,21 @@ public:
 	uint32_t get_item_accelerator(int p_idx) const;
 	Variant get_item_metadata(int p_idx) const;
 	bool is_item_disabled(int p_idx) const;
-	String get_item_submenu(int p_ID) const;	
+	String get_item_submenu(int p_ID) const;
 	bool is_item_separator(int p_idx) const;
 	bool is_item_checkable(int p_idx) const;
 	String get_item_tooltip(int p_idx) const;
+	Ref<ShortCut> get_item_shortcut(int p_idx) const;
 
 	int get_item_count() const;
 
-	int find_item_by_accelerator(uint32_t p_accel) const;
+	bool activate_item_by_event(const InputEvent& p_event);
 	void activate_item(int p_item);
 
 	void remove_item(int p_idx);
-	
+
 	void add_separator();
-		
+
 	void clear();
 
 	void set_parent_rect(const Rect2& p_rect);
@@ -137,7 +152,7 @@ public:
 
 	void set_invalidate_click_until_motion();
 
-	PopupMenu();	
+	PopupMenu();
 	~PopupMenu();
 
 };

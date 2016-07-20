@@ -143,118 +143,52 @@ Error DirAccess::make_dir_recursive(String p_dir) {
 	};
 
 	String full_dir;
-	Globals* g = Globals::get_singleton();
 
-	if (!p_dir.is_abs_path()) {
-		//append current
+	if (p_dir.is_rel_path()) {
+		//append current		
+		full_dir=get_current_dir().plus_file(p_dir);
 
-		String cur = normalize_path(g->globalize_path(get_current_dir()));
-		if (cur[cur.length()-1] != '/') {
-			cur = cur + "/";
-		};
-
-		full_dir=(cur+"/"+p_dir).simplify_path();
 	} else {
-		//validate and use given
-		String dir = normalize_path(g->globalize_path(p_dir));
-		if (dir.length() < 1) {
-			return OK;
-		};
-		if (dir[dir.length()-1] != '/') {
-			dir = dir + "/";
-		};
-		full_dir=dir;
+		full_dir=p_dir;
 	}
+
+	full_dir=full_dir.replace("\\","/");
 
 	//int slices = full_dir.get_slice_count("/");
 
-	int pos = 0;
-	while (pos < full_dir.length()) {
+	String base;
 
-		int n = full_dir.find("/", pos);
-		if (n < 0) {
-			n = full_dir.length();
-		};
-		pos = n + 1;
+	if (full_dir.begins_with("res://"))
+		base="res://";
+	else if (full_dir.begins_with("user://"))
+		base="user://";
+	else if (full_dir.begins_with("/"))
+		base="/";
+	else if (full_dir.find(":/")!=-1) {
+		base=full_dir.substr(0,full_dir.find(":/")+2);
+	} else {
+		ERR_FAIL_V(ERR_INVALID_PARAMETER);
+	}
 
-		if (pos > 1) {
-			String to_create = full_dir.substr(0, pos -1);
-			//print_line("MKDIR: "+to_create);
-			Error err = make_dir(to_create);
-			if (err != OK && err != ERR_ALREADY_EXISTS) {
+	full_dir=full_dir.replace_first(base,"").simplify_path();
 
-				ERR_FAIL_V(err);
-			};
-		};
-	};
+	Vector<String> subdirs=full_dir.split("/");
+
+	String curpath=base;
+	for(int i=0;i<subdirs.size();i++) {
+
+		curpath=curpath.plus_file(subdirs[i]);
+		Error err = make_dir(curpath);
+		if (err != OK && err != ERR_ALREADY_EXISTS) {
+
+			ERR_FAIL_V(err);
+		}
+	}
 
 	return OK;
-};
+}
 
 
-String DirAccess::normalize_path(const String &p_path) {
-
-	static const int max_depth = 64;
-	int pos_stack[max_depth];
-	int curr = 0;
-
-	int pos = 0;
-	String cur_dir;
-
-	do {
-
-		if (curr >= max_depth) {
-
-			ERR_PRINT("Directory depth too deep.");
-			return "";
-		};
-
-		int start = pos;
-
-		int next = p_path.find("/", pos);
-		if (next < 0) {
-			next = p_path.length() - 1;
-		};
-
-		pos = next + 1;
-
-		cur_dir = p_path.substr(start, next - start);
-
-		if (cur_dir == "" || cur_dir == ".") {
-			continue;
-		};
-		if (cur_dir == "..") {
-
-			if (curr > 0) { // pop a dir
-				curr -= 2;
-			};
-			continue;
-		};
-
-		pos_stack[curr++] = start;
-		pos_stack[curr++] = next;
-
-	} while (pos < p_path.length());
-
-	String path;
-	if (p_path[0] == '/') {
-		path = "/";
-	};
-
-	int i=0;
-	while (i < curr) {
-
-		int start = pos_stack[i++];
-
-		while ( ((i+1)<curr) && (pos_stack[i] == pos_stack[i+1]) ) {
-
-			++i;
-		};
-		path = path + p_path.substr(start, (pos_stack[i++] - start) + 1);
-	};
-
-	return path;
-};
 
 String DirAccess::get_next(bool* p_is_dir) {
 
@@ -276,9 +210,9 @@ String DirAccess::fix_path(String p_path) const {
 					String resource_path = Globals::get_singleton()->get_resource_path();
 					if (resource_path != "") {
 
-						return p_path.replace("res:/",resource_path);
+						return p_path.replace_first("res:/",resource_path);
 					};
-					return p_path.replace("res://", "");
+					return p_path.replace_first("res://", "");
 				}
 			}
 
@@ -292,9 +226,9 @@ String DirAccess::fix_path(String p_path) const {
 				String data_dir=OS::get_singleton()->get_data_dir();
 				if (data_dir != "") {
 
-					return p_path.replace("user:/",data_dir);
+					return p_path.replace_first("user:/",data_dir);
 				};
-				return p_path.replace("user://", "");
+				return p_path.replace_first("user://", "");
 			}
 
 		} break;
@@ -344,7 +278,7 @@ DirAccess *DirAccess::open(const String& p_path,Error *r_error) {
 }
 
 DirAccess *DirAccess::create(AccessType p_access) {
-	
+
 	DirAccess * da = create_func[p_access]?create_func[p_access]():NULL;
 	if (da) {
 		da->_access_type=p_access;
@@ -359,7 +293,7 @@ String DirAccess::get_full_path(const String& p_path,AccessType p_access) {
 	DirAccess *d=DirAccess::create(p_access);
 	if (!d)
 		return p_path;
-		
+
 	d->change_dir(p_path);
 	String full=d->get_current_dir();
 	memdelete(d);
@@ -367,31 +301,31 @@ String DirAccess::get_full_path(const String& p_path,AccessType p_access) {
 }
 
 Error DirAccess::copy(String p_from,String p_to) {
-	
+
 	//printf("copy %s -> %s\n",p_from.ascii().get_data(),p_to.ascii().get_data());
 	Error err;
 	FileAccess *fsrc = FileAccess::open(p_from, FileAccess::READ,&err);
-	
+
 	if (err) {
 
 		ERR_FAIL_COND_V( err, err );
 	}
 
-	
+
 	FileAccess *fdst = FileAccess::open(p_to, FileAccess::WRITE,&err );
 	if (err) {
-						
+
 		fsrc->close();
 		memdelete( fsrc );
 		ERR_FAIL_COND_V( err, err );
 	}
-	
+
 	fsrc->seek_end(0);
 	int size = fsrc->get_pos();
 	fsrc->seek(0);
 	err = OK;
 	while(size--) {
-		
+
 		if (fsrc->get_error()!=OK) {
 			err= fsrc->get_error();
 			break;
@@ -400,13 +334,13 @@ Error DirAccess::copy(String p_from,String p_to) {
 			err= fdst->get_error();
 			break;
 		}
-		
+
 		fdst->store_8( fsrc->get_8() );
 	}
-	
+
 	memdelete(fsrc);
 	memdelete(fdst);
-	
+
 	return err;
 }
 

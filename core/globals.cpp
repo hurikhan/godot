@@ -40,7 +40,7 @@
 Globals *Globals::singleton=NULL;
 
 Globals *Globals::get_singleton() {
-	
+
 	return singleton;
 }
 
@@ -54,7 +54,7 @@ String Globals::localize_path(const String& p_path) const {
 	if (resource_path=="")
 		return p_path; //not initialied yet
 
-	if (p_path.find(":/") != -1)
+	if (p_path.begins_with("res://") || p_path.begins_with("user://"))
 		return p_path.simplify_path();
 
 
@@ -82,6 +82,8 @@ String Globals::localize_path(const String& p_path) const {
 		if (sep == -1) {
 			return "res://"+path;
 		};
+
+
 		String parent = path.substr(0, sep);
 
 		String plocal = localize_path(parent);
@@ -108,7 +110,7 @@ bool Globals::is_persisting(const String& p_name) const {
 
 
 String Globals::globalize_path(const String& p_path) const {
-	
+
 	if (p_path.begins_with("res://")) {
 
 		if (resource_path != "") {
@@ -125,7 +127,7 @@ String Globals::globalize_path(const String& p_path) const {
 bool Globals::_set(const StringName& p_name, const Variant& p_value) {
 
 	_THREAD_SAFE_METHOD_
-	
+
 	if (p_value.get_type()==Variant::NIL)
 		props.erase(p_name);
 	else {
@@ -174,7 +176,7 @@ bool Globals::_get(const StringName& p_name,Variant &r_ret) const {
 		return false;
 	r_ret=props[p_name].variant;
 	return true;
-	
+
 }
 
 struct _VCSort {
@@ -188,13 +190,13 @@ struct _VCSort {
 };
 
 void Globals::_get_property_list(List<PropertyInfo> *p_list) const {
-	
+
 	_THREAD_SAFE_METHOD_
 
 	Set<_VCSort> vclist;
-	
+
 	for(Map<StringName,VariantContainer>::Element *E=props.front();E;E=E->next()) {
-		
+
 		const VariantContainer *v=&E->get();
 
 		if (v->hide_from_editor)
@@ -250,7 +252,7 @@ bool Globals::_load_resource_pack(const String& p_pack) {
 Error Globals::setup(const String& p_path,const String & p_main_pack) {
 
 	//an absolute mess of a function, must be cleaned up and reorganized somehow at some point
-	
+
 	//_load_settings(p_path+"/override.cfg");
 
 	if (p_main_pack!="") {
@@ -292,7 +294,7 @@ Error Globals::setup(const String& p_path,const String & p_main_pack) {
 		}
 
 	}
-	
+
 
 	if (FileAccessNetworkClient::get_singleton()) {
 
@@ -332,7 +334,7 @@ Error Globals::setup(const String& p_path,const String & p_main_pack) {
 		resource_path = p_path;
 
 	} else {
-	
+
 		d->change_dir(p_path);
 
 		String candidate = d->get_current_dir();
@@ -395,7 +397,7 @@ Error Globals::setup(const String& p_path,const String & p_main_pack) {
 }
 
 bool Globals::has(String p_var) const {
-	
+
 	_THREAD_SAFE_METHOD_
 
 	return props.has(p_var);
@@ -1410,7 +1412,7 @@ void Globals::_bind_methods() {
 }
 
 Globals::Globals() {
-	
+
 
 	singleton=this;
 	last_order=0;
@@ -1526,12 +1528,13 @@ Globals::Globals() {
 	custom_prop_info["render/thread_model"]=PropertyInfo(Variant::INT,"render/thread_model",PROPERTY_HINT_ENUM,"Single-Unsafe,Single-Safe,Multi-Threaded");
 	custom_prop_info["physics_2d/thread_model"]=PropertyInfo(Variant::INT,"physics_2d/thread_model",PROPERTY_HINT_ENUM,"Single-Unsafe,Single-Safe,Multi-Threaded");
 
+	set("debug/profiler_max_functions",16384);
 	using_datapack=false;
 }
 
 
 Globals::~Globals() {
-	
+
 	singleton=NULL;
 }
 

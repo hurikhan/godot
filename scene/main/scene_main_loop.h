@@ -33,7 +33,6 @@
 #include "os/main_loop.h"
 #include "scene/resources/world.h"
 #include "scene/resources/world_2d.h"
-#include "scene/main/scene_singleton.h"
 #include "os/thread_safe.h"
 #include "self_list.h"
 /**
@@ -76,8 +75,9 @@ private:
 	struct Group {
 
 		Vector<Node*> nodes;
-		uint64_t last_tree_version;		
-		Group() { last_tree_version=0; };
+		//uint64_t last_tree_version;
+		bool changed;
+		Group() {  changed=false; };
 	};
 
 	Viewport *root;
@@ -135,7 +135,7 @@ private:
 	void _flush_ugc();
 	void _flush_transform_notifications();
 
-	void _update_group_order(Group& g);
+	_FORCE_INLINE_ void _update_group_order(Group& g);
 	void _update_listener();
 
 	Array _get_nodes_in_group(const StringName& p_group);
@@ -162,7 +162,7 @@ friend class Node;
 	void node_removed(Node *p_node);
 
 
-	void add_to_group(const StringName& p_group, Node *p_node);
+	Group* add_to_group(const StringName& p_group, Node *p_node);
 	void remove_from_group(const StringName& p_group, Node *p_node);
 
 	void _notify_group_pause(const StringName& p_group,int p_notification);
@@ -344,6 +344,7 @@ public:
 
 	static SceneTree* get_singleton() { return singleton; }
 
+	void drop_files(const Vector<String>& p_files,int p_from_screen=0);
 
 	SceneTree();
 	~SceneTree();

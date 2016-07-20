@@ -47,7 +47,7 @@ public:
 	typedef int VoiceID;
 
 
-private:	
+private:
 
 	Ref<SampleLibrary> library;
 	int polyphony;
@@ -78,6 +78,7 @@ public:
 	void stop_voice(VoiceID p_voice);
 	void stop_all();
 
+	String get_configuration_warning() const;
 
 	SpatialSamplePlayer();
 	~SpatialSamplePlayer();

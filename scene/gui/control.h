@@ -35,7 +35,7 @@
 #include "scene/2d/canvas_item.h"
 #include "math_2d.h"
 #include "rid.h"
-
+#include "scene/gui/input_action.h"
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
 */
@@ -45,19 +45,19 @@ class Label;
 class Panel;
 
 class Control : public CanvasItem {
-	
+
 	OBJ_TYPE( Control, CanvasItem );
 	OBJ_CATEGORY("GUI Nodes");
 
 public:
-	
-	enum AnchorType {		
+
+	enum AnchorType {
 		ANCHOR_BEGIN,
 		ANCHOR_END,
 		ANCHOR_RATIO,
 		ANCHOR_CENTER,
 	};
-	
+
 	enum FocusMode {
 		FOCUS_NONE,
 		FOCUS_CLICK,
@@ -106,7 +106,7 @@ private:
 	};
 
 	struct Data {
-			
+
 		Point2 pos_cache;
 		Size2 size_cache;
 
@@ -129,10 +129,12 @@ private:
 		bool stop_mouse;
 
 		Control *parent;
+		ObjectID drag_owner;
 		bool modal;
 		bool modal_exclusive;
+		uint64_t modal_frame; //frame used to put something as modal
 		Ref<Theme> theme;
-		Control *theme_owner;		
+		Control *theme_owner;
 		String tooltip;
 		CursorShape default_cursor;
 
@@ -152,8 +154,10 @@ private:
 		HashMap<StringName, Ref<Font>, StringNameHasher > font_override;
 		HashMap<StringName, Color, StringNameHasher > color_override;
 		HashMap<StringName, int, StringNameHasher > constant_override;
+		Map< Ref<Font>, int> font_refcount;
+
 	} data;
-		
+
 	// used internally
 	Control* _find_control_at_pos(CanvasItem* p_node,const Point2& p_pos,const Matrix32& p_xform,Matrix32& r_inv_xform);
 
@@ -162,11 +166,15 @@ private:
 	Control *_get_focus_neighbour(Margin p_margin,int p_count=0);
 
 
+	void _set_anchor(Margin p_margin,AnchorType p_anchor);
+
 	float _get_parent_range(int p_idx) const;
 	float _get_range(int p_idx) const;
 	float _s2a(float p_val, AnchorType p_anchor,float p_range) const;
 	float _a2s(float p_val, AnchorType p_anchor,float p_range) const;
-	void _propagate_theme_changed(Control *p_owner);
+	void _propagate_theme_changed(CanvasItem *p_at, Control *p_owner, bool p_assign=true);
+	void _theme_changed();
+
 
 	void _change_notify_margins();
 	void _update_minimum_size();
@@ -177,14 +185,20 @@ private:
 	void _size_changed();
 	String _get_tooltip() const;
 
-	void _set_rotation_deg(float p_rot);
+	// Deprecated, should be removed in a future version.
+	void _set_rotation_deg(float p_degrees);
 	float _get_rotation_deg() const;
+
+	void _ref_font(Ref<Font> p_sc);
+	void _unref_font( Ref<Font> p_sc);
+	void _font_changed();
+
 
 friend class Viewport;
 	void _modal_stack_remove();
 	void _modal_set_prev_focus_owner(ObjectID p_prev);
 
-protected:	
+protected:
 
 	//virtual void _window_input_event(InputEvent p_event);
 
@@ -194,15 +208,15 @@ protected:
 
 	void _notification(int p_notification);
 
-	
-	static void _bind_methods();	
-	
-	//bind helpers 
-	
+
+	static void _bind_methods();
+
+	//bind helpers
+
 public:
 
 	enum {
-	
+
 /*		NOTIFICATION_DRAW=30,
 		NOTIFICATION_VISIBILITY_CHANGED=38*/
 		NOTIFICATION_RESIZED=40,
@@ -227,6 +241,7 @@ public:
 	virtual Size2 get_combined_minimum_size() const;
 	virtual bool has_point(const Point2& p_point) const;
 	virtual bool clips_input() const;
+	virtual void set_drag_forwarding(Control* p_target);
 	virtual Variant get_drag_data(const Point2& p_point);
 	virtual bool can_drop_data(const Point2& p_point,const Variant& p_data) const;
 	virtual void drop_data(const Point2& p_point,const Variant& p_data);
@@ -237,33 +252,34 @@ public:
 	Size2 get_custom_minimum_size() const;
 
 	bool is_window_modal_on_top() const;
+	uint64_t get_modal_frame() const; //frame in which this was made modal
 
 	Control *get_parent_control() const;
 
 
-	
+
 	/* POSITIONING */
-	
-	void set_anchor(Margin p_margin,AnchorType p_anchor);
+
+	void set_anchor(Margin p_margin,AnchorType p_anchor, bool p_keep_margin=false);
 	void set_anchor_and_margin(Margin p_margin,AnchorType p_anchor, float p_pos);
-	
+
 	AnchorType get_anchor(Margin p_margin) const;
-		
+
 	void set_margin(Margin p_margin,float p_value);
-	
+
 	void set_begin(const Point2& p_point); // helper
 	void set_end(const Point2& p_point); // helper
-	
-	
-	
+
+
+
 	float get_margin(Margin p_margin) const;
 	Point2 get_begin() const;
 	Point2 get_end() const;
-		
+
 	void set_pos(const Point2& p_point);
 	void set_size(const Size2& p_size);
 	void set_global_pos(const Point2& p_point);
-	
+
 	Point2 get_pos() const;
 	Point2 get_global_pos() const;
 	Size2 get_size() const;
@@ -271,15 +287,17 @@ public:
 	Rect2 get_global_rect() const;
 	Rect2 get_window_rect() const; ///< use with care, as it blocks waiting for the visual server
 
-	void set_rotation(float p_rotation);
+	void set_rotation(float p_radians);
+	void set_rotation_deg(float p_degrees);
 	float get_rotation() const;
+	float get_rotation_deg() const;
 
 	void set_scale(const Vector2& p_scale);
 	Vector2 get_scale() const;
 
-	
+
 	void set_area_as_parent_rect(int p_margin=0);
-	
+
 	void show_modal(bool p_exclusive=false);
 
 	void set_theme(const Ref<Theme>& p_theme);
@@ -297,7 +315,7 @@ public:
 	void minimum_size_changed();
 
 	/* FOCUS */
-	
+
 	void set_focus_mode(FocusMode p_focus_mode);
 	FocusMode get_focus_mode() const;
 	bool has_focus() const;
@@ -319,7 +337,7 @@ public:
 	bool is_stopping_mouse() const;
 
 	/* SKINNING */
-	
+
 	void add_icon_override(const StringName& p_name, const Ref<Texture>& p_icon);
 	void add_shader_override(const StringName& p_name, const Ref<Shader>& p_shader);
 	void add_style_override(const StringName& p_name, const Ref<StyleBox>& p_style);
@@ -333,6 +351,13 @@ public:
 	Ref<Font> get_font(const StringName& p_name,const StringName& p_type=StringName()) const;
 	Color get_color(const StringName& p_name,const StringName& p_type=StringName()) const;
 	int get_constant(const StringName& p_name,const StringName& p_type=StringName()) const;
+
+	bool has_icon_override(const StringName& p_name) const;
+	bool has_shader_override(const StringName& p_name) const;
+	bool has_stylebox_override(const StringName& p_name) const;
+	bool has_font_override(const StringName& p_name) const;
+	bool has_color_override(const StringName& p_name) const;
+	bool has_constant_override(const StringName& p_name) const;
 
 	bool has_icon(const StringName& p_name,const StringName& p_type=StringName()) const;
 	bool has_shader(const StringName& p_name,const StringName& p_type=StringName()) const;
@@ -367,9 +392,9 @@ public:
 
 	Control *get_root_parent_control() const;
 
-	Control();	
+	Control();
 	~Control();
-	
+
 };
 
 VARIANT_ENUM_CAST(Control::AnchorType);

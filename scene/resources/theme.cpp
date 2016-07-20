@@ -34,6 +34,32 @@
 Ref<Theme> Theme::default_theme;
 
 
+void Theme::_emit_theme_changed() {
+
+	emit_changed();
+}
+
+void  Theme::_ref_font( Ref<Font> p_sc) {
+
+	if (!font_refcount.has(p_sc)) {
+		font_refcount[p_sc]=1;
+		p_sc->connect("changed",this,"_emit_theme_changed");
+	} else {
+		font_refcount[p_sc]+=1;
+	}
+}
+
+void  Theme::_unref_font(Ref<Font> p_sc) {
+
+	ERR_FAIL_COND(!font_refcount.has(p_sc));
+	font_refcount[p_sc]--;
+	if (font_refcount[p_sc]==0) {
+		p_sc->disconnect("changed",this,"_emit_theme_changed");
+		font_refcount.erase(p_sc);
+	}
+}
+
+
 bool Theme::_set(const StringName& p_name, const Variant& p_value) {
 
 	String sname=p_name;
@@ -81,13 +107,22 @@ bool Theme::_get(const StringName& p_name,Variant &r_ret) const {
 
 		if (type=="icons") {
 
-			r_ret= get_icon(name,node_type);
+			if (!has_icon(name,node_type))
+				r_ret=Ref<Texture>();
+			else
+				r_ret= get_icon(name,node_type);
 		} else if (type=="styles") {
 
-			r_ret= get_stylebox(name,node_type);
+			if (!has_stylebox(name,node_type))
+				r_ret=Ref<StyleBox>();
+			else
+				r_ret= get_stylebox(name,node_type);
 		} else if (type=="fonts") {
 
-			r_ret= get_font(name,node_type);
+			if (!has_font(name,node_type))
+				r_ret=Ref<Font>();
+			else
+				r_ret= get_font(name,node_type);
 		} else if (type=="colors") {
 
 			r_ret= get_color(name,node_type);
@@ -104,67 +139,67 @@ bool Theme::_get(const StringName& p_name,Variant &r_ret) const {
 }
 
 void Theme::_get_property_list( List<PropertyInfo> *p_list) const {
-	
+
 
 	List<PropertyInfo> list;
 
 	const StringName *key=NULL;
-	
+
 	while((key=icon_map.next(key))) {
-		
+
 		const StringName *key2=NULL;
-	
+
 		while((key2=icon_map[*key].next(key2))) {
 
-			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/icons/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "Texture" ) );
+			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/icons/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "Texture",PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_STORE_IF_NULL ) );
 		}
 	}
-	
-	key=NULL;
-	
-	while((key=style_map.next(key))) {
-		
-		const StringName *key2=NULL;
-	
-		while((key2=style_map[*key].next(key2))) {
-		
-			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/styles/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "StyleBox" ) );
-		}
-	}
-	
+
 	key=NULL;
 
-	
-	while((key=font_map.next(key))) {
-	
+	while((key=style_map.next(key))) {
+
 		const StringName *key2=NULL;
-	
-		while((key2=font_map[*key].next(key2))) {
-		
-			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/fonts/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "Font" ) );
+
+		while((key2=style_map[*key].next(key2))) {
+
+			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/styles/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "StyleBox", PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_STORE_IF_NULL ) );
 		}
 	}
-	
+
 	key=NULL;
-	
-	while((key=color_map.next(key))) {
-		
+
+
+	while((key=font_map.next(key))) {
+
 		const StringName *key2=NULL;
-	
+
+		while((key2=font_map[*key].next(key2))) {
+
+			list.push_back( PropertyInfo( Variant::OBJECT, String()+*key+"/fonts/"+*key2, PROPERTY_HINT_RESOURCE_TYPE, "Font",PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_STORE_IF_NULL ) );
+		}
+	}
+
+	key=NULL;
+
+	while((key=color_map.next(key))) {
+
+		const StringName *key2=NULL;
+
 		while((key2=color_map[*key].next(key2))) {
-		
+
 			list.push_back( PropertyInfo( Variant::COLOR, String()+*key+"/colors/"+*key2 ) );
 		}
 	}
-	
+
 	key=NULL;
-	
+
 	while((key=constant_map.next(key))) {
-		
+
 		const StringName *key2=NULL;
-	
+
 		while((key2=constant_map[*key].next(key2))) {
-		
+
 			list.push_back( PropertyInfo( Variant::INT, String()+*key+"/constants/"+*key2 ) );
 		}
 	}
@@ -173,18 +208,33 @@ void Theme::_get_property_list( List<PropertyInfo> *p_list) const {
 	for(List<PropertyInfo>::Element *E=list.front();E;E=E->next()) {
 		p_list->push_back(E->get());
 	}
-	
+
 }
 
 Ref<Theme> Theme::get_default() {
-	
-	return default_theme;	
+
+	return default_theme;
 }
 
 
 void Theme::set_default_theme_font( const Ref<Font>& p_default_font ) {
 
+	if (default_theme_font==p_default_font)
+		return;
+
+	if (default_theme_font.is_valid()) {
+		_unref_font(default_theme_font);
+	}
+
 	default_theme_font=p_default_font;
+
+	if (default_theme_font.is_valid()) {
+		_ref_font(default_theme_font);
+	}
+
+	_change_notify();
+	emit_changed();;
+
 }
 
 Ref<Font> Theme::get_default_theme_font() const {
@@ -193,7 +243,7 @@ Ref<Font> Theme::get_default_theme_font() const {
 }
 
 void Theme::set_default(const Ref<Theme>& p_default) {
-	
+
 	default_theme=p_default;
 }
 
@@ -217,11 +267,11 @@ void Theme::set_default_font( const Ref<Font>& p_font ) {
 
 void Theme::set_icon(const StringName& p_name,const StringName& p_type,const Ref<Texture>& p_icon) {
 
-	ERR_FAIL_COND(p_icon.is_null());
+//	ERR_FAIL_COND(p_icon.is_null());
 
 	bool new_value=!icon_map.has(p_type) || !icon_map[p_type].has(p_name);
 
-	icon_map[p_type][p_name]=p_icon;	
+	icon_map[p_type][p_name]=p_icon;
 
 	if (new_value) {
 		_change_notify();
@@ -229,7 +279,7 @@ void Theme::set_icon(const StringName& p_name,const StringName& p_type,const Ref
 	}
 }
 Ref<Texture> Theme::get_icon(const StringName& p_name,const StringName& p_type) const {
-	
+
 	if (icon_map.has(p_type) && icon_map[p_type].has(p_name) && icon_map[p_type][p_name].is_valid()) {
 
 		return icon_map[p_type][p_name];
@@ -239,8 +289,8 @@ Ref<Texture> Theme::get_icon(const StringName& p_name,const StringName& p_type) 
 }
 
 bool Theme::has_icon(const StringName& p_name,const StringName& p_type) const {
-	
-	return (icon_map.has(p_type) && icon_map[p_type].has(p_name));
+
+	return (icon_map.has(p_type) && icon_map[p_type].has(p_name) && icon_map[p_type][p_name].is_valid());
 }
 
 
@@ -266,13 +316,13 @@ void Theme::get_icon_list(StringName p_type, List<StringName> *p_list) const {
 
 		p_list->push_back(*key);
 	}
-	
+
 }
 
 void Theme::set_shader(const StringName &p_name,const StringName &p_type,const Ref<Shader>& p_shader) {
 	bool new_value=!shader_map.has(p_type) || !shader_map[p_type].has(p_name);
 
-	shader_map[p_type][p_name]=p_shader;	
+	shader_map[p_type][p_name]=p_shader;
 
 	if (new_value) {
 		_change_notify();
@@ -311,13 +361,13 @@ void Theme::get_shader_list(const StringName &p_type, List<StringName> *p_list) 
 
 		p_list->push_back(*key);
 	}
-	
+
 }
 
 
 void Theme::set_stylebox(const StringName& p_name,const StringName& p_type,const Ref<StyleBox>& p_style) {
 
-	ERR_FAIL_COND(p_style.is_null());
+//	ERR_FAIL_COND(p_style.is_null());
 
 	bool new_value=!style_map.has(p_type) || !style_map[p_type].has(p_name);
 
@@ -331,18 +381,19 @@ void Theme::set_stylebox(const StringName& p_name,const StringName& p_type,const
 
 
 Ref<StyleBox> Theme::get_stylebox(const StringName& p_name,const StringName& p_type) const {
-	
+
 	if (style_map.has(p_type) && style_map[p_type].has(p_name) && style_map[p_type][p_name].is_valid()) {
 
 		return style_map[p_type][p_name];
 	} else {
 		return default_style;
+
 	}
 }
 
 bool Theme::has_stylebox(const StringName& p_name,const StringName& p_type) const {
-	
-	return (style_map.has(p_type) && style_map[p_type].has(p_name) );
+
+	return (style_map.has(p_type) && style_map[p_type].has(p_name) && style_map[p_type][p_name].is_valid());
 }
 
 void Theme::clear_stylebox(const StringName& p_name,const StringName& p_type) {
@@ -370,39 +421,59 @@ void Theme::get_stylebox_list(StringName p_type, List<StringName> *p_list) const
 
 }
 
+void Theme::get_stylebox_types(List<StringName> *p_list) const {
+	const StringName *key=NULL;
+	while((key=style_map.next(key))) {
+		p_list->push_back(*key);
+	}
+}
+
 void Theme::set_font(const StringName& p_name,const StringName& p_type,const Ref<Font>& p_font) {
 
-	ERR_FAIL_COND(p_font.is_null());
+//	ERR_FAIL_COND(p_font.is_null());
 
 	bool new_value=!font_map.has(p_type) || !font_map[p_type].has(p_name);
+
+	if (!new_value) {
+		if (font_map[p_type][p_name].is_valid()) {
+			_unref_font(font_map[p_type][p_name]);
+		}
+	}
 	font_map[p_type][p_name]=p_font;
+
+	if (p_font.is_valid()) {
+		_ref_font(p_font);
+	}
 
 	if (new_value) {
 		_change_notify();
 		emit_changed();;
-
 	}
 }
 Ref<Font> Theme::get_font(const StringName& p_name,const StringName& p_type) const {
-	
+
 	if (font_map.has(p_type) && font_map[p_type].has(p_name) && font_map[p_type][p_name].is_valid())
-		return font_map[p_type][p_name];	
+		return font_map[p_type][p_name];
 	else if (default_theme_font.is_valid())
 		return default_theme_font;
 	else
 		return default_font;
-	
+
 }
 
 bool Theme::has_font(const StringName& p_name,const StringName& p_type) const {
-	
-	return (font_map.has(p_type) && font_map[p_type].has(p_name));
+
+	return (font_map.has(p_type) && font_map[p_type].has(p_name) && font_map[p_type][p_name].is_valid());
 }
 
 void Theme::clear_font(const StringName& p_name,const StringName& p_type) {
 
 	ERR_FAIL_COND(!font_map.has(p_type));
 	ERR_FAIL_COND(!font_map[p_type].has(p_name));
+
+	if (font_map.has(p_type) && font_map[p_type].has(p_name) && font_map[p_type][p_name].is_valid()) {
+		_unref_font(font_map[p_type][p_name]);
+	}
 
 	font_map[p_type].erase(p_name);
 	_change_notify();
@@ -425,7 +496,7 @@ void Theme::get_font_list(StringName p_type, List<StringName> *p_list) const {
 }
 
 void Theme::set_color(const StringName& p_name,const StringName& p_type,const Color& p_color) {
-	
+
 	bool new_value=!color_map.has(p_type) || !color_map[p_type].has(p_name);
 
 	color_map[p_type][p_name]=p_color;
@@ -440,16 +511,16 @@ void Theme::set_color(const StringName& p_name,const StringName& p_type,const Co
 
 
 Color Theme::get_color(const StringName& p_name,const StringName& p_type) const {
-	
+
 	if (color_map.has(p_type) && color_map[p_type].has(p_name))
-		return color_map[p_type][p_name];	
+		return color_map[p_type][p_name];
 	else
 		return Color();
-	
+
 }
 
 bool Theme::has_color(const StringName& p_name,const StringName& p_type) const {
-	
+
 	return (color_map.has(p_type) && color_map[p_type].has(p_name));
 }
 
@@ -479,7 +550,7 @@ void Theme::get_color_list(StringName p_type, List<StringName> *p_list) const {
 }
 
 void Theme::set_constant(const StringName& p_name,const StringName& p_type,int p_constant) {
-	
+
 	bool new_value=!constant_map.has(p_type) || !constant_map[p_type].has(p_name);
 	constant_map[p_type][p_name]=p_constant;
 
@@ -490,17 +561,17 @@ void Theme::set_constant(const StringName& p_name,const StringName& p_type,int p
 }
 
 int Theme::get_constant(const StringName& p_name,const StringName& p_type) const {
-	
+
 	if (constant_map.has(p_type) && constant_map[p_type].has(p_name))
-		return constant_map[p_type][p_name];	
+		return constant_map[p_type][p_name];
 	else {
 		return 0;
 	}
-	
+
 }
 
 bool Theme::has_constant(const StringName& p_name,const StringName& p_type) const {
-	
+
 	return (constant_map.has(p_type) && constant_map[p_type].has(p_name));
 }
 
@@ -604,6 +675,7 @@ void Theme::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("has_stylebox","name","type"),&Theme::has_stylebox);
 	ObjectTypeDB::bind_method(_MD("clear_stylebox","name","type"),&Theme::clear_stylebox);
 	ObjectTypeDB::bind_method(_MD("get_stylebox_list","type"),&Theme::_get_stylebox_list);
+	ObjectTypeDB::bind_method(_MD("get_stylebox_types"),&Theme::_get_stylebox_types);
 
 	ObjectTypeDB::bind_method(_MD("set_font","name","type","font:Font"),&Theme::set_font);
 	ObjectTypeDB::bind_method(_MD("get_font:Font","name","type"),&Theme::get_font);
@@ -628,6 +700,11 @@ void Theme::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("get_type_list","type"),&Theme::_get_type_list);
 
+	ObjectTypeDB::bind_method(_MD("_emit_theme_changed"),&Theme::_emit_theme_changed);
+
+
+
+
 	ObjectTypeDB::bind_method("copy_default_theme",&Theme::copy_default_theme);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT,"default_font",PROPERTY_HINT_RESOURCE_TYPE,"Font"),_SCS("set_default_font"),_SCS("get_default_font"));
@@ -635,8 +712,8 @@ void Theme::_bind_methods() {
 }
 
 Theme::Theme() {
-	
-	
+
+
 }
 
 

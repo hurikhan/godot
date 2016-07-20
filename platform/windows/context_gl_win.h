@@ -30,7 +30,7 @@
 //
 // C++ Interface: context_gl_x11
 //
-// Description: 
+// Description:
 //
 //
 // Author: Juan Linietsky <reduzio@gmail.com>, (C) 2008
@@ -49,6 +49,8 @@
 
 #include <windows.h>
 
+typedef bool (APIENTRY *PFNWGLSWAPINTERVALEXTPROC) (int interval);
+
 class ContextGL_Win : public ContextGL {
 
 	HDC hDC;
@@ -56,20 +58,26 @@ class ContextGL_Win : public ContextGL {
 	unsigned int pixel_format;
 	HWND hWnd;
 	bool opengl_3_context;
+	bool use_vsync;
+
+
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 public:
 
 
 	virtual void release_current();
 
 	virtual void make_current();
-	
+
 	virtual int get_window_width();
 	virtual int get_window_height();
 	virtual void swap_buffers();
-	
+
 	virtual Error initialize();
-		
-	
+
+	virtual void set_use_vsync(bool p_use);
+	virtual bool is_using_vsync() const;
+
 	ContextGL_Win(HWND hwnd,bool p_opengl_3_context);
 	~ContextGL_Win();
 

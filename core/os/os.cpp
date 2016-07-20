@@ -32,6 +32,8 @@
 #include "dir_access.h"
 #include "globals.h"
 #include "input.h"
+// For get_engine_version, could be removed if it's moved to a new Engine singleton
+#include "version.h"
 
 OS* OS::singleton=NULL;
 
@@ -306,6 +308,15 @@ String OS::get_system_dir(SystemDir p_dir) const {
 	return ".";
 }
 
+String OS::get_safe_application_name() const {
+	String an = Globals::get_singleton()->get("application/name");
+	Vector<String> invalid_char = String("\\ / : * ? \" < > |").split(" ");
+	for (int i=0;i<invalid_char.size();i++) {
+		an = an.replace(invalid_char[i],"-");
+	}
+	return an;
+}
+
 String OS::get_data_dir() const {
 
 	return ".";
@@ -530,6 +541,36 @@ String OS::get_joy_guid(int p_device) const {
 void OS::set_context(int p_context) {
 
 }
+void OS::set_use_vsync(bool p_enable) {
+
+}
+
+bool OS::is_vsnc_enabled() const{
+
+	return true;
+}
+
+Dictionary OS::get_engine_version() const {
+
+	Dictionary dict;
+	dict["major"] = _MKSTR(VERSION_MAJOR);
+	dict["minor"] = _MKSTR(VERSION_MINOR);
+#ifdef VERSION_PATCH
+	dict["patch"] = _MKSTR(VERSION_PATCH);
+#else
+	dict["patch"] = "";
+#endif
+	dict["status"] = _MKSTR(VERSION_STATUS);
+	dict["revision"] = _MKSTR(VERSION_REVISION);
+
+	String stringver = String(dict["major"]) + "." + String(dict["minor"]);
+	if (dict["patch"] != "")
+		stringver += "." + String(dict["patch"]);
+	stringver += "-" + String(dict["status"]) + " (" + String(dict["revision"]) + ")";
+	dict["string"] = stringver;
+
+	return dict;
+}
 
 OS::OS() {
 	last_error=NULL;
@@ -548,6 +589,7 @@ OS::OS() {
 	_render_thread_mode=RENDER_THREAD_SAFE;
 	_time_scale=1.0;
 	_pixel_snap=false;
+	_allow_hidpi=true;
 	Math::seed(1234567);
 }
 

@@ -182,8 +182,10 @@ bool FileAccessJAndroid::file_exists(const String& p_path) {
 
 	jstring js = env->NewStringUTF(path.utf8().get_data());
 	int res = env->CallIntMethod(io,_file_open,js,false);
-	if (res<=0)
+	if (res<=0) {
+		env->DeleteLocalRef(js);
 		return false;
+	}
 	env->CallVoidMethod(io,_file_close,res);
 	env->DeleteLocalRef(js);
 	return true;
@@ -203,7 +205,7 @@ void FileAccessJAndroid::setup(  jobject p_io) {
 	__android_log_print(ANDROID_LOG_INFO,"godot","STEP6");
 	cls=(jclass)env->NewGlobalRef(c);
 
-	_file_open = env->GetMethodID(cls, "file_open", "(Ljava/lang/String;Z)I");	
+	_file_open = env->GetMethodID(cls, "file_open", "(Ljava/lang/String;Z)I");
 	if(_file_open != 0) {
 		__android_log_print(ANDROID_LOG_INFO,"godot","*******GOT METHOD _file_open ok!!");
 	}

@@ -32,9 +32,16 @@
 #include "translation.h"
 #include "os/input.h"
 
-String PopupMenu::_get_accel_text(uint32_t p_accel) const {
+String PopupMenu::_get_accel_text(int p_item) const {
 
-	return keycode_get_string(p_accel);
+	ERR_FAIL_INDEX_V(p_item,items.size(),String());
+
+	if (items[p_item].shortcut.is_valid())
+		return items[p_item].shortcut->get_as_text();
+	else if (items[p_item].accel)
+		return keycode_get_string(items[p_item].accel);
+	return String();
+
 	/*
 	String atxt;
 	if (p_accel&KEY_MASK_SHIFT)
@@ -59,52 +66,53 @@ Size2 PopupMenu::get_minimum_size() const {
 
 	int vseparation = get_constant("vseparation");
 	int hseparation = get_constant("hseparation");
-	
+
 	Size2 minsize = get_stylebox("panel")->get_minimum_size();
 	Ref<Font> font = get_font("font");
-	
+
 	float max_w=0;
 	int font_h = font->get_height();
 	int check_w = get_icon("checked")->get_width();
 	int accel_max_w=0;
-	
+
 	for (int i=0;i<items.size();i++) {
-	
+
 		Size2 size;
 		if (!items[i].icon.is_null()) {
-		
+
 			Size2 icon_size = items[i].icon->get_size();
 			size.height = MAX( icon_size.height, font_h );
 			size.width+=icon_size.width;
 			size.width+=hseparation;
 		} else {
-		
+
 			size.height=font_h;
 		}
-		
+
 		if (items[i].checkable) {
-		
+
 			size.width+=check_w+hseparation;
 		}
-		
-		size.width+=font->get_string_size(items[i].text).width;
+
+		String text = items[i].shortcut.is_valid() ? String(tr(items[i].shortcut->get_name())) : items[i].text;
+		size.width+=font->get_string_size(text).width;
 		if (i>0)
 			size.height+=vseparation;
 
-		if (items[i].accel) {
+		if (items[i].accel || (items[i].shortcut.is_valid() && items[i].shortcut->is_valid())) {
 
 			int accel_w = hseparation*2;
-			accel_w+=font->get_string_size(_get_accel_text(items[i].accel)).width;
+			accel_w+=font->get_string_size(_get_accel_text(i)).width;
 			accel_max_w = MAX( accel_w, accel_max_w );
 		}
 
 		minsize.height+=size.height;
 		max_w = MAX( max_w, size.width );
-		
+
 	}
-	
+
 	minsize.width+=max_w+accel_max_w;
-	
+
 	return minsize;
 }
 
@@ -115,41 +123,41 @@ int PopupMenu::_get_mouse_over(const Point2& p_over) const {
 		return -1;
 
 	Ref<StyleBox> style = get_stylebox("panel");
-	
+
 	Point2 ofs=style->get_offset();
-	
+
 
 	if (ofs.y>p_over.y)
 		return -1;
-	
-		
-	Ref<Font> font = get_font("font");	
+
+
+	Ref<Font> font = get_font("font");
 	int vseparation = get_constant("vseparation");
 //	int hseparation = get_constant("hseparation");
 	float font_h=font->get_height();
 
-	
+
 	for (int i=0;i<items.size();i++) {
-	
+
 		if (i>0)
 			ofs.y+=vseparation;
 		float h;
-		
+
 		if (!items[i].icon.is_null()) {
-		
+
 			Size2 icon_size = items[i].icon->get_size();
 			h = MAX( icon_size.height, font_h );
 		} else {
-		
+
 			h=font_h;
 		}
-		
+
 		ofs.y+=h;
 		if (p_over.y < ofs.y) {
 			return i;
-		}			
+		}
 	}
-	
+
 	return -1;
 
 }
@@ -271,11 +279,11 @@ void PopupMenu::_input_event(const InputEvent &p_event) {
 		} break;
 
 		case InputEvent::MOUSE_BUTTON: {
-	
-			
+
+
 			const InputEventMouseButton &b=p_event.mouse_button;
 			if (b.pressed)
-				break;			
+				break;
 
 			switch(b.button_index) {
 
@@ -347,11 +355,11 @@ void PopupMenu::_input_event(const InputEvent &p_event) {
 
 				} break;
 			}
-			
+
 			//update();
 		} break;
 		case InputEvent::MOUSE_MOTION: {
-	
+
 
 			if (invalidated_click) {
 				moved+=Vector2(p_event.mouse_motion.relative_x,p_event.mouse_motion.relative_y);
@@ -409,13 +417,13 @@ bool PopupMenu::has_point(const Point2& p_point) const {
 void PopupMenu::_notification(int p_what) {
 
 	switch(p_what) {
-	
+
 
 		case NOTIFICATION_DRAW: {
-		
+
 			RID ci = get_canvas_item();
 			Size2 size=get_size();
-		
+
 			Ref<StyleBox> style = get_stylebox("panel");
 			Ref<StyleBox> hover = get_stylebox("hover");
 			Ref<Font> font = get_font("font");
@@ -423,7 +431,7 @@ void PopupMenu::_notification(int p_what) {
 			Ref<Texture> uncheck = get_icon("unchecked");
 			Ref<Texture> submenu= get_icon("submenu");
 			Ref<StyleBox> separator = get_stylebox("separator");
-			
+
 			style->draw( ci, Rect2( Point2(), get_size() ) );
 			Point2 ofs=style->get_offset();
 			int vseparation = get_constant("vseparation");
@@ -433,36 +441,36 @@ void PopupMenu::_notification(int p_what) {
 			Color font_color_accel = get_color("font_color_accel");
 			Color font_color_hover = get_color("font_color_hover");
 			float font_h=font->get_height();
-			
+
 			for (int i=0;i<items.size();i++) {
-			
+
 				if (i>0)
 					ofs.y+=vseparation;
 				Point2 item_ofs=ofs;
 				float h;
 				Size2 icon_size;
-								
+
 				if (!items[i].icon.is_null()) {
-				
+
 					icon_size = items[i].icon->get_size();
 					h = MAX( icon_size.height, font_h );
 				} else {
-				
+
 					h=font_h;
 				}
-					
+
 				if (i==mouse_over) {
-							
+
 					hover->draw(ci,	Rect2( ofs+Point2(-hseparation,-vseparation), Size2( get_size().width - style->get_minimum_size().width + hseparation*2, h+vseparation*2 ) ));
 				}
-				
+
 				if (items[i].separator) {
-				
+
 					int sep_h=separator->get_center_size().height+separator->get_minimum_size().height;
 					separator->draw(ci,	Rect2( ofs+Point2(0,Math::floor((h-sep_h)/2.0)), Size2( get_size().width - style->get_minimum_size().width , sep_h ) ));
-					
+
 				}
-				
+
 				if (items[i].checkable) {
 
 					if (items[i].checked)
@@ -484,13 +492,15 @@ void PopupMenu::_notification(int p_what) {
 				}
 
 				item_ofs.y+=font->get_ascent();
-				if (!items[i].separator)
-					font->draw(ci,item_ofs+Point2(0,Math::floor((h-font_h)/2.0)),items[i].text,items[i].disabled?font_color_disabled:(i==mouse_over?font_color_hover:font_color));
+				String text = items[i].shortcut.is_valid() ? String(tr(items[i].shortcut->get_name())) : items[i].text;
+				if (!items[i].separator) {
 
+					font->draw(ci,item_ofs+Point2(0,Math::floor((h-font_h)/2.0)),text,items[i].disabled?font_color_disabled:(i==mouse_over?font_color_hover:font_color));
+				}
 
-				if (items[i].accel) {
+				if (items[i].accel || (items[i].shortcut.is_valid() && items[i].shortcut->is_valid())) {
 					//accelerator
-					String text = _get_accel_text(items[i].accel);
+					String text = _get_accel_text(i);
 					item_ofs.x=size.width-style->get_margin(MARGIN_RIGHT)-font->get_string_size(text).width;
 					font->draw(ci,item_ofs+Point2(0,Math::floor((h-font_h)/2.0)),text,i==mouse_over?font_color_hover:font_color_accel);
 
@@ -499,16 +509,16 @@ void PopupMenu::_notification(int p_what) {
 				items[i]._ofs_cache=ofs.y;
 
 				ofs.y+=h;
-				
+
 			}
-			
+
 		} break;
 		case NOTIFICATION_MOUSE_ENTER: {
 
 			grab_focus();
 		} break;
 		case NOTIFICATION_MOUSE_EXIT: {
-		
+
 			if (mouse_over>=0) {
 				mouse_over=-1;
 				update();
@@ -570,11 +580,69 @@ void PopupMenu::add_check_item(const String& p_label,int p_ID,uint32_t p_accel) 
 	update();
 }
 
+
+void PopupMenu::add_icon_shortcut(const Ref<Texture>& p_icon,const Ref<ShortCut>& p_shortcut,int p_ID) {
+
+	ERR_FAIL_COND(p_shortcut.is_null());
+
+	_ref_shortcut(p_shortcut);
+
+	Item item;
+	item.ID=p_ID;
+	item.icon=p_icon;
+	item.shortcut=p_shortcut;
+	items.push_back(item);
+	update();
+
+}
+
+void PopupMenu::add_shortcut(const Ref<ShortCut>& p_shortcut,int p_ID){
+
+	ERR_FAIL_COND(p_shortcut.is_null());
+
+	_ref_shortcut(p_shortcut);
+
+	Item item;
+	item.ID=p_ID;
+	item.shortcut=p_shortcut;
+	items.push_back(item);
+	update();
+
+}
+void PopupMenu::add_icon_check_shortcut(const Ref<Texture>& p_icon,const Ref<ShortCut>& p_shortcut,int p_ID){
+
+	ERR_FAIL_COND(p_shortcut.is_null());
+
+	_ref_shortcut(p_shortcut);
+
+	Item item;
+	item.ID=p_ID;
+	item.shortcut=p_shortcut;
+	item.checkable=true;
+	item.icon=p_icon;
+	items.push_back(item);
+	update();
+}
+
+void PopupMenu::add_check_shortcut(const Ref<ShortCut>& p_shortcut,int p_ID){
+
+	ERR_FAIL_COND(p_shortcut.is_null());
+
+	_ref_shortcut(p_shortcut);
+
+	Item item;
+	item.ID=p_ID;
+	item.shortcut=p_shortcut;
+	item.checkable=true;
+	items.push_back(item);
+	update();
+}
+
 void PopupMenu::set_item_text(int p_idx,const String& p_text) {
 
 	ERR_FAIL_INDEX(p_idx,items.size());
 	items[p_idx].text=XL_MESSAGE(p_text);
-	
+
 	update();
 
 }
@@ -597,8 +665,8 @@ void PopupMenu::set_item_checked(int p_idx,bool p_checked) {
 void PopupMenu::set_item_ID(int p_idx,int p_ID) {
 
 	ERR_FAIL_INDEX(p_idx,items.size());
-	items[p_idx].ID=p_ID;	
-	
+	items[p_idx].ID=p_ID;
+
 	update();
 }
 
@@ -701,6 +769,12 @@ String PopupMenu::get_item_tooltip(int p_idx) const {
 	return items[p_idx].tooltip;
 }
 
+Ref<ShortCut> PopupMenu::get_item_shortcut(int p_idx) const {
+
+	ERR_FAIL_INDEX_V(p_idx,items.size(),Ref<ShortCut>());
+	return items[p_idx].shortcut;
+}
+
 void PopupMenu::set_item_as_separator(int p_idx, bool p_separator) {
 
 	ERR_FAIL_INDEX(p_idx,items.size());
@@ -730,6 +804,21 @@ void PopupMenu::set_item_tooltip(int p_idx,const String& p_tooltip) {
 	update();
 }
 
+void PopupMenu::set_item_shortcut(int p_idx, const Ref<ShortCut>& p_shortcut) {
+	ERR_FAIL_INDEX(p_idx,items.size());
+	if (items[p_idx].shortcut.is_valid()) {
+		_unref_shortcut(items[p_idx].shortcut);
+	}
+	items[p_idx].shortcut=p_shortcut;
+
+	if (items[p_idx].shortcut.is_valid()) {
+		_ref_shortcut(items[p_idx].shortcut);
+	}
+
+
+	update();
+}
+
 bool PopupMenu::is_item_checkable(int p_idx) const {
 	ERR_FAIL_INDEX_V(p_idx,items.size(),false);
 	return items[p_idx].checkable;
@@ -740,15 +829,55 @@ int PopupMenu::get_item_count() const {
 	return items.size();
 }
 
-int PopupMenu::find_item_by_accelerator(uint32_t p_accel) const {
+bool PopupMenu::activate_item_by_event(const InputEvent& p_event) {
+
+	uint32_t code=0;
+	if (p_event.type==InputEvent::KEY) {
+		code=p_event.key.scancode;
+		if (code==0)
+			code=p_event.key.unicode;
+		if (p_event.key.mod.control)
+			code|=KEY_MASK_CTRL;
+		if (p_event.key.mod.alt)
+			code|=KEY_MASK_ALT;
+		if (p_event.key.mod.meta)
+			code|=KEY_MASK_META;
+		if (p_event.key.mod.shift)
+			code|=KEY_MASK_SHIFT;
+	}
+
 
 	int il=items.size();
 	for(int i=0;i<il;i++) {
+		if (is_item_disabled(i))
+			continue;
 
-		if (items[i].accel==p_accel)
-			return i;
+
+		if (items[i].shortcut.is_valid() && items[i].shortcut->is_shortcut(p_event)) {
+			activate_item(i);
+			return true;
+		}
+
+		if (code!=0 && items[i].accel==code) {
+			activate_item(i);
+			return true;
+		}
+
+		if (items[i].submenu!="") {
+			Node* n = get_node(items[i].submenu);
+			if(!n)
+				continue;
+
+			PopupMenu* pm = n->cast_to<PopupMenu>();
+			if(!pm)
+				continue;
+
+			if(pm->activate_item_by_event(p_event)) {
+				return true;
+			}
+		}
 	}
-	return -1;
+	return false;
 }
 
 void PopupMenu::activate_item(int p_item) {
@@ -773,6 +902,12 @@ void PopupMenu::activate_item(int p_item) {
 
 void PopupMenu::remove_item(int p_idx) {
 
+	ERR_FAIL_INDEX(p_idx,items.size());
+
+	if (items[p_idx].shortcut.is_valid()) {
+		_unref_shortcut(items[p_idx].shortcut);
+	}
+
 	items.remove(p_idx);
 	update();
 }
@@ -785,9 +920,14 @@ void PopupMenu::add_separator() {
 	items.push_back(sep);
 	update();
 }
-	
+
 void PopupMenu::clear()  {
 
+	for(int i=0;i<items.size();i++) {
+		if (items[i].shortcut.is_valid()) {
+			_unref_shortcut(items[i].shortcut);
+		}
+	}
 	items.clear();
 	mouse_over=-1;
 	update();
@@ -816,6 +956,27 @@ Array PopupMenu::_get_items() const {
 	return items;
 
 }
+
+void  PopupMenu::_ref_shortcut( Ref<ShortCut> p_sc) {
+
+	if (!shortcut_refcount.has(p_sc)) {
+		shortcut_refcount[p_sc]=1;
+		p_sc->connect("changed",this,"update");
+	} else {
+		shortcut_refcount[p_sc]+=1;
+	}
+}
+
+void  PopupMenu::_unref_shortcut(Ref<ShortCut> p_sc) {
+
+	ERR_FAIL_COND(!shortcut_refcount.has(p_sc));
+	shortcut_refcount[p_sc]--;
+	if (shortcut_refcount[p_sc]==0) {
+		p_sc->disconnect("changed",this,"update");
+		shortcut_refcount.erase(p_sc);
+	}
+}
+
 void PopupMenu::_set_items(const Array& p_items){
 
 	ERR_FAIL_COND(p_items.size() % 10);
@@ -888,18 +1049,26 @@ void PopupMenu::clear_autohide_areas(){
 
 void PopupMenu::_bind_methods() {
 
-	ObjectTypeDB::bind_method(_MD("_input_event"),&PopupMenu::_input_event);	
+	ObjectTypeDB::bind_method(_MD("_input_event"),&PopupMenu::_input_event);
 	ObjectTypeDB::bind_method(_MD("add_icon_item","texture","label","id","accel"),&PopupMenu::add_icon_item,DEFVAL(-1),DEFVAL(0));
 	ObjectTypeDB::bind_method(_MD("add_item","label","id","accel"),&PopupMenu::add_item,DEFVAL(-1),DEFVAL(0));
 	ObjectTypeDB::bind_method(_MD("add_icon_check_item","texture","label","id","accel"),&PopupMenu::add_icon_check_item,DEFVAL(-1),DEFVAL(0));
 	ObjectTypeDB::bind_method(_MD("add_check_item","label","id","accel"),&PopupMenu::add_check_item,DEFVAL(-1),DEFVAL(0));
 	ObjectTypeDB::bind_method(_MD("add_submenu_item","label","submenu","id"),&PopupMenu::add_submenu_item,DEFVAL(-1));
+
+	ObjectTypeDB::bind_method(_MD("add_icon_shortcut","texture","shortcut:ShortCut","id"),&PopupMenu::add_icon_shortcut,DEFVAL(-1));
+	ObjectTypeDB::bind_method(_MD("add_shortcut","shortcut:ShortCut","id"),&PopupMenu::add_shortcut,DEFVAL(-1));
+	ObjectTypeDB::bind_method(_MD("add_icon_check_shortcut","texture","shortcut:ShortCut","id"),&PopupMenu::add_icon_check_shortcut,DEFVAL(-1));
+	ObjectTypeDB::bind_method(_MD("add_check_shortcut","shortcut:ShortCut","id"),&PopupMenu::add_check_shortcut,DEFVAL(-1));
+
+
 	ObjectTypeDB::bind_method(_MD("set_item_text","idx","text"),&PopupMenu::set_item_text);
 	ObjectTypeDB::bind_method(_MD("set_item_icon","idx","icon"),&PopupMenu::set_item_icon);
 	ObjectTypeDB::bind_method(_MD("set_item_accelerator","idx","accel"),&PopupMenu::set_item_accelerator);
 	ObjectTypeDB::bind_method(_MD("set_item_metadata","idx","metadata"),&PopupMenu::set_item_metadata);
 	ObjectTypeDB::bind_method(_MD("set_item_checked","idx","checked"),&PopupMenu::set_item_checked);
 	ObjectTypeDB::bind_method(_MD("set_item_disabled","idx","disabled"),&PopupMenu::set_item_disabled);
+	ObjectTypeDB::bind_method(_MD("set_item_shortcut","idx","shortcut:ShortCut"),&PopupMenu::set_item_shortcut);
 	ObjectTypeDB::bind_method(_MD("set_item_submenu","idx","submenu"),&PopupMenu::set_item_submenu);
 	ObjectTypeDB::bind_method(_MD("set_item_as_separator","idx","enable"),&PopupMenu::set_item_as_separator);
 	ObjectTypeDB::bind_method(_MD("set_item_as_checkable","idx","enable"),&PopupMenu::set_item_as_checkable);
@@ -908,6 +1077,7 @@ void PopupMenu::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("get_item_icon","idx"),&PopupMenu::get_item_icon);
 	ObjectTypeDB::bind_method(_MD("get_item_metadata","idx"),&PopupMenu::get_item_metadata);
 	ObjectTypeDB::bind_method(_MD("get_item_accelerator","idx"),&PopupMenu::get_item_accelerator);
+	ObjectTypeDB::bind_method(_MD("get_item_shortcut:ShortCut","idx"),&PopupMenu::get_item_shortcut);
 	ObjectTypeDB::bind_method(_MD("get_item_submenu","idx"),&PopupMenu::get_item_submenu);
 	ObjectTypeDB::bind_method(_MD("is_item_separator","idx"),&PopupMenu::is_item_separator);
 	ObjectTypeDB::bind_method(_MD("is_item_checkable","idx"),&PopupMenu::is_item_checkable);
@@ -916,7 +1086,7 @@ void PopupMenu::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("get_item_ID","idx"),&PopupMenu::get_item_ID);
 	ObjectTypeDB::bind_method(_MD("get_item_index","id"),&PopupMenu::get_item_index);
 	ObjectTypeDB::bind_method(_MD("get_item_count"),&PopupMenu::get_item_count);
-	ObjectTypeDB::bind_method(_MD("add_separator"),&PopupMenu::add_separator);	
+	ObjectTypeDB::bind_method(_MD("add_separator"),&PopupMenu::add_separator);
 	ObjectTypeDB::bind_method(_MD("remove_item","idx"),&PopupMenu::remove_item);
 	ObjectTypeDB::bind_method(_MD("clear"),&PopupMenu::clear);
 
@@ -930,7 +1100,7 @@ void PopupMenu::_bind_methods() {
 	ADD_SIGNAL( MethodInfo("item_pressed", PropertyInfo( Variant::INT,"ID") ) );
 
 }
-	
+
 
 void PopupMenu::set_invalidate_click_until_motion() {
 	moved=Vector2();
@@ -941,7 +1111,7 @@ PopupMenu::PopupMenu() {
 
 
 	mouse_over=-1;
-	
+
 	set_focus_mode(FOCUS_ALL);
 	set_as_toplevel(true);
 

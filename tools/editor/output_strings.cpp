@@ -32,7 +32,6 @@
 
 void OutputStrings::update_scrollbars() {
 
-	Size2 size = get_size();
 	Size2 hmin = h_scroll->get_combined_minimum_size();
 	Size2 vmin = v_scroll->get_combined_minimum_size();
 
@@ -84,7 +83,7 @@ void OutputStrings::_notification(int p_what) {
 			Ref<Texture> icon_warning = get_icon("Warning","EditorIcons");
 
 		//	int lines = (size_height-(int)margin.y) / font_height;
-			Point2 ofs=tree_st->get_offset();			
+			Point2 ofs=tree_st->get_offset();
 
 			LineMap::Element *E = line_map.find(v_scroll->get_val());
 			float h_ofs = (int)h_scroll->get_val();

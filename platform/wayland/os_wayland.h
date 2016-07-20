@@ -159,7 +159,7 @@ class OS_Wayland : public OS_Unix {
 		Point2i rel;
 		Point2i speed;
 		Point2i last_click_pos;
-		uint64_t last_click_time;		
+		uint64_t last_click_time = 0 ;
 		int button_mask;
 		struct wl_cursor_theme *cursor_theme;
 		struct wl_surface *cursor_surface;

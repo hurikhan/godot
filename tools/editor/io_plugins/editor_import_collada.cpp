@@ -355,6 +355,10 @@ Error ColladaImport::_create_scene(Collada::Node *p_node, Spatial *p_parent) {
 	p_parent->add_child(node);
 	node->set_owner(scene);
 
+	if (p_node->empty_draw_type!="") {
+		node->set_meta("empty_draw_type", Variant(p_node->empty_draw_type));
+	}
+	
 	for(int i=0;i<p_node->children.size();i++) {
 
 		Error err = _create_scene(p_node->children[i],node);
@@ -463,6 +467,7 @@ Error ColladaImport::_create_material(const String& p_target) {
 
 	material->set_parameter(FixedMaterial::PARAM_SPECULAR_EXP,effect.shininess);
 	material->set_flag(Material::FLAG_DOUBLE_SIDED,effect.double_sided);
+	material->set_flag(Material::FLAG_UNSHADED,effect.unshaded);
 
 
 
@@ -1372,7 +1377,7 @@ Error ColladaImport::_create_mesh_surfaces(bool p_optimize,Ref<Mesh>& p_mesh,con
 					DVector<float> tangents;
 					print_line("vertex source id: "+vertex_src_id);
 					if(md.vertices[vertex_src_id].sources.has("NORMAL")){
-						//has normals 
+						//has normals
 						normals.resize(vlen);
 						//std::cout << "has normals" << std::endl;
 						String normal_src_id = md.vertices[vertex_src_id].sources["NORMAL"];
@@ -1386,7 +1391,7 @@ Error ColladaImport::_create_mesh_surfaces(bool p_optimize,Ref<Mesh>& p_mesh,con
 						if (stride==0)
 							stride=3;
 
-					
+
 						//read normals from morph target
 						DVector<Vector3>::Write vertw = normals.write();
 
@@ -1421,7 +1426,7 @@ Error ColladaImport::_create_mesh_surfaces(bool p_optimize,Ref<Mesh>& p_mesh,con
 								}
 							}
 						}
-					
+
 						print_line("using built-in normals");
 					}else{
 						print_line("generating normals");
@@ -2070,8 +2075,9 @@ void ColladaImport::create_animation(int p_clip, bool p_make_tracks_in_all_bones
 
 
 		animation->add_track(Animation::TYPE_TRANSFORM);
-		int track = animation->get_track_count() -1;		
+		int track = animation->get_track_count() -1;
 		animation->track_set_path( track , path );
+		animation->track_set_imported( track , true ); //helps merging later
 
 		Vector<float> snapshots = base_snapshots;
 
@@ -2224,6 +2230,7 @@ void ColladaImport::create_animation(int p_clip, bool p_make_tracks_in_all_bones
 			animation->add_track(Animation::TYPE_TRANSFORM);
 			int track = animation->get_track_count() -1;
 			animation->track_set_path( track , path );
+			animation->track_set_imported( track , true ); //helps merging later
 
 
 			Transform xform = cn->compute_transform(collada);
@@ -2271,16 +2278,13 @@ void ColladaImport::create_animation(int p_clip, bool p_make_tracks_in_all_bones
 		NodeMap &nm = node_map[at.target];
 		String path = scene->get_path_to(nm.node);
 
-		Collada::Node *cn = collada.state.scene_map[at.target];
-		//if (cn->ignore_anim) {
-		//	print_line("warning, ignoring property animation on node: "+nm.path);
-			//continue;
-		//}
-
 		animation->add_track(Animation::TYPE_VALUE);
 		int track = animation->get_track_count() -1;
+
 		path = path +":"+at.param;
 		animation->track_set_path( track , path );
+		animation->track_set_imported( track , true ); //helps merging later
+
 
 		for(int i=0;i<at.keys.size();i++) {
 

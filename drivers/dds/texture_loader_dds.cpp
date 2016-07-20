@@ -1,3 +1,31 @@
+/*************************************************************************/
+/*  texture_loader_dds.cpp                                               */
+/*************************************************************************/
+/*                       This file is part of:                           */
+/*                           GODOT ENGINE                                */
+/*                    http://www.godotengine.org                         */
+/*************************************************************************/
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
+/*                                                                       */
+/* Permission is hereby granted, free of charge, to any person obtaining */
+/* a copy of this software and associated documentation files (the       */
+/* "Software"), to deal in the Software without restriction, including   */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* distribute, sublicense, and/or sell copies of the Software, and to    */
+/* permit persons to whom the Software is furnished to do so, subject to */
+/* the following conditions:                                             */
+/*                                                                       */
+/* The above copyright notice and this permission notice shall be        */
+/* included in all copies or substantial portions of the Software.       */
+/*                                                                       */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
+/*************************************************************************/
 #include "texture_loader_dds.h"
 #include "os/file_access.h"
 
@@ -134,20 +162,20 @@ RES ResourceFormatDDS::load(const String &p_path, const String& p_original_path,
 
 	DDSFormat dds_format;
 
-	if (format_flags&DDPF_FOURCC && format_fourcc=='1TXD') {
+	if (format_flags&DDPF_FOURCC && format_fourcc==0x31545844) { //'1TXD'
 
 		dds_format=DDS_DXT1;
-	} else if (format_flags&DDPF_FOURCC && format_fourcc=='3TXD') {
+	} else if (format_flags&DDPF_FOURCC && format_fourcc==0x33545844) { //'3TXD'
 
 		dds_format=DDS_DXT3;
 
-	} else if (format_flags&DDPF_FOURCC && format_fourcc=='5TXD') {
+	} else if (format_flags&DDPF_FOURCC && format_fourcc==0x35545844) { //'5TXD'
 
 		dds_format=DDS_DXT5;
-	} else if (format_flags&DDPF_FOURCC && format_fourcc=='1ITA') {
+	} else if (format_flags&DDPF_FOURCC && format_fourcc==0x31495441) { //'1ITA'
 
 		dds_format=DDS_ATI1;
-	} else if (format_flags&DDPF_FOURCC && format_fourcc=='2ITA') {
+	} else if (format_flags&DDPF_FOURCC && format_fourcc==0x32495441) { //'2ITA'
 
 		dds_format=DDS_ATI2;
 

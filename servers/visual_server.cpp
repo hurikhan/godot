@@ -73,11 +73,11 @@ DVector<String> VisualServer::_shader_get_param_list(RID p_shader) const {
 VisualServer *VisualServer::create() {
 
 	ERR_FAIL_COND_V(singleton,NULL);
-	
+
 	if (create_func)
 		return create_func();
-		
-	return NULL;	
+
+	return NULL;
 }
 
 RID VisualServer::texture_create_from_image(const Image& p_image,uint32_t p_flags) {
@@ -87,7 +87,7 @@ RID VisualServer::texture_create_from_image(const Image& p_image,uint32_t p_flag
 	ERR_FAIL_COND_V(!texture.is_valid(),texture);
 
 	texture_set_data(texture, p_image );
-	
+
 	return texture;
 }
 
@@ -152,9 +152,9 @@ RID VisualServer::_make_test_cube() {
 
 	DVector<Vector3> vertices;
 	DVector<Vector3> normals;
-	DVector<float> tangents;	
+	DVector<float> tangents;
 	DVector<Vector3> uvs;
-							
+
 	int vtx_idx=0;
 #define ADD_VTX(m_idx);\
 	vertices.push_back( face_points[m_idx] );\
@@ -168,20 +168,20 @@ RID VisualServer::_make_test_cube() {
 
 	for (int i=0;i<6;i++) {
 
-	
+
 		Vector3 face_points[4];
 		Vector3 normal_points[4];
 		float uv_points[8]={0,0,0,1,1,1,1,0};
-	
+
 		for (int j=0;j<4;j++) {
-		
+
 			float v[3];
 			v[0]=1.0;
 			v[1]=1-2*((j>>1)&1);
 			v[2]=v[1]*(1-2*(j&1));
-		
+
 			for (int k=0;k<3;k++) {
-			
+
 				if (i<3)
 					face_points[j][(i+k)%3]=v[k]*(i>=3?-1:1);
 				else
@@ -218,7 +218,7 @@ RID VisualServer::_make_test_cube() {
 	d[VisualServer::ARRAY_INDEX]=indices;
 
 	mesh_add_surface( test_cube, PRIMITIVE_TRIANGLES,d );
-	
+
 
 
 	test_material = fixed_material_create();
@@ -231,51 +231,51 @@ RID VisualServer::_make_test_cube() {
 	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR, Color(1,1,1) );
 
 	mesh_surface_set_material(test_cube, 0, test_material );
-	
+
 	return test_cube;
 }
 
 
 RID VisualServer::make_sphere_mesh(int p_lats,int p_lons,float p_radius) {
-	
+
 	DVector<Vector3> vertices;
 	DVector<Vector3> normals;
-	
+
 	for(int i = 1; i <= p_lats; i++) {
 		double lat0 = Math_PI * (-0.5 + (double) (i - 1) / p_lats);
 		double z0  = Math::sin(lat0);
 		double zr0 =  Math::cos(lat0);
-	
+
 		double lat1 = Math_PI * (-0.5 + (double) i / p_lats);
 		double z1 = Math::sin(lat1);
 		double zr1 = Math::cos(lat1);
-	
+
 		for(int j = p_lons; j >= 1; j--) {
-		
+
 			double lng0 = 2 * Math_PI * (double) (j - 1) / p_lons;
 			double x0 = Math::cos(lng0);
 			double y0 = Math::sin(lng0);
-			
+
 			double lng1 = 2 * Math_PI * (double) (j) / p_lons;
-			double x1 = Math::cos(lng1);					
+			double x1 = Math::cos(lng1);
 			double y1 = Math::sin(lng1);
-			
-			
+
+
 			Vector3 v[4]={
 				Vector3(x1 * zr0, z0, y1 *zr0),
 				Vector3(x1 * zr1, z1, y1 *zr1),
 				Vector3(x0 * zr1, z1, y0 *zr1),
 				Vector3(x0 * zr0, z0, y0 *zr0)
 			};
-			
+
 #define ADD_POINT(m_idx)\
 	normals.push_back(v[m_idx]);	\
 	vertices.push_back(v[m_idx]*p_radius);\
-	
+
 			ADD_POINT(0);
 			ADD_POINT(1);
 			ADD_POINT(2);
-			
+
 			ADD_POINT(2);
 			ADD_POINT(3);
 			ADD_POINT(0);
@@ -313,7 +313,7 @@ RID VisualServer::material_2d_get(bool p_shaded, bool p_transparent, bool p_cut_
 
 	material_2d[version]=fixed_material_create();
 	fixed_material_set_flag(material_2d[version],FIXED_MATERIAL_FLAG_USE_ALPHA,p_transparent);
-	fixed_material_set_flag(material_2d[version],FIXED_MATERIAL_FLAG_USE_COLOR_ARRAY,true);	
+	fixed_material_set_flag(material_2d[version],FIXED_MATERIAL_FLAG_USE_COLOR_ARRAY,true);
 	fixed_material_set_flag(material_2d[version],FIXED_MATERIAL_FLAG_DISCARD_ALPHA,p_cut_alpha);
 	material_set_flag(material_2d[version],MATERIAL_FLAG_UNSHADED,!p_shaded);
 	material_set_flag(material_2d[version],MATERIAL_FLAG_DOUBLE_SIDED,true);
@@ -355,7 +355,11 @@ void VisualServer::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("texture_get_flags"),&VisualServer::texture_get_flags );
 	ObjectTypeDB::bind_method(_MD("texture_get_width"),&VisualServer::texture_get_width );
 	ObjectTypeDB::bind_method(_MD("texture_get_height"),&VisualServer::texture_get_height );
+
+	ObjectTypeDB::bind_method(_MD("texture_set_shrink_all_x2_on_set_data","shrink"),&VisualServer::texture_set_shrink_all_x2_on_set_data );
+
 #ifndef _3D_DISABLED
+
 
 	ObjectTypeDB::bind_method(_MD("shader_create","mode"),&VisualServer::shader_create,DEFVAL(SHADER_MATERIAL));
 	ObjectTypeDB::bind_method(_MD("shader_set_mode","shader","mode"),&VisualServer::shader_set_mode);
@@ -556,7 +560,7 @@ void VisualServer::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("draw"),&VisualServer::draw);
 	ObjectTypeDB::bind_method(_MD("sync"),&VisualServer::sync);
-	ObjectTypeDB::bind_method(_MD("free"),&VisualServer::free);
+	ObjectTypeDB::bind_method(_MD("free_rid"),&VisualServer::free);
 
 	ObjectTypeDB::bind_method(_MD("set_default_clear_color"),&VisualServer::set_default_clear_color);
 
@@ -701,10 +705,10 @@ void VisualServer::_bind_methods() {
 
 }
 
-void VisualServer::_canvas_item_add_style_box(RID p_item, const Rect2& p_rect, RID p_texture,const Vector<float>& p_margins, const Color& p_modulate) {
+void VisualServer::_canvas_item_add_style_box(RID p_item, const Rect2& p_rect, const Rect2& p_source, RID p_texture,const Vector<float>& p_margins, const Color& p_modulate) {
 
 	ERR_FAIL_COND(p_margins.size()!=4);
-	canvas_item_add_style_box(p_item, p_rect, p_texture,Vector2(p_margins[0],p_margins[1]),Vector2(p_margins[2],p_margins[3]),true,p_modulate);
+	canvas_item_add_style_box(p_item,p_rect,p_source,p_texture,Vector2(p_margins[0],p_margins[1]),Vector2(p_margins[2],p_margins[3]),true,p_modulate);
 }
 
 void VisualServer::_camera_set_orthogonal(RID p_camera,float p_size,float p_z_near,float p_z_far) {
@@ -736,24 +740,23 @@ void VisualServer::mesh_add_surface_from_mesh_data( RID p_mesh, const Geometry::
 #if 1
 	DVector<Vector3> vertices;
 	DVector<Vector3> normals;
-		
+
 	for (int i=0;i<p_mesh_data.faces.size();i++) {
-	
+
 		const Geometry::MeshData::Face& f = p_mesh_data.faces[i];
-		
+
 		for (int j=2;j<f.indices.size();j++) {
-			
+
 #define _ADD_VERTEX(m_idx)\
 	vertices.push_back( p_mesh_data.vertices[ f.indices[m_idx] ] );\
 	normals.push_back( f.plane.normal );
-	
+
 			_ADD_VERTEX( 0 );
 			_ADD_VERTEX( j-1 );
 			_ADD_VERTEX( j );
-		}	
+		}
 	}
-	
-	int s = mesh_get_surface_count(p_mesh);
+
 	Array d;
 	d.resize(VS::ARRAY_MAX);
 	d[ARRAY_VERTEX]=vertices;
@@ -783,7 +786,7 @@ void VisualServer::mesh_add_surface_from_mesh_data( RID p_mesh, const Geometry::
 
 
 #endif
-	
+
 }
 
 void VisualServer::mesh_add_surface_from_planes( RID p_mesh, const DVector<Plane>& p_planes) {
@@ -818,5 +821,3 @@ VisualServer::~VisualServer() {
 
 	singleton=NULL;
 }
-
-

@@ -1818,7 +1818,7 @@ Error ResourceInteractiveLoaderXML::rename_dependencies(FileAccess *p_f, const S
 
 void ResourceInteractiveLoaderXML::open(FileAccess *p_f) {
 
-	error=OK;	
+	error=OK;
 
 	lines=1;
 	f=p_f;
@@ -1862,8 +1862,6 @@ void ResourceInteractiveLoaderXML::open(FileAccess *p_f) {
 	}
 
 	int major = version.get_slicec('.',0).to_int();
-	int minor = version.get_slicec('.',1).to_int();
-
 	if (major>VERSION_MAJOR) {
 
 		error=ERR_FILE_UNRECOGNIZED;

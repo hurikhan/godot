@@ -859,12 +859,12 @@ void OS_Wayland::finalize() {
 	pointer_finalize( this );
 	keyboard_finalize( this );
 
-	wl_display_flush(display);
-	wl_display_disconnect(display);
-
 #if defined(OPENGL_ENABLED) || defined(LEGACYGL_ENABLED)
 	memdelete(context_gl);
 #endif
+
+	wl_display_flush(display);
+	wl_display_disconnect(display);
 }
 
 
@@ -923,7 +923,7 @@ Point2 OS_Wayland::get_mouse_pos() const {
 
 
 void OS_Wayland::set_window_title(const String& p_title) {
-	;	// FIXME
+	wl_shell_surface_set_title( shell_surface, p_title.utf8() );
 }
 
 
@@ -1018,6 +1018,9 @@ void OS_Wayland::set_window_fullscreen(bool p_enabled) {
 		current_videomode.fullscreen = false;
 		maximized = false;
 	}
+
+	wl_display_roundtrip( display );
+	print_line("Wayland -- set_window_fullscreen");
 }
 
 
@@ -1060,7 +1063,10 @@ void OS_Wayland::set_window_maximized(bool p_enabled) {
 		wl_shell_surface_set_toplevel( shell_surface );
 		maximized = false;
 		current_videomode.fullscreen = false;
-	}		
+	}
+
+	wl_display_roundtrip( display );
+	print_line("Wayland -- set_window_maximized");
 }
 
 

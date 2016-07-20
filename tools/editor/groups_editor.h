@@ -39,9 +39,9 @@
 @author Juan Linietsky <reduzio@gmail.com>
 */
 
-class GroupsEditor : public AcceptDialog {
+class GroupsEditor : public VBoxContainer {
 
-	OBJ_TYPE(GroupsEditor,AcceptDialog);
+	OBJ_TYPE(GroupsEditor,VBoxContainer);
 
 	Node *node;
 
@@ -63,7 +63,7 @@ public:
 	void set_undo_redo(UndoRedo *p_undoredo) { undo_redo=p_undoredo; }
 	void set_current(Node* p_node);
 
-	GroupsEditor();	
+	GroupsEditor();
 	~GroupsEditor();
 };
 

@@ -31,7 +31,7 @@
 //
 // C++ Implementation: context_gl_x11
 //
-// Description: 
+// Description:
 //
 //
 // Author: Juan Linietsky <reduzio@gmail.com>, (C) 2008
@@ -96,6 +96,20 @@ static GLWrapperFuncPtr wrapper_get_proc_address(const char* p_function) {
 }
 */
 
+void ContextGL_Win::set_use_vsync(bool p_use) {
+
+	if (wglSwapIntervalEXT) {
+		wglSwapIntervalEXT(p_use?1:0);
+	}
+	use_vsync=p_use;
+
+}
+
+bool ContextGL_Win::is_using_vsync() const {
+
+	return use_vsync;
+}
+
 
 Error ContextGL_Win::initialize() {
 
@@ -105,21 +119,21 @@ Error ContextGL_Win::initialize() {
 		PFD_DRAW_TO_WINDOW |						// Format Must Support Window
 		PFD_SUPPORT_OPENGL |						// Format Must Support OpenGL
 		PFD_DOUBLEBUFFER,
-		PFD_TYPE_RGBA,	
+		PFD_TYPE_RGBA,
 		24,
 		0, 0, 0, 0, 0, 0,							// Color Bits Ignored
 		0,// No Alpha Buffer
 		0,// Shift Bit Ignored
 		0,// No Accumulation Buffer
 		0, 0, 0, 0,// Accumulation Bits Ignored
-		24,// 24Bit Z-Buffer (Depth Buffer)  
+		24,// 24Bit Z-Buffer (Depth Buffer)
 		0,// No Stencil Buffer
 		0,// No Auxiliary Buffer
 		PFD_MAIN_PLANE, // Main Drawing Layer
 		0,// Reserved
 		0, 0, 0	// Layer Masks Ignored
 	};
-	
+
 	if (!(hDC=GetDC(hWnd))) {
 		MessageBox(NULL,"Can't Create A GL Device Context.","ERROR",MB_OK|MB_ICONEXCLAMATION);
 		return ERR_CANT_CREATE;								// Return FALSE
@@ -184,7 +198,7 @@ Error ContextGL_Win::initialize() {
 		printf("Activated GL 3.1 context");
 	}
 
-
+	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)  wglGetProcAddress ("wglSwapIntervalEXT");
 //	glWrapperInit(wrapper_get_proc_address);
 
 	return OK;
@@ -194,6 +208,7 @@ ContextGL_Win::ContextGL_Win(HWND hwnd,bool p_opengl_3_context) {
 
 	opengl_3_context=p_opengl_3_context;
 	hWnd=hwnd;
+	use_vsync=false;
 }
 
 ContextGL_Win::~ContextGL_Win() {

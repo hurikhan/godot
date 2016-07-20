@@ -607,7 +607,7 @@ bool ShaderLanguage::test_existing_identifier(Node *p_node,const StringName p_id
 				return true;
 		} else if (node->type==Node::TYPE_PROGRAM) {
 
-			ProgramNode *program = (ProgramNode*)node;			
+			ProgramNode *program = (ProgramNode*)node;
 			for(int i=0;i<program->functions.size();i++) {
 
 				if (program->functions[i].name==p_identifier) {
@@ -1138,7 +1138,7 @@ const ShaderLanguage::BuiltinsDef ShaderLanguage::ci_vertex_builtins_defs[]={
 	//builtins
 	{ "WORLD_MATRIX", TYPE_MAT4},
 	{ "PROJECTION_MATRIX", TYPE_MAT4},
-	{ "EXTRA_MATRIX", TYPE_MAT4},	
+	{ "EXTRA_MATRIX", TYPE_MAT4},
 	{ "TIME", TYPE_FLOAT},
 	{ NULL, TYPE_VOID},
 };
@@ -2539,8 +2539,6 @@ Error ShaderLanguage::parse_block(Parser& parser,BlockNode *p_block) {
 Error ShaderLanguage::parse(const Vector<Token>& p_tokens,ShaderType p_type,CompileFunc p_compile_func,void *p_userdata,String *r_error,int *r_err_line,int *r_err_column) {
 
 
-	uint64_t t = OS::get_singleton()->get_ticks_usec();
-
 	Parser parser(p_tokens);
 	parser.program = parser.create_node<ProgramNode>(NULL);
 	parser.program->body = parser.create_node<BlockNode>(parser.program);
@@ -2605,17 +2603,9 @@ Error ShaderLanguage::parse(const Vector<Token>& p_tokens,ShaderType p_type,Comp
 		return err;
 	}
 
-	double tf = (OS::get_singleton()->get_ticks_usec()-t)/1000.0;
-	//print_line("parse time: "+rtos(tf));
-
-	t = OS::get_singleton()->get_ticks_usec();
-
 	if (p_compile_func) {
 		err = p_compile_func(p_userdata,parser.program);
 	}
-
-	tf = (OS::get_singleton()->get_ticks_usec()-t)/1000.0;
-	//print_line("compile time: "+rtos(tf));
 
 	//clean up nodes created
 	while(parser.nodegc.size()) {
@@ -2633,22 +2623,16 @@ Error ShaderLanguage::compile(const String& p_code,ShaderType p_type,CompileFunc
 	*r_err_column=0;
 	Vector<Token> tokens;
 
-	uint64_t t = OS::get_singleton()->get_ticks_usec();
-
 	Error err = tokenize(p_code,&tokens,r_error,r_err_line,r_err_column);
 	if (err!=OK) {
 		print_line("tokenizer error!");
 	}
-
-	double tf = (OS::get_singleton()->get_ticks_usec()-t)/1000.0;
-	//print_line("tokenize time: "+rtos(tf));
 
 	if (err!=OK) {
 		return err;
 	}
 	err = parse(tokens,p_type,p_compile_func,p_userdata,r_error,r_err_line,r_err_column);
 	if (err!=OK) {
-		//print_line("LDEBUG: "+lex_debug(p_code));
 		return err;
 	}
 	return OK;

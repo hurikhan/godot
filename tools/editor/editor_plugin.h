@@ -48,7 +48,7 @@ class EditorImportPlugin;
 class EditorExportPlugin;
 
 class EditorPlugin : public Node {
-	
+
 	OBJ_TYPE( EditorPlugin, Node );
 friend class EditorData;
 	UndoRedo *undo_redo;
@@ -73,7 +73,8 @@ public:
 		CONTAINER_SPATIAL_EDITOR_BOTTOM,
 		CONTAINER_CANVAS_EDITOR_MENU,
 		CONTAINER_CANVAS_EDITOR_SIDE,
-		CONTAINER_CANVAS_EDITOR_BOTTOM
+		CONTAINER_CANVAS_EDITOR_BOTTOM,
+		CONTAINER_PROPERTY_EDITOR_BOTTOM
 	};
 
 	enum DockSlot {

@@ -37,7 +37,7 @@ void StyleBox::set_default_margin(Margin p_margin, float p_value) {
 
 	margin[p_margin]=p_value;
 	emit_changed();
-	
+
 }
 float StyleBox::get_default_margin(Margin p_margin) const{
 
@@ -59,7 +59,7 @@ Size2 StyleBox::get_minimum_size() const {
 
 
 Point2 StyleBox::get_offset() const {
-	
+
 	return Point2( get_margin( MARGIN_LEFT), get_margin( MARGIN_TOP) );
 }
 
@@ -94,33 +94,36 @@ void StyleBox::_bind_methods() {
 }
 
 StyleBox::StyleBox() {
-	
+
 	for (int i=0;i<4;i++) {
-	
+
 		margin[i]=-1;
 	}
 }
 
 
 void StyleBoxTexture::set_texture(RES p_texture) {
-	
+
+	if (texture==p_texture)
+		return;
 	texture=p_texture;
+	emit_signal("texture_changed");
 	emit_changed();
 
 }
 RES StyleBoxTexture::get_texture() const {
-	
+
 	return texture;
 }
 
 void StyleBoxTexture::set_margin_size(Margin p_margin,float p_size) {
-	
+
 	margin[p_margin]=p_size;
 	emit_changed();
 
 }
 float StyleBoxTexture::get_margin_size(Margin p_margin) const {
-	
+
 	return margin[p_margin];
 }
 
@@ -138,18 +141,18 @@ void StyleBoxTexture::draw(RID p_canvas_item,const Rect2& p_rect) const {
 	r.pos.y-=expand_margin[MARGIN_TOP];
 	r.size.x+=expand_margin[MARGIN_LEFT]+expand_margin[MARGIN_RIGHT];
 	r.size.y+=expand_margin[MARGIN_TOP]+expand_margin[MARGIN_BOTTOM];
-	VisualServer::get_singleton()->canvas_item_add_style_box( p_canvas_item,r,texture->get_rid(),Vector2(margin[MARGIN_LEFT],margin[MARGIN_TOP]),Vector2(margin[MARGIN_RIGHT],margin[MARGIN_BOTTOM]),draw_center);
+	VisualServer::get_singleton()->canvas_item_add_style_box( p_canvas_item,r,region_rect,texture->get_rid(),Vector2(margin[MARGIN_LEFT],margin[MARGIN_TOP]),Vector2(margin[MARGIN_RIGHT],margin[MARGIN_BOTTOM]),draw_center);
 }
 
 void StyleBoxTexture::set_draw_center(bool p_draw) {
-	
+
 	draw_center=p_draw;
 	emit_changed();
 
 }
 
 bool StyleBoxTexture::get_draw_center() const {
-	
+
 	return draw_center;
 }
 
@@ -175,6 +178,20 @@ float StyleBoxTexture::get_expand_margin_size(Margin p_expand_margin) const {
 	return expand_margin[p_expand_margin];
 }
 
+void StyleBoxTexture::set_region_rect(const Rect2& p_region_rect) {
+
+	if (region_rect==p_region_rect)
+		return;
+
+	region_rect=p_region_rect;
+	emit_changed();
+}
+
+Rect2 StyleBoxTexture::get_region_rect() const {
+
+	return region_rect;
+}
+
 
 void StyleBoxTexture::_bind_methods() {
 
@@ -187,10 +204,16 @@ void StyleBoxTexture::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("set_expand_margin_size","margin","size"),&StyleBoxTexture::set_expand_margin_size);
 	ObjectTypeDB::bind_method(_MD("get_expand_margin_size","margin"),&StyleBoxTexture::get_expand_margin_size);
 
+	ObjectTypeDB::bind_method(_MD("set_region_rect","region"),&StyleBoxTexture::set_region_rect);
+	ObjectTypeDB::bind_method(_MD("get_region_rect"),&StyleBoxTexture::get_region_rect);
+
 	ObjectTypeDB::bind_method(_MD("set_draw_center","enable"),&StyleBoxTexture::set_draw_center);
 	ObjectTypeDB::bind_method(_MD("get_draw_center"),&StyleBoxTexture::get_draw_center);
 
+	ADD_SIGNAL(MethodInfo("texture_changed"));
+
 	ADD_PROPERTY( PropertyInfo( Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture" ), _SCS("set_texture"),_SCS("get_texture") );
+	ADD_PROPERTYNZ( PropertyInfo( Variant::RECT2, "region_rect"), _SCS("set_region_rect"),_SCS("get_region_rect"));
 	ADD_PROPERTYI( PropertyInfo( Variant::REAL, "margin/left", PROPERTY_HINT_RANGE,"0,2048,1" ), _SCS("set_margin_size"),_SCS("get_margin_size"), MARGIN_LEFT );
 	ADD_PROPERTYI( PropertyInfo( Variant::REAL, "margin/right", PROPERTY_HINT_RANGE,"0,2048,1" ), _SCS("set_margin_size"),_SCS("get_margin_size"), MARGIN_RIGHT );
 	ADD_PROPERTYI( PropertyInfo( Variant::REAL, "margin/top", PROPERTY_HINT_RANGE,"0,2048,1" ), _SCS("set_margin_size"),_SCS("get_margin_size"), MARGIN_TOP);
@@ -204,18 +227,18 @@ void StyleBoxTexture::_bind_methods() {
 }
 
 StyleBoxTexture::StyleBoxTexture() {
-	
-	
+
+
 	for (int i=0;i<4;i++) {
 		margin[i]=0;
 		expand_margin[i]=0;
 	}
 	draw_center=true;
-	
+
 }
 StyleBoxTexture::~StyleBoxTexture() {
-	
-	
+
+
 }
 
 ////////////////
@@ -505,4 +528,3 @@ StyleBoxImageMask::StyleBoxImageMask() {
 	}
 	expand=true;
 }
-

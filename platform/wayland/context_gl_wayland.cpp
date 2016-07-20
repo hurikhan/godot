@@ -151,6 +151,7 @@ Error ContextGL_Wayland::initialize() {
 
 	eglMakeCurrent( egl_display, egl_surface, egl_surface, egl_context );
 	eglSwapInterval( egl_display, 0 );
+	vsync_active = false;
 	eglSwapBuffers( egl_display, egl_surface );
 		
 	return OK;
@@ -164,6 +165,21 @@ int ContextGL_Wayland::get_window_width() {
 
 int ContextGL_Wayland::get_window_height() {
 	return video_mode.height;
+}
+
+
+void ContextGL_Wayland::set_use_vsync(bool p_use) {
+	if (p_use)
+		eglSwapInterval( egl_display, 1 );
+	else
+		eglSwapInterval( egl_display, 0 );
+
+	vsync_active = p_use;
+}
+
+
+bool ContextGL_Wayland::is_using_vsync() const {
+	return vsync_active;
 }
 
 
@@ -185,11 +201,12 @@ ContextGL_Wayland::~ContextGL_Wayland() {
 
 	release_current();
 
-	wl_egl_window_destroy( egl_window );
 	eglDestroyContext( egl_display, egl_context );
 
 	if( egl_display != EGL_NO_DISPLAY )
 		eglTerminate( egl_display );
+
+	wl_egl_window_destroy( egl_window );
 }
 
 

@@ -304,7 +304,7 @@ void OS_Android::get_fullscreen_mode_list(List<VideoMode> *p_list,int p_screen) 
 
 void OS_Android::set_keep_screen_on(bool p_enabled) {
 	OS::set_keep_screen_on(p_enabled);
-	
+
 	if (set_keep_screen_on_func) {
 		set_keep_screen_on_func(p_enabled);
 	}
@@ -609,6 +609,16 @@ void OS_Android::process_accelerometer(const Vector3& p_accelerometer) {
 	input->set_accelerometer(p_accelerometer);
 }
 
+void OS_Android::process_magnetometer(const Vector3& p_magnetometer) {
+
+	input->set_magnetometer(p_magnetometer);
+}
+
+void OS_Android::process_gyroscope(const Vector3& p_gyroscope) {
+
+	input->set_gyroscope(p_gyroscope);
+}
+
 bool OS_Android::has_touchscreen_ui_hint() const {
 
 	return true;
@@ -703,8 +713,33 @@ void OS_Android::set_need_reload_hooks(bool p_needs_them) {
 
 String OS_Android::get_data_dir() const {
 
-	if (get_data_dir_func)
-		return get_data_dir_func();
+	if (data_dir_cache!=String())
+		return data_dir_cache;
+
+	if (get_data_dir_func) {
+		String data_dir=get_data_dir_func();
+
+		//store current dir
+		char real_current_dir_name[2048];
+		getcwd(real_current_dir_name,2048);
+
+		//go to data dir
+		chdir(data_dir.utf8().get_data());
+
+		//get actual data dir, so we resolve potential symlink (Android 6.0+ seems to use symlink)
+		char data_current_dir_name[2048];
+		getcwd(data_current_dir_name,2048);
+
+		//cache by parsing utf8
+		data_dir_cache.parse_utf8(data_current_dir_name);
+
+		//restore original dir so we don't mess things up
+		chdir(real_current_dir_name);
+
+		return data_dir_cache;
+	}
+
+
 	return ".";
 	//return Globals::get_singleton()->get_singleton_object("GodotOS")->call("get_data_dir");
 };
@@ -796,7 +831,7 @@ OS_Android::OS_Android(GFXInitFunc p_gfx_init_func,void*p_gfx_init_ud, OpenURIFu
 	get_model_func=p_get_model_func;
 	get_unique_id_func=p_get_unique_id;
 	get_system_dir_func=p_get_sdir_func;
-    
+
 	video_play_func = p_video_play_func;
 	video_is_playing_func = p_video_is_playing_func;
 	video_pause_func = p_video_pause_func;

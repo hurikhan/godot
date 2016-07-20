@@ -1,3 +1,31 @@
+/*************************************************************************/
+/*  core_bind.h                                                          */
+/*************************************************************************/
+/*                       This file is part of:                           */
+/*                           GODOT ENGINE                                */
+/*                    http://www.godotengine.org                         */
+/*************************************************************************/
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
+/*                                                                       */
+/* Permission is hereby granted, free of charge, to any person obtaining */
+/* a copy of this software and associated documentation files (the       */
+/* "Software"), to deal in the Software without restriction, including   */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* distribute, sublicense, and/or sell copies of the Software, and to    */
+/* permit persons to whom the Software is furnished to do so, subject to */
+/* the following conditions:                                             */
+/*                                                                       */
+/* The above copyright notice and this permission notice shall be        */
+/* included in all copies or substantial portions of the Software.       */
+/*                                                                       */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
+/*************************************************************************/
 #ifndef CORE_BIND_H
 #define CORE_BIND_H
 
@@ -81,7 +109,9 @@ public:
 	};
 
 	enum Month {
-		MONTH_JANUARY,
+		/// Start at 1 to follow Windows SYSTEMTIME structure
+		/// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
+		MONTH_JANUARY = 1,
 		MONTH_FEBRUARY,
 		MONTH_MARCH,
 		MONTH_APRIL,
@@ -115,6 +145,7 @@ public:
 	virtual void set_current_screen(int p_screen);
 	virtual Point2 get_screen_position(int p_screen=0) const;
 	virtual Size2 get_screen_size(int p_screen=0) const;
+	virtual int get_screen_dpi(int p_screen=0) const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2& p_position);
 	virtual Size2 get_window_size() const;
@@ -128,6 +159,8 @@ public:
 	virtual void set_window_maximized(bool p_enabled);
 	virtual bool is_window_maximized() const;
 
+	virtual void set_borderless_window(bool p_borderless);
+	virtual bool get_borderless_window() const;
 
 	Error native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track);
 	bool native_video_is_playing();
@@ -159,6 +192,8 @@ public:
 	Vector<String> get_cmdline_args();
 
 	String get_locale() const;
+	String get_latin_keyboard_variant() const;
+
 	String get_model_name() const;
 	MainLoop *get_main_loop() const;
 
@@ -208,6 +243,9 @@ public:
 	void set_icon(const Image& p_icon);
 	Dictionary get_date(bool utc) const;
 	Dictionary get_time(bool utc) const;
+	Dictionary get_datetime(bool utc) const;
+	Dictionary get_datetime_from_unix_time(uint64_t unix_time_val) const;
+	uint64_t get_unix_time_from_datetime(Dictionary datetime) const;
 	Dictionary get_time_zone_info() const;
 	uint64_t get_unix_time() const;
 	uint64_t get_system_time_secs() const;
@@ -273,6 +311,11 @@ public:
 	bool is_ok_left_and_cancel_right() const;
 
 	Error set_thread_name(const String& p_name);
+
+	void set_use_vsync(bool p_enable);
+	bool is_vsnc_enabled() const;
+
+	Dictionary get_engine_version() const;
 
 	static _OS *get_singleton() { return singleton; }
 
@@ -368,6 +411,8 @@ public:
 	DVector<uint8_t> get_buffer(int p_length) const; ///< get an array of bytes
 	String get_line() const;
 	String get_as_text() const;
+	String get_md5(const String& p_path) const;
+	String get_sha256(const String& p_path) const;
 
 	/**< use this for files WRITTEN in _big_ endian machines (ie, amiga/mac)
 	 * It's not about the current CPU type but file formats.

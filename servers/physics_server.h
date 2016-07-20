@@ -346,6 +346,9 @@ public:
 	virtual Variant area_get_param(RID p_parea,AreaParameter p_param) const=0;
 	virtual Transform area_get_transform(RID p_area) const=0;
 
+	virtual void area_set_collision_mask(RID p_area,uint32_t p_mask)=0;
+	virtual void area_set_layer_mask(RID p_area,uint32_t p_mask)=0;
+
 	virtual void area_set_monitorable(RID p_area,bool p_monitorable)=0;
 
 	virtual void area_set_monitor_callback(RID p_area,Object *p_receiver,const StringName& p_method)=0;
@@ -397,6 +400,9 @@ public:
 	virtual void body_set_layer_mask(RID p_body, uint32_t p_mask)=0;
 	virtual uint32_t body_get_layer_mask(RID p_body, uint32_t p_mask) const=0;
 
+	virtual void body_set_collision_mask(RID p_body, uint32_t p_mask)=0;
+	virtual uint32_t body_get_collision_mask(RID p_body, uint32_t p_mask) const=0;
+
 	virtual void body_set_user_flags(RID p_body, uint32_t p_flags)=0;
 	virtual uint32_t body_get_user_flags(RID p_body, uint32_t p_flags) const=0;
 
@@ -421,7 +427,7 @@ public:
 		BODY_STATE_LINEAR_VELOCITY,
 		BODY_STATE_ANGULAR_VELOCITY,
 		BODY_STATE_SLEEPING,
-		BODY_STATE_CAN_SLEEP			
+		BODY_STATE_CAN_SLEEP
 	};
 
 	virtual void body_set_state(RID p_body, BodyState p_state, const Variant& p_variant)=0;
@@ -648,7 +654,7 @@ public:
 	virtual void damped_string_joint_set_param(RID p_joint, DampedStringParam p_param, real_t p_value)=0;
 	virtual real_t damped_string_joint_get_param(RID p_joint, DampedStringParam p_param) const=0;
 
-	virtual JointType joint_get_type(RID p_joint) const=0;	
+	virtual JointType joint_get_type(RID p_joint) const=0;
 #endif
 	/* QUERY API */
 

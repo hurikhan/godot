@@ -30,7 +30,7 @@
 #include "main/main.h"
 #include "message_queue.h"
 #include "os/os.h"
-
+#include "editor_scale.h"
 void BackgroundProgress::_add_task(const String& p_task,const String& p_label, int p_steps) {
 
 	_THREAD_SAFE_METHOD_
@@ -48,7 +48,7 @@ void BackgroundProgress::_add_task(const String& p_task,const String& p_label, i
 	ec->set_v_size_flags(SIZE_EXPAND_FILL);
 	t.progress->set_area_as_parent_rect();
 	ec->add_child(t.progress);
-	ec->set_custom_minimum_size(Size2(80,5));
+	ec->set_custom_minimum_size(Size2(80,5)*EDSCALE);
 	t.hb->add_child(ec);
 
 	add_child(t.hb);
@@ -140,6 +140,9 @@ void BackgroundProgress::end_task(const String& p_task){
 
 ////////////////////////////////////////////////
 
+
+ProgressDialog *ProgressDialog::singleton=NULL;
+
 void ProgressDialog::_notification(int p_what) {
 
 	switch(p_what) {
@@ -157,7 +160,7 @@ void ProgressDialog::_notification(int p_what) {
 void ProgressDialog::_popup() {
 
 	Size2 ms = main->get_combined_minimum_size();
-	ms.width = MAX(500,ms.width);
+	ms.width = MAX(500*EDSCALE,ms.width);
 
 
 	Ref<StyleBox> style = get_stylebox("panel","PopupMenu");
@@ -237,4 +240,5 @@ ProgressDialog::ProgressDialog() {
 	main->set_area_as_parent_rect();
 	set_exclusive(true);
 	last_progress_tick=0;
+	singleton=this;
 }

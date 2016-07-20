@@ -41,9 +41,9 @@ class VisualServerWrapMT : public VisualServer {
 
 	// the real visual server
 	mutable VisualServer *visual_server;
-	
+
 	mutable CommandQueueMT command_queue;
-	
+
 	static void _thread_callback(void *_instance);
 	void thread_loop();
 
@@ -52,7 +52,7 @@ class VisualServerWrapMT : public VisualServer {
 	Thread *thread;
 	volatile bool draw_thread_up;
 	bool create_thread;
-	
+
 	Mutex *draw_mutex;
 	int draw_pending;
 	void thread_draw();
@@ -100,6 +100,8 @@ public:
 
 	FUNC2(texture_set_path,RID,const String&);
 	FUNC1RC(String,texture_get_path,RID);
+
+	FUNC1(texture_set_shrink_all_x2_on_set_data,bool);
 
 	virtual void texture_debug_usage(List<TextureInfo> *r_info) {
 		//pass directly, should lock the server anyway
@@ -391,6 +393,14 @@ public:
 	FUNC3(baked_light_add_lightmap,RID,RID,int);
 	FUNC1(baked_light_clear_lightmaps,RID);
 
+	FUNC2(baked_light_set_realtime_color_enabled, RID, const bool);
+	FUNC1RC(bool, baked_light_get_realtime_color_enabled, RID);
+
+	FUNC2(baked_light_set_realtime_color, RID, const Color&);
+	FUNC1RC(Color, baked_light_get_realtime_color, RID);
+
+	FUNC2(baked_light_set_realtime_energy, RID, const float);
+	FUNC1RC(float, baked_light_get_realtime_energy, RID);
 
 	FUNC0R(RID,baked_light_sampler_create);
 
@@ -433,7 +443,7 @@ public:
 	FUNC2(viewport_set_render_target_vflip,RID,bool);
 	FUNC1RC(bool,viewport_get_render_target_vflip,RID);
 	FUNC2(viewport_set_render_target_to_screen_rect,RID,const Rect2&);
-	
+
 	FUNC2(viewport_set_render_target_clear_on_new_frame,RID,bool);
 	FUNC1RC(bool,viewport_get_render_target_clear_on_new_frame,RID);
 	FUNC1(viewport_render_target_clear,RID);
@@ -515,6 +525,8 @@ public:
 	FUNC3(instance_set_morph_target_weight,RID,int, float);
 	FUNC2RC(float,instance_get_morph_target_weight,RID,int);
 
+	FUNC3(instance_set_surface_material,RID,int, RID);
+
 	FUNC2(instance_set_transform,RID, const Transform&);
 	FUNC1RC(Transform,instance_get_transform,RID);
 
@@ -533,6 +545,9 @@ public:
 
 	FUNC3(instance_geometry_set_flag,RID,InstanceFlags ,bool );
 	FUNC2RC(bool,instance_geometry_get_flag,RID,InstanceFlags );
+
+	FUNC2(instance_geometry_set_cast_shadows_setting, RID, ShadowCastingSetting);
+	FUNC1RC(ShadowCastingSetting, instance_geometry_get_cast_shadows_setting, RID);
 
 	FUNC2(instance_geometry_set_material_override,RID, RID );
 	FUNC1RC(RID,instance_geometry_get_material_override,RID);
@@ -592,7 +607,7 @@ public:
 	FUNC4(canvas_item_add_circle,RID, const Point2& , float ,const Color& );
 	FUNC6(canvas_item_add_texture_rect,RID, const Rect2& , RID ,bool ,const Color&,bool );
 	FUNC6(canvas_item_add_texture_rect_region,RID, const Rect2& , RID ,const Rect2& ,const Color&,bool );
-	FUNC7(canvas_item_add_style_box,RID, const Rect2& , RID ,const Vector2& ,const Vector2&, bool ,const Color& );
+	FUNC8(canvas_item_add_style_box,RID, const Rect2& , const Rect2&, RID ,const Vector2& ,const Vector2&, bool ,const Color& );
 	FUNC6(canvas_item_add_primitive,RID, const Vector<Point2>& , const Vector<Color>& ,const Vector<Point2>& , RID ,float );
 	FUNC5(canvas_item_add_polygon,RID, const Vector<Point2>& , const Vector<Color>& ,const Vector<Point2>& , RID );
 	FUNC7(canvas_item_add_triangle_array,RID, const Vector<int>& , const Vector<Point2>& , const Vector<Color>& ,const Vector<Point2>& , RID , int );
@@ -660,12 +675,12 @@ public:
 	FUNC0R(RID,canvas_item_material_create);
 	FUNC2(canvas_item_material_set_shader,RID,RID);
 	FUNC3(canvas_item_material_set_shader_param,RID,const StringName&,const Variant&);
-	FUNC2RC(Variant,canvas_item_material_get_shader_param,RID,const StringName&);	
+	FUNC2RC(Variant,canvas_item_material_get_shader_param,RID,const StringName&);
 	FUNC2(canvas_item_material_set_shading_mode,RID,CanvasItemShadingMode);
 
 	/* CURSOR */
 	FUNC2(cursor_set_rotation,float , int ); // radians
-	FUNC3(cursor_set_texture,RID , const Point2 &, int );
+	FUNC4(cursor_set_texture,RID , const Point2 &, int, const Rect2 &);
 	FUNC2(cursor_set_visible,bool , int );
 	FUNC2(cursor_set_pos,const Point2& , int );
 

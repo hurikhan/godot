@@ -31,7 +31,7 @@
 #include "scene/resources/convex_polygon_shape.h"
 #include "surface_tool.h"
 
-static const char*_array_name[]={
+static const char* _array_name[]={
 	"vertex_array",
 	"normal_array",
 	"tangent_array",
@@ -126,7 +126,7 @@ bool Mesh::_set(const StringName& p_name, const Variant& p_value) {
 			add_custom_surface(p_value);
 			return true;
 
-		}		
+		}
 
 		//create
 		Dictionary d=p_value;
@@ -147,12 +147,6 @@ bool Mesh::_set(const StringName& p_name, const Variant& p_value) {
 		}
 
 
-		return true;
-	}
-
-	if (what=="custom_aabb") {
-
-		surface_set_custom_aabb(idx,p_value);
 		return true;
 	}
 
@@ -223,7 +217,7 @@ void Mesh::_get_property_list( List<PropertyInfo> *p_list) const {
 	}
 
 	for (int i=0;i<surfaces.size();i++) {
-		
+
 		p_list->push_back( PropertyInfo( Variant::DICTIONARY,"surfaces/"+itos(i), PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NOEDITOR ) );
 		p_list->push_back( PropertyInfo( Variant::STRING,"surface_"+itos(i+1)+"/name", PROPERTY_HINT_NONE,"",PROPERTY_USAGE_EDITOR ) );
 		p_list->push_back( PropertyInfo( Variant::OBJECT,"surface_"+itos(i+1)+"/material", PROPERTY_HINT_RESOURCE_TYPE,"Material",PROPERTY_USAGE_EDITOR ) );
@@ -238,9 +232,9 @@ void Mesh::_recompute_aabb() {
 
 	// regenerate AABB
 	aabb=AABB();
-		
+
 	for (int i=0;i<surfaces.size();i++) {
-	
+
 		if (i==0)
 			aabb=surfaces[i].aabb;
 		else
@@ -288,6 +282,7 @@ void Mesh::add_surface(PrimitiveType p_primitive,const Array& p_arrays,const Arr
 
 	triangle_mesh=Ref<TriangleMesh>();
 	_change_notify();
+	emit_changed();
 
 }
 
@@ -383,10 +378,11 @@ void Mesh::surface_remove(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, surfaces.size() );
 	VisualServer::get_singleton()->mesh_remove_surface(mesh,p_idx);
 	surfaces.remove(p_idx);
-	
+
 	triangle_mesh=Ref<TriangleMesh>();
 	_recompute_aabb();
 	_change_notify();
+	emit_changed();
 }
 
 
@@ -472,14 +468,14 @@ void Mesh::add_surface_from_mesh_data(const Geometry::MeshData& p_mesh_data) {
 	VisualServer::get_singleton()->mesh_add_surface_from_mesh_data( mesh, p_mesh_data );
 	AABB aabb;
 	for (int i=0;i<p_mesh_data.vertices.size();i++) {
-	
+
 		if (i==0)
 			aabb.pos=p_mesh_data.vertices[i];
 		else
 			aabb.expand_to(p_mesh_data.vertices[i]);
 	}
 
-	
+
 	Surface s;
 	s.aabb=aabb;
 	if (surfaces.size()==0)
@@ -491,6 +487,8 @@ void Mesh::add_surface_from_mesh_data(const Geometry::MeshData& p_mesh_data) {
 
 	surfaces.push_back(s);
 	_change_notify();
+
+	emit_changed();
 }
 
 RID Mesh::get_rid() const {
@@ -524,60 +522,60 @@ DVector<Face3> Mesh::get_faces() const {
 	return DVector<Face3>();
 /*
 	for (int i=0;i<surfaces.size();i++) {
-	
+
 		if (VisualServer::get_singleton()->mesh_surface_get_primitive_type( mesh, i ) != VisualServer::PRIMITIVE_TRIANGLES )
 			continue;
-	
+
 		DVector<int> indices;
 		DVector<Vector3> vertices;
-		
+
 		vertices=VisualServer::get_singleton()->mesh_surface_get_array(mesh, i,VisualServer::ARRAY_VERTEX);
-		
+
 		int len=VisualServer::get_singleton()->mesh_surface_get_array_index_len(mesh, i);
 		bool has_indices;
-		
+
 		if (len>0) {
-		
+
 			indices=VisualServer::get_singleton()->mesh_surface_get_array(mesh, i,VisualServer::ARRAY_INDEX);
 			has_indices=true;
-			
+
 		} else {
-		
+
 			len=vertices.size();
 			has_indices=false;
 		}
-	
+
 		if (len<=0)
 			continue;
-			
+
 		DVector<int>::Read indicesr = indices.read();
 		const int *indicesptr = indicesr.ptr();
-		
+
 		DVector<Vector3>::Read verticesr = vertices.read();
 		const Vector3 *verticesptr = verticesr.ptr();
-		
+
 		int old_faces=faces.size();
 		int new_faces=old_faces+(len/3);
-		
+
 		faces.resize(new_faces);
-		
+
 		DVector<Face3>::Write facesw = faces.write();
 		Face3 *facesptr=facesw.ptr();
-		
-	
+
+
 		for (int i=0;i<len/3;i++) {
-		
+
 			Face3 face;
-			
+
 			for (int j=0;j<3;j++) {
-			
+
 				int idx=i*3+j;
 				face.vertex[j] = has_indices ? verticesptr[ indicesptr[ idx ] ] : verticesptr[idx];
 			}
-			
+
 			facesptr[i+old_faces]=face;
 		}
-		
+
 	}
 */
 
@@ -850,7 +848,6 @@ Ref<Mesh> Mesh::create_outline(float p_margin) const {
 	}
 
 	{
-		int tc=0;
 		DVector<int>::Write ir;
 		DVector<int> indices =arrays[ARRAY_INDEX];
 		bool has_indices=false;
@@ -993,17 +990,17 @@ void Mesh::_bind_methods() {
 
 	BIND_CONSTANT( NO_INDEX_ARRAY );
 	BIND_CONSTANT( ARRAY_WEIGHTS_SIZE );
-	
+
 	BIND_CONSTANT( ARRAY_VERTEX );
 	BIND_CONSTANT( ARRAY_NORMAL );
 	BIND_CONSTANT( ARRAY_TANGENT );
 	BIND_CONSTANT( ARRAY_COLOR );
-	BIND_CONSTANT( ARRAY_TEX_UV );	
+	BIND_CONSTANT( ARRAY_TEX_UV );
 	BIND_CONSTANT( ARRAY_TEX_UV2 );
 	BIND_CONSTANT( ARRAY_BONES );
 	BIND_CONSTANT( ARRAY_WEIGHTS );
 	BIND_CONSTANT( ARRAY_INDEX );
-	
+
 	BIND_CONSTANT( ARRAY_FORMAT_VERTEX );
 	BIND_CONSTANT( ARRAY_FORMAT_NORMAL );
 	BIND_CONSTANT( ARRAY_FORMAT_TANGENT );
@@ -1013,7 +1010,7 @@ void Mesh::_bind_methods() {
 	BIND_CONSTANT( ARRAY_FORMAT_BONES );
 	BIND_CONSTANT( ARRAY_FORMAT_WEIGHTS );
 	BIND_CONSTANT( ARRAY_FORMAT_INDEX );
-		
+
 	BIND_CONSTANT( PRIMITIVE_POINTS );
 	BIND_CONSTANT( PRIMITIVE_LINES );
 	BIND_CONSTANT( PRIMITIVE_LINE_STRIP );

@@ -52,6 +52,7 @@
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xcursor/Xcursor.h>
+#include <X11/extensions/Xrandr.h>
 
 // Hints for X11 fullscreen
 typedef struct {
@@ -62,6 +63,20 @@ typedef struct {
 	unsigned long status;
 } Hints;
 
+typedef struct _xrr_monitor_info {
+    Atom name;
+    Bool primary;
+    Bool automatic;
+    int noutput;
+    int x;
+    int y;
+    int width;
+    int height;
+    int mwidth;
+    int mheight;
+    RROutput *outputs;
+} xrr_monitor_info;
+
 #undef CursorShape
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
@@ -70,6 +85,17 @@ typedef struct {
 class OS_X11 : public OS_Unix {
 
 	Atom wm_delete;
+	Atom xdnd_enter;
+	Atom xdnd_position;
+	Atom xdnd_status;
+	Atom xdnd_action_copy;
+	Atom xdnd_drop;
+	Atom xdnd_finished;
+	Atom xdnd_selection;
+	Atom requested;
+
+	int  xdnd_version;
+
 #if defined(OPENGL_ENABLED) || defined(LEGACYGL_ENABLED)
 	ContextGL_X11 *context_gl;
 #endif
@@ -78,7 +104,8 @@ class OS_X11 : public OS_Unix {
 	VideoMode current_videomode;
 	List<String> args;
 	Window x11_window;
-	MainLoop *main_loop;	
+	Window xdnd_source_window;
+	MainLoop *main_loop;
 	::Display* x11_display;
 	char *xmbstring;
 	int xmblen;
@@ -93,7 +120,7 @@ class OS_X11 : public OS_Unix {
 	uint64_t last_click_ms;
 	unsigned int event_id;
 	uint32_t last_button_state;
-	
+
 	PhysicsServer *physics_server;
 	unsigned int get_mouse_button_state(unsigned int p_x11_state);
 	InputModifierState get_key_modifier_state(unsigned int p_x11_state);
@@ -101,7 +128,7 @@ class OS_X11 : public OS_Unix {
 
 	MouseMode mouse_mode;
 	Point2i center;
-	
+
 	void handle_key_event(XKeyEvent *p_event,bool p_echo=false);
 	void process_xevents();
 	virtual void delete_main_loop();
@@ -150,20 +177,26 @@ class OS_X11 : public OS_Unix {
 	//void set_wm_border(bool p_enabled);
 	void set_wm_fullscreen(bool p_enabled);
 
+	typedef xrr_monitor_info* (*xrr_get_monitors_t)(Display *dpy, Window window, Bool get_active, int *nmonitors);
+	typedef void (*xrr_free_monitors_t)(xrr_monitor_info* monitors);
+	xrr_get_monitors_t xrr_get_monitors;
+	xrr_free_monitors_t xrr_free_monitors;
+	void *xrandr_handle;
+	Bool xrandr_ext_ok;
 
 protected:
 
 	virtual int get_video_driver_count() const;
-	virtual const char * get_video_driver_name(int p_driver) const;	
+	virtual const char * get_video_driver_name(int p_driver) const;
 	virtual VideoMode get_default_video_mode() const;
 
 	virtual int get_audio_driver_count() const;
 	virtual const char * get_audio_driver_name(int p_driver) const;
 
-	virtual void initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver);	
+	virtual void initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver);
 	virtual void finalize();
 
-	virtual void set_main_loop( MainLoop * p_main_loop );    
+	virtual void set_main_loop( MainLoop * p_main_loop );
 
 
 public:
@@ -183,7 +216,7 @@ public:
 	virtual void set_icon(const Image& p_icon);
 
 	virtual MainLoop *get_main_loop() const;
-	
+
 	virtual bool can_draw() const;
 
 	virtual void set_clipboard(const String& p_text);
@@ -207,6 +240,7 @@ public:
 	virtual void set_current_screen(int p_screen);
 	virtual Point2 get_screen_position(int p_screen=0) const;
 	virtual Size2 get_screen_size(int p_screen=0) const;
+	virtual int get_screen_dpi(int p_screen=0) const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2& p_position);
 	virtual Size2 get_window_size() const;
@@ -227,6 +261,9 @@ public:
 	virtual String get_joy_guid(int p_device) const;
 
 	virtual void set_context(int p_context);
+
+	virtual void set_use_vsync(bool p_enable);
+	virtual bool is_vsnc_enabled() const;
 
 	void run();
 

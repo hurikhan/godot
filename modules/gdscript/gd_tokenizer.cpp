@@ -79,8 +79,8 @@ const char* GDTokenizer::token_names[TK_MAX]={
 "for",
 "do",
 "while",
-"switch",
-"case",
+"switch (reserved)",
+"case (reserved)",
 "break",
 "continue",
 "pass",
@@ -541,14 +541,14 @@ void GDTokenizerText::_advance() {
 				}
 				INCPOS(1);
 				is_node_path=true;
-				
+
 			case '\'':
 			case '"': {
-	
+
 				if (GETCHAR(0)=='\'')
 					string_mode=STRING_SINGLE_QUOTE;
-																	
-																	
+
+
 				int i=1;
 				if (string_mode==STRING_DOUBLE_QUOTE && GETCHAR(i)=='"' && GETCHAR(i+1)=='"') {
 					i+=2;
@@ -725,7 +725,7 @@ void GDTokenizerText::_advance() {
 					if (hexa_found) {
 						int val = str.hex_to_int();
 						_make_constant(val);
-					} else if (period_found) {
+					} else if (period_found || exponent_found) {
 						real_t val = str.to_double();
 						//print_line("*%*%*%*% to convert: "+str+" result: "+rtos(val));
 						_make_constant(val);
@@ -874,6 +874,7 @@ void GDTokenizerText::_advance() {
 								{TK_CF_WHILE,"while"},
 								{TK_CF_DO,"do"},
 								{TK_CF_SWITCH,"switch"},
+								{TK_CF_CASE,"case"},
 								{TK_CF_BREAK,"break"},
 								{TK_CF_CONTINUE,"continue"},
 								{TK_CF_RETURN,"return"},
@@ -1054,7 +1055,7 @@ Error GDTokenizerBuffer::set_code_buffer(const Vector<uint8_t> & p_buffer) {
 	const uint8_t *buf=p_buffer.ptr();
 	int total_len=p_buffer.size();
 	ERR_FAIL_COND_V( p_buffer.size()<24 || p_buffer[0]!='G' || p_buffer[1]!='D' || p_buffer[2]!='S' || p_buffer[3]!='C',ERR_INVALID_DATA);
-	
+
 	int version = decode_uint32(&buf[4]);
 	if (version>BYTECODE_VERSION) {
 		ERR_EXPLAIN("Bytecode is too New! Please use a newer engine version.");
@@ -1066,13 +1067,13 @@ Error GDTokenizerBuffer::set_code_buffer(const Vector<uint8_t> & p_buffer) {
 	int token_count = decode_uint32(&buf[20]);
 
 	const uint8_t *b=buf;
-	
+
 	b=&buf[24];
 	total_len-=24;
-	
+
 	identifiers.resize(identifier_count);
 	for(int i=0;i<identifier_count;i++) {
-		
+
 		int len = decode_uint32(b);
 		ERR_FAIL_COND_V(len>total_len,ERR_INVALID_DATA);
 		b+=4;
@@ -1089,7 +1090,7 @@ Error GDTokenizerBuffer::set_code_buffer(const Vector<uint8_t> & p_buffer) {
 		total_len-=len+4;
 		identifiers[i]=s;
 	}
-	
+
 	constants.resize(constant_count);
 	for(int i=0;i<constant_count;i++) {
 
@@ -1155,7 +1156,6 @@ Vector<uint8_t> GDTokenizerBuffer::parse_code_string(const String& p_code) {
 	GDTokenizerText tt;
 	tt.set_code(p_code);
 	int line=-1;
-	int col=0;
 
 	while(true) {
 

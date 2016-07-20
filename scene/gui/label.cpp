@@ -87,11 +87,14 @@ void Label::_notification(int p_what) {
 		Color font_color_shadow = get_color("font_color_shadow");
 		bool use_outlinde = get_constant("shadow_as_outline");
 		Point2 shadow_ofs(get_constant("shadow_offset_x"),get_constant("shadow_offset_y"));
+		int line_spacing = get_constant("line_spacing");
 
 		VisualServer::get_singleton()->canvas_item_set_distance_field_mode(get_canvas_item(),font.is_valid() && font->is_distance_field_hint());
 
-		int font_h = font->get_height();
-		int lines_visible = size.y/font_h;
+		int font_h = font->get_height()+line_spacing;
+
+		int lines_visible = (size.y+line_spacing)/font_h;
+
 		int space_w=font->get_char_size(' ').width;
 		int chars_total=0;
 
@@ -141,7 +144,6 @@ void Label::_notification(int p_what) {
 		if (!wc)
 			return;
 
-		int c = 0;
 		int line=0;
 		int line_to=lines_skipped + (lines_visible>0?lines_visible:1);
 		while(wc) {
@@ -354,6 +356,21 @@ int Label::get_line_count() const {
 	return line_count;
 }
 
+int Label::get_visible_line_count() const {
+
+	int line_spacing = get_constant("line_spacing");
+	int font_h = get_font("font")->get_height()+line_spacing;
+	int lines_visible = (get_size().y+line_spacing)/font_h;
+
+	if (lines_visible > line_count)
+		lines_visible = line_count;
+
+	if (max_lines_visible >= 0 && lines_visible > max_lines_visible)
+		lines_visible = max_lines_visible;
+
+	return lines_visible;
+}
+
 void Label::regenerate_word_cache() {
 
 	while (word_cache) {
@@ -372,6 +389,7 @@ void Label::regenerate_word_cache() {
 	int line_width=0;
 	int space_count=0;
 	int space_width=font->get_char_size(' ').width;
+	int line_spacing = get_constant("line_spacing");
 	line_count=1;
 	total_char_cache=0;
 
@@ -486,9 +504,9 @@ void Label::regenerate_word_cache() {
 	if (!autowrap) {
 		minsize.width=width;
 		if (max_lines_visible > 0 && line_count > max_lines_visible) {
-			minsize.height=font->get_height()*max_lines_visible;
+			minsize.height=(font->get_height() * max_lines_visible) + (line_spacing * (max_lines_visible - 1));
 		} else {
-			minsize.height=font->get_height()*line_count;
+			minsize.height=(font->get_height() * line_count)+(line_spacing * (line_count - 1));
 		}
 	}
 
@@ -532,7 +550,9 @@ void Label::set_text(const String& p_string) {
 	if (percent_visible<1)
 		visible_chars=get_total_character_count()*percent_visible;
 	update();
-	minimum_size_changed();
+	if (!autowrap) {
+		minimum_size_changed();
+	}
 
 }
 
@@ -635,6 +655,7 @@ void Label::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("is_uppercase"),&Label::is_uppercase);
 	ObjectTypeDB::bind_method(_MD("get_line_height"),&Label::get_line_height);
 	ObjectTypeDB::bind_method(_MD("get_line_count"),&Label::get_line_count);
+	ObjectTypeDB::bind_method(_MD("get_visible_line_count"),&Label::get_visible_line_count);
 	ObjectTypeDB::bind_method(_MD("get_total_character_count"),&Label::get_total_character_count);
 	ObjectTypeDB::bind_method(_MD("set_visible_characters","amount"),&Label::set_visible_characters);
 	ObjectTypeDB::bind_method(_MD("get_visible_characters"),&Label::get_visible_characters);

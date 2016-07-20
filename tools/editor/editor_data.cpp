@@ -260,14 +260,24 @@ EditorPlugin* EditorData::get_subeditor(Object *p_object) {
 	return NULL;
 }
 
+Vector<EditorPlugin*> EditorData::get_subeditors(Object* p_object) {
+	Vector<EditorPlugin*> sub_plugins;
+	for (int i = 0; i < editor_plugins.size(); i++) {
+		if (!editor_plugins[i]->has_main_screen() && editor_plugins[i]->handles(p_object)) {
+			sub_plugins.push_back(editor_plugins[i]);
+		}
+	}
+	return sub_plugins;
+}
+
 EditorPlugin* EditorData::get_editor(String p_name) {
-	
+
 	for(int i=0;i<editor_plugins.size();i++) {
-		
+
 		if (editor_plugins[i]->get_name()==p_name)
 			return editor_plugins[i];
 	}
-	
+
 	return NULL;
 }
 
@@ -314,6 +324,13 @@ Dictionary EditorData::get_editor_states() const {
 
 	return metadata;
 
+}
+
+Dictionary EditorData::get_scene_editor_states(int p_idx) const
+{
+	ERR_FAIL_INDEX_V(p_idx,edited_scene.size(),Dictionary());
+	EditedScene es = edited_scene[p_idx];
+	return es.editor_states;
 }
 
 void EditorData::set_editor_states(const Dictionary& p_states) {
@@ -555,16 +572,18 @@ bool EditorData::check_and_update_scene(int p_idx) {
 
 	bool must_reload = _find_updated_instances(edited_scene[p_idx].root,edited_scene[p_idx].root,checked_scenes);
 
+	print_line("MUST RELOAD? "+itos(must_reload));
+
 	if (must_reload) {
 		Ref<PackedScene> pscene;
 		pscene.instance();
 
-		EditorProgress ep("update_scene","Updating Scene",2);
-		ep.step("Storing local changes..",0);
+		EditorProgress ep("update_scene",TTR("Updating Scene"),2);
+		ep.step(TTR("Storing local changes.."),0);
 		//pack first, so it stores diffs to previous version of saved scene
 		Error err = pscene->pack(edited_scene[p_idx].root);
 		ERR_FAIL_COND_V(err!=OK,false);
-		ep.step("Updating scene..",1);
+		ep.step(TTR("Updating scene.."),1);
 		Node *new_scene = pscene->instance(true);
 		ERR_FAIL_COND_V(!new_scene,false);
 
@@ -601,11 +620,14 @@ void EditorData::set_edited_scene(int p_idx){
 	current_edited_scene=p_idx;
 	//swap
 }
-Node* EditorData::get_edited_scene_root(){
-
-	ERR_FAIL_INDEX_V(current_edited_scene,edited_scene.size(),NULL);
-
-	return edited_scene[current_edited_scene].root;
+Node* EditorData::get_edited_scene_root(int p_idx){
+	if (p_idx < 0) {
+		ERR_FAIL_INDEX_V(current_edited_scene,edited_scene.size(),NULL);
+		return edited_scene[current_edited_scene].root;
+	} else {
+		ERR_FAIL_INDEX_V(p_idx,edited_scene.size(),NULL);
+		return edited_scene[p_idx].root;
+	}
 }
 void EditorData::set_edited_scene_root(Node* p_root) {
 
@@ -618,9 +640,14 @@ int EditorData::get_edited_scene_count() const {
 	return edited_scene.size();
 }
 
-void EditorData::set_edited_scene_version(uint64_t version) {
+void EditorData::set_edited_scene_version(uint64_t version, int scene_idx) {
 	ERR_FAIL_INDEX(current_edited_scene,edited_scene.size());
-	edited_scene[current_edited_scene].version=version;
+	if (scene_idx < 0) {
+		edited_scene[current_edited_scene].version=version;
+	} else {
+		ERR_FAIL_INDEX(scene_idx,edited_scene.size());
+		edited_scene[scene_idx].version=version;
+	}
 
 }
 
@@ -746,11 +773,18 @@ void EditorData::set_edited_scene_import_metadata(Ref<ResourceImportMetadata> p_
 
 }
 
-Ref<ResourceImportMetadata> EditorData::get_edited_scene_import_metadata() const{
+Ref<ResourceImportMetadata> EditorData::get_edited_scene_import_metadata(int idx) const{
 
 	ERR_FAIL_INDEX_V(current_edited_scene,edited_scene.size(),Ref<ResourceImportMetadata>());
-	return edited_scene[current_edited_scene].medatata;
+	if(idx<0) {
+		return edited_scene[current_edited_scene].medatata;
+	} else {
+		ERR_FAIL_INDEX_V(idx,edited_scene.size(),Ref<ResourceImportMetadata>());
+		return edited_scene[idx].medatata;
+	}
 }
+
+
 
 void EditorData::clear_edited_scenes() {
 

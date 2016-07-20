@@ -42,9 +42,11 @@ class BaseButton : public Control {
 	OBJ_TYPE( BaseButton, Control );
 
 	bool toggle_mode;
-	
+	FocusMode enabled_focus_mode;
+	Ref<ShortCut> shortcut;
+
 	struct Status {
-		
+
 		bool pressed;
 		bool hovering;
 		bool press_attempt;
@@ -55,19 +57,21 @@ class BaseButton : public Control {
 		int pressing_button;
 
 	} status;
-	
+
+
 	ButtonGroup *group;
 
-		
+
 protected:
 
 
 
-	
+
 	virtual void pressed();
 	virtual void toggled(bool p_pressed);
 	static void _bind_methods();
 	virtual void _input_event(InputEvent p_event);
+	virtual void _unhandled_input(InputEvent p_event);
 	void _notification(int p_what);
 
 public:
@@ -82,7 +86,7 @@ public:
 	DrawMode get_draw_mode() const;
 
 	/* Signals */
-	
+
 	bool is_pressed() const; ///< return wether button is pressed (toggled in)
 	bool is_pressing() const; ///< return wether button is pressed (toggled in)
 	bool is_hovered() const;
@@ -90,15 +94,22 @@ public:
 	void set_pressed(bool p_pressed); ///only works in toggle mode
 	void set_toggle_mode(bool p_on);
 	bool is_toggle_mode() const;
-	
+
 	void set_disabled(bool p_disabled);
 	bool is_disabled() const;
 
 	void set_click_on_press(bool p_click_on_press);
 	bool get_click_on_press() const;
 
+	void set_enabled_focus_mode(FocusMode p_mode);
+	FocusMode get_enabled_focus_mode() const;
 
-	BaseButton();	
+	void set_shortcut(const Ref<ShortCut>& p_shortcut);
+	Ref<ShortCut> get_shortcut() const;
+
+	virtual String get_tooltip(const Point2& p_pos) const;
+
+	BaseButton();
 	~BaseButton();
 
 };

@@ -33,7 +33,7 @@
 #include "typedefs.h"
 #include "os/copymem.h"
 #include "ustring.h"
-
+#include "math_2d.h"
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
 */
@@ -189,7 +189,7 @@ struct InputModifierState {
 struct InputEventKey  {
 
 	InputModifierState mod;
-		
+
 	bool pressed; /// otherwise release
 
 	uint32_t scancode; ///< check keyboard.h , KeyCode enum, without modifier masks
@@ -212,11 +212,11 @@ struct InputEventMouse  {
 
 struct InputEventMouseButton : public InputEventMouse {
 
-	
+
 	int button_index;
 	bool pressed; //otherwise released
 	bool doubleclick; //last even less than doubleclick time
-	
+
 };
 
 struct InputEventMouseMotion : public InputEventMouse {
@@ -297,6 +297,8 @@ struct InputEvent {
 	bool is_echo() const;
 	void set_as_action(const String& p_action, bool p_pressed);
 
+
+	InputEvent xform_by(const Matrix32& p_xform) const;
 	bool operator==(const InputEvent &p_event) const;
 	operator String() const;
 	InputEvent() { zeromem(this,sizeof(InputEvent)); }

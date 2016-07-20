@@ -122,7 +122,12 @@ class ScriptEditor : public VBoxContainer {
 		FILE_SAVE,
 		FILE_SAVE_AS,
 		FILE_SAVE_ALL,
+		FILE_IMPORT_THEME,
+		FILE_RELOAD_THEME,
+		FILE_SAVE_THEME,
+		FILE_SAVE_THEME_AS,
 		FILE_CLOSE,
+		CLOSE_DOCS,
 		EDIT_UNDO,
 		EDIT_REDO,
 		EDIT_CUT,
@@ -131,14 +136,18 @@ class ScriptEditor : public VBoxContainer {
 		EDIT_SELECT_ALL,
 		EDIT_COMPLETE,
 		EDIT_AUTO_INDENT,
+		EDIT_TRIM_TRAILING_WHITESAPCE,
 		EDIT_TOGGLE_COMMENT,
 		EDIT_MOVE_LINE_UP,
 		EDIT_MOVE_LINE_DOWN,
 		EDIT_INDENT_RIGHT,
 		EDIT_INDENT_LEFT,
 		EDIT_CLONE_DOWN,
+		FILE_TOOL_RELOAD,
+		FILE_TOOL_RELOAD_SOFT,
 		SEARCH_FIND,
 		SEARCH_FIND_NEXT,
+		SEARCH_FIND_PREV,
 		SEARCH_REPLACE,
 		SEARCH_LOCATE_FUNCTION,
 		SEARCH_GOTO_LINE,
@@ -146,6 +155,9 @@ class ScriptEditor : public VBoxContainer {
 		SEARCH_CLASSES,
 		SEARCH_WEBSITE,
 		DEBUG_TOGGLE_BREAKPOINT,
+		DEBUG_REMOVE_ALL_BREAKPOINTS,
+		DEBUG_GOTO_NEXT_BREAKPOINT,
+		DEBUG_GOTO_PREV_BREAKPOINT,
 		DEBUG_NEXT,
 		DEBUG_STEP,
 		DEBUG_BREAK,
@@ -178,12 +190,14 @@ class ScriptEditor : public VBoxContainer {
 	ItemList *script_list;
 	HSplitContainer *script_split;
 	TabContainer *tab_container;
-	FindReplaceDialog *find_replace_dialog;
+	EditorFileDialog *file_dialog;
 	GotoLineDialog *goto_line_dialog;
 	ConfirmationDialog *erase_tab_confirm;
 	ScriptCreateDialog *script_create_dialog;
 	ScriptEditorDebugger* debugger;
 	ToolButton *scripts_visible;
+
+	String current_theme;
 
 	TextureFrame *script_icon;
 	Label *script_name_label;
@@ -219,11 +233,18 @@ class ScriptEditor : public VBoxContainer {
 	void _resave_scripts(const String& p_str);
 	void _reload_scripts();
 
-	bool _test_script_times_on_disk();
+	bool _test_script_times_on_disk(Ref<Script> p_for_script=Ref<Script>());
+
+	void _close_tab(int p_idx);
 
 	void _close_current_tab();
+	void _close_docs_tab();
 
 	bool grab_focus_block;
+
+	bool pending_auto_reload;
+	bool auto_reload_running_scripts;
+	void _live_auto_reload_running_scripts();
 
 	ScriptEditorQuickOpen *quick_open;
 
@@ -238,6 +259,10 @@ class ScriptEditor : public VBoxContainer {
 	void _add_callback(Object *p_obj, const String& p_function, const StringArray& p_args);
 	void _res_saved_callback(const Ref<Resource>& p_res);
 
+	bool trim_trailing_whitespace_on_save;
+
+	void _trim_trailing_whitespace(TextEdit *tx);
+
 	void _goto_script_line2(int p_line);
 	void _goto_script_line(REF p_script,int p_line);
 	void _breaked(bool p_breaked,bool p_can_debug);
@@ -245,6 +270,7 @@ class ScriptEditor : public VBoxContainer {
 	void _update_window_menu();
 	void _script_created(Ref<Script> p_script);
 
+	void _save_layout();
 	void _editor_settings_changed();
 	void _autosave_scripts();
 
@@ -258,6 +284,8 @@ class ScriptEditor : public VBoxContainer {
 
 	void _script_split_dragged(float);
 
+	void _unhandled_input(const InputEvent& p_event);
+
 
 	void _history_forward();
 	void _history_back();
@@ -270,8 +298,10 @@ class ScriptEditor : public VBoxContainer {
 	void _go_to_tab(int p_idx);
 	void _update_history_pos(int p_new_pos);
 	void _update_script_colors();
-	void _update_modified_scripts_for_external_editor();
+	void _update_modified_scripts_for_external_editor(Ref<Script> p_for_script=Ref<Script>());
 
+	int file_dialog_option;
+	void _file_dialog_action(String p_file);
 
 	static ScriptEditor *script_editor;
 protected:
@@ -294,6 +324,7 @@ public:
 	void get_breakpoints(List<String> *p_breakpoints);
 
 	void swap_lines(TextEdit *tx, int line1, int line2);
+	void _breakpoint_toggled(const int p_row);
 
 	void save_all_scripts();
 
@@ -302,9 +333,14 @@ public:
 
 	void set_scene_root_script( Ref<Script> p_script );
 
+	bool script_go_to_method(Ref<Script> p_script, const String& p_method);
+
 	virtual void edited_scene_changed();
 
+	void close_builtin_scripts_from_scene(const String& p_scene);
+
 	ScriptEditorDebugger *get_debugger() { return debugger; }
+	void set_live_auto_reload_running_scripts(bool p_enabled);
 
 	ScriptEditor(EditorNode *p_editor);
 	~ScriptEditor();
@@ -339,6 +375,7 @@ public:
 	virtual void get_window_layout(Ref<ConfigFile> p_layout);
 
 	virtual void get_breakpoints(List<String> *p_breakpoints);
+
 
 	virtual void edited_scene_changed();
 

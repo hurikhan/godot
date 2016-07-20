@@ -33,7 +33,7 @@
 
 void Body2DSW::_update_inertia() {
 
-	if (get_space() && !inertia_update_list.in_list())
+	if (!user_inertia && get_space() && !inertia_update_list.in_list())
 		get_space()->body_add_to_inertia_update_list(&inertia_update_list);
 
 }
@@ -47,6 +47,8 @@ void Body2DSW::update_inertias() {
 	switch(mode) {
 
 		case Physics2DServer::BODY_MODE_RIGID: {
+
+			if(user_inertia) break;
 
 			//update tensor for allshapes, not the best way but should be somehow OK. (inspired from bullet)
 			float total_area=0;
@@ -157,6 +159,15 @@ void Body2DSW::set_param(Physics2DServer::BodyParameter p_param, float p_value) 
 			_update_inertia();
 
 		} break;
+		case Physics2DServer::BODY_PARAM_INERTIA: {
+			if(p_value<=0) {
+				user_inertia = false;
+				_update_inertia();
+			} else {
+				user_inertia = true;
+				_inv_inertia = 1.0 / p_value;
+			}
+		} break;
 		case Physics2DServer::BODY_PARAM_GRAVITY_SCALE: {
 			gravity_scale=p_value;
 		} break;
@@ -185,6 +196,9 @@ float Body2DSW::get_param(Physics2DServer::BodyParameter p_param) const {
 		} break;
 		case Physics2DServer::BODY_PARAM_MASS: {
 			return mass;
+		} break;
+		case Physics2DServer::BODY_PARAM_INERTIA: {
+			return _inv_inertia==0 ? 0 : 1.0 / _inv_inertia;
 		} break;
 		case Physics2DServer::BODY_PARAM_GRAVITY_SCALE: {
 			return gravity_scale;
@@ -260,7 +274,7 @@ void Body2DSW::set_state(Physics2DServer::BodyState p_state, const Variant& p_va
 
 			if (mode==Physics2DServer::BODY_MODE_KINEMATIC) {
 
-				new_transform=p_variant;				
+				new_transform=p_variant;
 				//wakeup_neighbours();
 				set_active(true);
 				if (first_time_kinematic) {
@@ -396,7 +410,7 @@ void Body2DSW::_compute_area_gravity_and_dampenings(const Area2DSW *p_area) {
 	}
 
 	area_linear_damp += p_area->get_linear_damp();
-	area_angular_damp += p_area->get_angular_damp();	
+	area_angular_damp += p_area->get_angular_damp();
 }
 
 void Body2DSW::integrate_forces(real_t p_step) {
@@ -518,7 +532,7 @@ void Body2DSW::integrate_forces(real_t p_step) {
 
 	// damp_area=NULL; // clear the area, so it is set in the next frame
 	def_area=NULL; // clear the area, so it is set in the next frame
-	contact_count=0;	
+	contact_count=0;
 
 }
 
@@ -597,7 +611,7 @@ void Body2DSW::call_queries() {
 
 			set_force_integration_callback(0,StringName());
 		} else {
-			Variant::CallError ce;			
+			Variant::CallError ce;
 			if (fi_callback->callback_udata.get_type()) {
 
 				obj->call(fi_callback->method,vp,2,ce);
@@ -665,6 +679,7 @@ Body2DSW::Body2DSW() : CollisionObject2DSW(TYPE_BODY), active_list(this), inerti
 	angular_velocity=0;
 	biased_angular_velocity=0;
 	mass=1;
+	user_inertia=false;
 	_inv_inertia=0;
 	_inv_mass=1;
 	bounce=0;

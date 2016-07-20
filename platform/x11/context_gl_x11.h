@@ -50,22 +50,26 @@ class ContextGL_X11 : public ContextGL {
 	OS::VideoMode default_video_mode;
 //	::Colormap x11_colormap;
 	::Display *x11_display;
-	::Window& x11_window;	
+	::Window& x11_window;
 	bool double_buffer;
 	bool direct_render;
 	int glx_minor,glx_major;
 	bool opengl_3_context;
+	bool use_vsync;
 public:
 
-	virtual void release_current();	
-	virtual void make_current();	
+	virtual void release_current();
+	virtual void make_current();
 	virtual void swap_buffers();
 	virtual int get_window_width();
 	virtual int get_window_height();
 
 	virtual Error initialize();
 
-	ContextGL_X11(::Display *p_x11_display,::Window &p_x11_window,const OS::VideoMode& p_default_video_mode,bool p_opengl_3_context);	
+	virtual void set_use_vsync(bool p_use);
+	virtual bool is_using_vsync() const;
+
+	ContextGL_X11(::Display *p_x11_display,::Window &p_x11_window,const OS::VideoMode& p_default_video_mode,bool p_opengl_3_context);
 	~ContextGL_X11();
 
 };

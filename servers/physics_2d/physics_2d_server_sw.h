@@ -55,6 +55,7 @@ friend class Physics2DDirectBodyStateSW;
 	bool using_threads;
 
 
+
 	Step2DSW *stepper;
 	Set<const Space2DSW*> active_spaces;
 
@@ -205,6 +206,8 @@ public:
 	virtual void body_set_applied_torque(RID p_body, float p_torque);
 	virtual float body_get_applied_torque(RID p_body) const;
 
+	virtual void body_add_force(RID p_body, const Vector2& p_offset, const Vector2& p_force);
+
 	virtual void body_apply_impulse(RID p_body, const Vector2& p_pos, const Vector2& p_impulse);
 	virtual void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
 
@@ -258,7 +261,7 @@ public:
 	virtual void set_active(bool p_active);
 	virtual void init();
 	virtual void step(float p_step);
-	virtual void sync();	
+	virtual void sync();
 	virtual void flush_queries();
 	virtual void end_sync();
 	virtual void finish();

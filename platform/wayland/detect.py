@@ -19,7 +19,6 @@ def can_build():
 		return False # no wayland on mac for now
 
 	errorval=os.system("pkg-config --version > /dev/null")
-	
 	if (errorval):
 		print("pkg-config not found.. wayland disabled.")
 		return False
@@ -55,7 +54,8 @@ def get_flags():
 
 	return [
 	('builtin_zlib', 'no'),
-	("theora","no"),
+	("openssl", "yes"),
+	('freetype','yes')
         ]
 			
 
@@ -111,11 +111,18 @@ def configure(env):
 	env.ParseConfig('pkg-config egl --cflags --libs')
 	env.ParseConfig('pkg-config wayland-egl --cflags --libs')
 	env.ParseConfig('pkg-config wayland-cursor --cflags --libs')
-        env.ParseConfig('pkg-config xkbcommon --cflags --libs')
+	env.ParseConfig('pkg-config xkbcommon --cflags --libs')
 
 
-	env.ParseConfig('pkg-config freetype2 --cflags --libs')
-	env.Append(CCFLAGS=['-DFREETYPE_ENABLED'])
+	#env.ParseConfig('pkg-config freetype2 --cflags --libs')
+	#env.Append(CCFLAGS=['-DFREETYPE_ENABLED'])
+
+	if (env["openssl"]=="yes"):
+		env.ParseConfig('pkg-config openssl --cflags --libs')
+
+
+	if (env["freetype"]=="yes"):
+		env.ParseConfig('pkg-config freetype2 --cflags --libs')
 
 	
 	#env.Append(CPPFLAGS=['-DOPENGL_ENABLED','-DGLEW_ENABLED'])

@@ -126,11 +126,14 @@
 #include "scene/main/scene_main_loop.h"
 #include "scene/main/resource_preloader.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/main/scene_main_loop.h"
 
 
 #include "scene/resources/surface_tool.h"
 #include "scene/resources/mesh_data_tool.h"
 #include "scene/resources/scene_preloader.h"
+#include "scene/resources/dynamic_font.h"
+#include "scene/resources/dynamic_font_stb.h"
 
 #include "scene/main/timer.h"
 
@@ -169,7 +172,6 @@
 
 #include "scene/resources/world.h"
 #include "scene/resources/world_2d.h"
-#include "scene/resources/volume.h"
 
 #include "scene/resources/sample_library.h"
 #include "scene/resources/audio_stream.h"
@@ -190,6 +192,7 @@
 
 #ifndef _3D_DISABLED
 #include "scene/3d/camera.h"
+#include "scene/3d/listener.h"
 
 #include "scene/3d/interpolated_camera.h"
 #include "scene/3d/position_3d.h"
@@ -235,6 +238,8 @@ static ResourceFormatLoaderShader *resource_loader_shader=NULL;
 static ResourceFormatSaverText *resource_saver_text=NULL;
 static ResourceFormatLoaderText *resource_loader_text=NULL;
 
+static ResourceFormatLoaderDynamicFont *resource_loader_dynamic_font=NULL;
+
 //static SceneStringNames *string_names;
 
 void register_scene_types() {
@@ -250,7 +255,8 @@ void register_scene_types() {
 
 	resource_loader_wav = memnew( ResourceFormatLoaderWAV );
 	ResourceLoader::add_resource_format_loader( resource_loader_wav );
-
+	resource_loader_dynamic_font = memnew( ResourceFormatLoaderDynamicFont );
+	ResourceLoader::add_resource_format_loader( resource_loader_dynamic_font );
 
 #ifdef TOOLS_ENABLED
 
@@ -264,7 +270,28 @@ void register_scene_types() {
 	resource_loader_shader = memnew( ResourceFormatLoaderShader );
 	ResourceLoader::add_resource_format_loader( resource_loader_shader );
 
-	make_default_theme();
+	bool default_theme_hidpi=GLOBAL_DEF("display/use_hidpi_theme",false);
+	Globals::get_singleton()->set_custom_property_info("display/use_hidpi_theme",PropertyInfo(Variant::BOOL,"display/use_hidpi_theme",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_RESTART_IF_CHANGED));
+	String theme_path = GLOBAL_DEF("display/custom_theme","");
+	Globals::get_singleton()->set_custom_property_info("display/custom_theme",PropertyInfo(Variant::STRING,"display/custom_theme",PROPERTY_HINT_FILE,"*.tres,*.res",PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_RESTART_IF_CHANGED));
+	String font_path = GLOBAL_DEF("display/custom_theme_font","");
+	Globals::get_singleton()->set_custom_property_info("display/custom_theme_font",PropertyInfo(Variant::STRING,"display/custom_theme_font",PROPERTY_HINT_FILE,"*.tres,*.res,*.fnt",PROPERTY_USAGE_DEFAULT|PROPERTY_USAGE_RESTART_IF_CHANGED));
+
+
+	if (theme_path!=String()) {
+		Ref<Theme> theme = ResourceLoader::load(theme_path);
+		if (theme.is_valid()) {
+			Theme::set_default(theme);
+		}
+	} else {
+
+		Ref<Font> font;
+		if (font_path!=String()) {
+			font=ResourceLoader::load(font_path);
+		}
+		make_default_theme(default_theme_hidpi,font);
+	}
+
 
 	OS::get_singleton()->yield(); //may take time to init
 
@@ -287,6 +314,7 @@ void register_scene_types() {
 
 	OS::get_singleton()->yield(); //may take time to init
 
+	ObjectTypeDB::register_type<ShortCut>();
 	ObjectTypeDB::register_type<Control>();
 //	ObjectTypeDB::register_type<EmptyControl>();
 	ObjectTypeDB::add_compatibility_type("EmptyControl","Control");
@@ -380,6 +408,7 @@ void register_scene_types() {
 	ObjectTypeDB::register_type<BoneAttachment>();
 	ObjectTypeDB::register_virtual_type<VisualInstance>();
 	ObjectTypeDB::register_type<Camera>();
+	ObjectTypeDB::register_type<Listener>();
 	ObjectTypeDB::register_type<InterpolatedCamera>();
 	ObjectTypeDB::register_type<TestCube>();
 	ObjectTypeDB::register_type<MeshInstance>();
@@ -432,7 +461,7 @@ void register_scene_types() {
 	ObjectTypeDB::register_type<ConeTwistJoint>();
 	ObjectTypeDB::register_type<Generic6DOFJoint>();
 
-	//scenariofx	
+	//scenariofx
 
 	OS::get_singleton()->yield(); //may take time to init
 
@@ -446,30 +475,9 @@ void register_scene_types() {
 	AcceptDialog::set_swap_ok_cancel( GLOBAL_DEF("display/swap_ok_cancel",bool(OS::get_singleton()->get_swap_ok_cancel())) );
 
 	ObjectTypeDB::register_type<SamplePlayer>();
-
-
-//	ObjectTypeDB::register_type<StaticBody>();
-//	ObjectTypeDB::register_type<RigidBody>();
-//	ObjectTypeDB::register_type<CharacterBody>();
-//	ObjectTypeDB::register_type<BodyVolumeSphere>();
-	//ObjectTypeDB::register_type<BodyVolumeBox>();
-	//ObjectTypeDB::register_type<BodyVolumeCylinder>();
-	//ObjectTypeDB::register_type<BodyVolumeCapsule>();
-	//ObjectTypeDB::register_type<PhysicsJointPin>();
-
-
-
-
 	ObjectTypeDB::register_type<StreamPlayer>();
 	ObjectTypeDB::register_type<EventPlayer>();
 
-
-	/* disable types by default, only editors should enable them */
-	//ObjectTypeDB::set_type_enabled("BodyVolumeSphere",false);
-	//ObjectTypeDB::set_type_enabled("BodyVolumeBox",false);
-	//ObjectTypeDB::set_type_enabled("BodyVolumeCapsule",false);
-	//ObjectTypeDB::set_type_enabled("BodyVolumeCylinder",false);
-	//ObjectTypeDB::set_type_enabled("BodyVolumeConvexPolygon",false);
 
 	ObjectTypeDB::register_type<CanvasItemMaterial>();
 	ObjectTypeDB::register_virtual_type<CanvasItem>();
@@ -570,12 +578,20 @@ void register_scene_types() {
 	ObjectTypeDB::register_type<LargeTexture>();
 	ObjectTypeDB::register_type<CubeMap>();
 	ObjectTypeDB::register_type<Animation>();
-	ObjectTypeDB::register_type<Font>();
+	ObjectTypeDB::register_virtual_type<Font>();
+	ObjectTypeDB::register_type<BitmapFont>();
+
+	ObjectTypeDB::register_type<DynamicFontData>();
+	ObjectTypeDB::register_type<DynamicFont>();
+
 	ObjectTypeDB::register_type<StyleBoxEmpty>();
 	ObjectTypeDB::register_type<StyleBoxTexture>();
 	ObjectTypeDB::register_type<StyleBoxFlat>();
 	ObjectTypeDB::register_type<StyleBoxImageMask>();
 	ObjectTypeDB::register_type<Theme>();
+
+	ObjectTypeDB::add_compatibility_type("Font","BitmapFont");
+
 
 	ObjectTypeDB::register_type<PolygonPathFinder>();
 	ObjectTypeDB::register_type<BitMap>();
@@ -583,11 +599,11 @@ void register_scene_types() {
 
 	OS::get_singleton()->yield(); //may take time to init
 
-	//ObjectTypeDB::register_type<Volume>();
 	ObjectTypeDB::register_type<Sample>();
 	ObjectTypeDB::register_type<SampleLibrary>();
 	ObjectTypeDB::register_virtual_type<AudioStream>();
 	ObjectTypeDB::register_virtual_type<AudioStreamPlayback>();
+//TODO: Adapt to the new AudioStream API or drop (GH-3307)
 //	ObjectTypeDB::register_type<AudioStreamGibberish>();
 	ObjectTypeDB::register_virtual_type<VideoStream>();
 
@@ -629,11 +645,13 @@ void register_scene_types() {
 }
 
 void unregister_scene_types() {
-	
+
 	clear_default_theme();
-	
+
 	memdelete( resource_loader_image );
 	memdelete( resource_loader_wav );
+	memdelete( resource_loader_dynamic_font );
+
 #ifdef TOOLS_ENABLED
 
 

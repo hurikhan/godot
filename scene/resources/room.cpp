@@ -31,7 +31,7 @@
 #include "servers/visual_server.h"
 
 
-RID RoomBounds::get_rid() {
+RID RoomBounds::get_rid() const {
 
 	return area;
 }
@@ -48,11 +48,11 @@ BSP_Tree RoomBounds::get_bounds() const {
 }
 
 void RoomBounds::set_geometry_hint(const DVector<Face3>& p_geometry_hint) {
-	
+
 	geometry_hint=p_geometry_hint;
 }
 
-const DVector<Face3>& RoomBounds::get_geometry_hint() const {
+DVector<Face3> RoomBounds::get_geometry_hint() const {
 
 	return geometry_hint;
 }

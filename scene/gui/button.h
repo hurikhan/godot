@@ -34,7 +34,7 @@
 	@author Juan Linietsky <reduzio@gmail.com>
 */
 class Button : public BaseButton {
-	
+
 	OBJ_TYPE( Button, BaseButton );
 public:
 
@@ -49,25 +49,26 @@ private:
 
 	bool flat;
 	String text;
-	Ref<Texture> icon;	
+	Ref<Texture> icon;
 	bool clip_text;
 	TextAlign align;
 
-	 	
 
-protected:	
+protected:
 
 	virtual Size2 get_minimum_size() const;
 	void _notification(int p_what);
-	static void _bind_methods();	
+	static void _bind_methods();
 public:
-// 	
+//
+
+
 	void set_text(const String& p_text);
 	String get_text() const;
-	
+
 	void set_icon(const Ref<Texture>& p_icon);
 	Ref<Texture> get_icon() const;
-	
+
 	void set_flat(bool p_flat);
 	bool is_flat() const;
 
@@ -76,6 +77,7 @@ public:
 
 	void set_text_align(TextAlign p_align);
 	TextAlign get_text_align() const;
+
 
 	Button(const String& p_text=String());
 	~Button();

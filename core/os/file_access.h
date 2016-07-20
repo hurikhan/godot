@@ -47,6 +47,8 @@ public:
 		ACCESS_MAX
 	};
 
+	typedef void (*FileCloseFailNotify)(const String&);
+
 	typedef FileAccess*(*CreateFunc)();
 	bool endian_swap;
 	bool real_is_double;
@@ -56,7 +58,7 @@ protected:
 	virtual Error _open(const String& p_path, int p_mode_flags)=0; ///< open a file
 	virtual uint64_t _get_modified_time(const String& p_file)=0;
 
-
+	static FileCloseFailNotify close_fail_notify;
 private:
 
 	static bool backup_save;
@@ -69,7 +71,11 @@ private:
 		return memnew( T );
 	}
 
+
+
 public:
+
+	static void set_file_close_fail_notify_callback(FileCloseFailNotify p_cbk) { close_fail_notify=p_cbk; }
 
 	virtual void _set_access_type(AccessType p_access);
 
@@ -80,21 +86,21 @@ public:
 		READ_WRITE=3,
 		WRITE_READ=7,
 	};
-	
-	virtual void close()=0; ///< close a file 
-	virtual bool is_open() const=0; ///< true when file is open 
 
-	virtual void seek(size_t p_position)=0; ///< seek to a given position 
-	virtual void seek_end(int64_t p_position=0)=0; ///< seek from the end of file 
-	virtual size_t get_pos() const=0; ///< get position in the file 
-	virtual size_t get_len() const=0; ///< get size of the file 
+	virtual void close()=0; ///< close a file
+	virtual bool is_open() const=0; ///< true when file is open
 
-	virtual bool eof_reached() const=0; ///< reading passed EOF 
+	virtual void seek(size_t p_position)=0; ///< seek to a given position
+	virtual void seek_end(int64_t p_position=0)=0; ///< seek from the end of file
+	virtual size_t get_pos() const=0; ///< get position in the file
+	virtual size_t get_len() const=0; ///< get size of the file
 
-	virtual uint8_t get_8() const=0; ///< get a byte 
-	virtual uint16_t get_16() const; ///< get 16 bits uint  
-	virtual uint32_t get_32() const; ///< get 32 bits uint 
-	virtual uint64_t get_64() const; ///< get 64 bits uint 
+	virtual bool eof_reached() const=0; ///< reading passed EOF
+
+	virtual uint8_t get_8() const=0; ///< get a byte
+	virtual uint16_t get_16() const; ///< get 16 bits uint
+	virtual uint32_t get_32() const; ///< get 32 bits uint
+	virtual uint64_t get_64() const; ///< get 64 bits uint
 
 	virtual float get_float() const;
 	virtual double get_double() const;
@@ -103,21 +109,21 @@ public:
 	virtual int get_buffer(uint8_t *p_dst,int p_length) const; ///< get an array of bytes
 	virtual String get_line() const;
 	virtual Vector<String> get_csv_line(String delim=",") const;
-	
+
 	/**< use this for files WRITTEN in _big_ endian machines (ie, amiga/mac)
 	 * It's not about the current CPU type but file formats.
 	 * this flags get reset to false (little endian) on each open
 	 */
-	 
+
 	virtual void set_endian_swap(bool p_swap) { endian_swap=p_swap; }
 	inline bool get_endian_swap() const { return endian_swap; }
 
-	virtual Error get_error() const=0; ///< get last error 
+	virtual Error get_error() const=0; ///< get last error
 
-	virtual void store_8(uint8_t p_dest)=0; ///< store a byte 
-	virtual void store_16(uint16_t p_dest); ///< store 16 bits uint 
-	virtual void store_32(uint32_t p_dest); ///< store 32 bits uint 
-	virtual void store_64(uint64_t p_dest); ///< store 64 bits uint 
+	virtual void store_8(uint8_t p_dest)=0; ///< store a byte
+	virtual void store_16(uint16_t p_dest); ///< store 16 bits uint
+	virtual void store_32(uint32_t p_dest); ///< store 32 bits uint
+	virtual void store_64(uint64_t p_dest); ///< store 64 bits uint
 
 	virtual void store_float(float p_dest);
 	virtual void store_double(double p_dest);
@@ -129,9 +135,9 @@ public:
 	virtual void store_pascal_string(const String& p_string);
 	virtual String get_pascal_string();
 
-	virtual void store_buffer(const uint8_t *p_src,int p_length); ///< store an array of bytes 
-	
-	virtual bool file_exists(const String& p_name)=0; ///< return true if a file exists 
+	virtual void store_buffer(const uint8_t *p_src,int p_length); ///< store an array of bytes
+
+	virtual bool file_exists(const String& p_name)=0; ///< return true if a file exists
 
 	virtual Error reopen(const String& p_path, int p_mode_flags); ///< does not change the AccessType
 
@@ -147,6 +153,7 @@ public:
 	static bool is_backup_save_enabled() { return backup_save; };
 
 	static String get_md5(const String& p_file);
+	static String get_sha256(const String& p_file);
 
 	static Vector<uint8_t> get_file_as_array(const String& p_path);
 

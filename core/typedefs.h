@@ -41,7 +41,11 @@
 #define _MKSTR(m_x) _STR(m_x)
 #endif
 // have to include version.h for this to work, include it in the .cpp not the .h
+#ifdef VERSION_PATCH
+#define VERSION_MKSTRING _MKSTR(VERSION_MAJOR)"." _MKSTR(VERSION_MINOR)"." _MKSTR(VERSION_PATCH)"." _MKSTR(VERSION_STATUS)"." _MKSTR(VERSION_REVISION)
+#else
 #define VERSION_MKSTRING _MKSTR(VERSION_MAJOR)"." _MKSTR(VERSION_MINOR)"." _MKSTR(VERSION_STATUS)"." _MKSTR(VERSION_REVISION)
+#endif // VERSION_PATCH
 #define VERSION_FULL_NAME _MKSTR(VERSION_NAME)" v" VERSION_MKSTRING
 
 
@@ -270,7 +274,7 @@ void _global_lock();
 void _global_unlock();
 
 struct _GlobalLock {
-	
+
 	_GlobalLock() { _global_lock(); }
 	~_GlobalLock() { _global_unlock(); }
 };
@@ -290,6 +294,7 @@ struct _GlobalLock {
 
 #define __STRX(m_index) #m_index
 #define __STR(m_index) __STRX(m_index)
+
 
 
 #endif  /* typedefs.h */

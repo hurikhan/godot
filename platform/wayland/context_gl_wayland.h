@@ -62,6 +62,7 @@ class ContextGL_Wayland : public ContextGL {
 	bool direct_render;
 	int egl_major,egl_minor;
 	bool opengl_3_context;
+	bool vsync_active;
 
 	void print_config(int number, EGLConfig config);
 public:
@@ -74,6 +75,9 @@ public:
 	virtual int get_window_height();
 
 	virtual Error initialize();
+
+	virtual void set_use_vsync(bool p_use);
+	virtual bool is_using_vsync() const;
 
 	ContextGL_Wayland(struct wl_display *p_wayland_display, struct wl_surface *p_wayland_surface ,const OS::VideoMode& p_default_video_mode,bool p_opengl_3_context);	
 	~ContextGL_Wayland();

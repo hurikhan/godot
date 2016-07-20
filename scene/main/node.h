@@ -43,7 +43,7 @@ class Node : public Object {
 
 	OBJ_TYPE( Node, Object );
 	OBJ_CATEGORY("Nodes");
-	
+
 public:
 
 	enum PauseMode {
@@ -59,16 +59,17 @@ public:
 		bool operator()(const Node* p_a, const Node* p_b) const { return p_b->is_greater_than(p_a); }
 	};
 
-private:	
-	
+private:
+
 	struct GroupData {
-		
-		bool persistent;	
+
+		bool persistent;
+		SceneTree::Group *group;
 		GroupData() { persistent=false; }
 	};
-		
+
 	struct Data {
-	
+
 		String filename;
 		Ref<SceneState> instance_state;
 		Ref<SceneState> inherited_state;
@@ -90,11 +91,11 @@ private:
 
 		Viewport *viewport;
 
-				
-		HashMap< StringName, GroupData,StringNameHasher>  grouped;
+
+		Map< StringName, GroupData>  grouped;
 		List<Node*>::Element *OW; // owned element
 		List<Node*> owned;
-		
+
 		PauseMode pause_mode;
 		Node *pause_owner;
 		// variables used to properly sort the node when processing, ignored otherwise
@@ -110,21 +111,22 @@ private:
 		bool in_constructor;
 		bool use_placeholder;
 
+		bool display_folded;
 
 	} data;
-	
 
-	void _print_tree(const Node *p_node);	
-	
+
+	void _print_tree(const Node *p_node);
+
 	virtual bool _use_builtin_script() const { return true; }
 	Node *_get_node(const NodePath& p_path) const;
 	Node *_get_child_by_name(const StringName& p_name) const;
 
-
+	void _replace_connections_target(Node* p_new_target);
 
 	void _validate_child_name(Node *p_name, bool p_force_human_readable=false);
 
-	void _propagate_reverse_notification(int p_notification);	
+	void _propagate_reverse_notification(int p_notification);
 	void _propagate_deferred_notification(int p_notification, bool p_reverse);
 	void _propagate_enter_tree();
 	void _propagate_ready();
@@ -136,6 +138,8 @@ private:
 
 	void _duplicate_signals(const Node* p_original,Node* p_copy) const;
 	void _duplicate_and_reown(Node* p_new_parent, const Map<Node*,Node*>& p_reown_map) const;
+	Node *_duplicate(bool p_use_instancing) const;
+
 	Array _get_children() const;
 	Array _get_groups() const;
 
@@ -147,15 +151,15 @@ protected:
 	void _block() { data.blocked++; }
 	void _unblock()  { data.blocked--; }
 
-	void _notification(int p_notification);	
-	
+	void _notification(int p_notification);
+
 	virtual void add_child_notify(Node *p_child);
 	virtual void remove_child_notify(Node *p_child);
 	virtual void move_child_notify(Node *p_child);
 	//void remove_and_delete_child(Node *p_child);
-	
-	void _propagate_replace_owner(Node *p_owner,Node* p_by_owner); 
-	
+
+	void _propagate_replace_owner(Node *p_owner,Node* p_by_owner);
+
 	static void _bind_methods();
 
 friend class SceneState;
@@ -180,16 +184,19 @@ public:
 		NOTIFICATION_PARENTED=18,
 		NOTIFICATION_UNPARENTED=19,
 		NOTIFICATION_INSTANCED=20,
+		NOTIFICATION_DRAG_BEGIN=21,
+		NOTIFICATION_DRAG_END=22,
 	};
-			
-	/* NODE/TREE */			
-			
+
+	/* NODE/TREE */
+
 	StringName get_name() const;
 	void set_name(const String& p_name);
-	
+
 	void add_child(Node *p_child,bool p_legible_unique_name=false);
+	void add_child_below_node(Node *p_node, Node *p_child, bool p_legible_unique_name=false);
 	void remove_child(Node *p_child);
-	
+
 	int get_child_count() const;
 	Node *get_child(int p_index) const;
 	bool has_node(const NodePath& p_path) const;
@@ -197,54 +204,57 @@ public:
 	Node* find_node(const String& p_mask,bool p_recursive=true,bool p_owned=true) const;
 	bool has_node_and_resource(const NodePath& p_path) const;
 	Node *get_node_and_resource(const NodePath& p_path,RES& r_res) const;
-	
+
 	Node *get_parent() const;
 	_FORCE_INLINE_ SceneTree *get_tree() const { ERR_FAIL_COND_V( !data.tree, NULL ); return data.tree; }
 
 	_FORCE_INLINE_ bool is_inside_tree() const { return data.inside_tree; }
-	
+
 	bool is_a_parent_of(const Node *p_node) const;
 	bool is_greater_than(const Node *p_node) const;
-	
+
 	NodePath get_path() const;
 	NodePath get_path_to(const Node *p_node) const;
-	
+
 	void add_to_group(const StringName& p_identifier,bool p_persistent=false);
 	void remove_from_group(const StringName& p_identifier);
 	bool is_in_group(const StringName& p_identifier) const;
-	
+
 	struct GroupInfo {
-	
+
 		StringName name;
 		bool persistent;
 	};
-	
+
 	void get_groups(List<GroupInfo> *p_groups) const;
-	
+	bool has_persistent_groups() const;
+
 	void move_child(Node *p_child,int p_pos);
 	void raise();
-	
+
 	void set_owner(Node *p_owner);
 	Node *get_owner() const;
 	void get_owned_by(Node *p_by,List<Node*> *p_owned);
 
-	
+
 	void remove_and_skip();
 	int get_index() const;
-	
+
 	void print_tree();
-	
+
 	void set_filename(const String& p_filename);
 	String get_filename() const;
 
 	void set_editable_instance(Node* p_node,bool p_editable);
 	bool is_editable_instance(Node* p_node) const;
+	void set_editable_instances(const HashMap<NodePath,int>& p_editable_instances);
+	HashMap<NodePath,int> get_editable_instances() const;
 
 
 	/* NOTIFICATIONS */
-	
+
 	void propagate_notification(int p_notification);
-	
+
 	/* PROCESSING */
 	void set_fixed_process(bool p_process);
 	float get_fixed_process_delta_time() const;
@@ -306,12 +316,20 @@ public:
 	NodePath get_import_path() const;
 #endif
 
+	bool is_owned_by_parent() const;
+
 	void get_argument_options(const StringName& p_function,int p_idx,List<String>*r_options) const;
 
 	void clear_internal_tree_resource_paths();
 
 	_FORCE_INLINE_ Viewport *get_viewport() const { return data.viewport; }
 
+	virtual String get_configuration_warning() const;
+
+	void update_configuration_warning();
+
+	void set_display_folded(bool p_folded);
+	bool is_displayed_folded() const;
 	/* CANVAS */
 
 	Node();

@@ -103,7 +103,7 @@ public:
 	bool is_v_drag_enabled() const;
 
 	void set_drag_margin(Margin p_margin,float p_drag_margin);
-	float get_drag_margin(Margin p_margin) const;  
+	float get_drag_margin(Margin p_margin) const;
 
 	void set_v_offset(float p_offset);
 	float get_v_offset() const;
@@ -128,6 +128,8 @@ public:
 
 	Vector2 get_camera_pos() const;
 	void force_update_scroll();
+	void reset_smoothing();
+	void align();
 
 	Camera2D();
 };

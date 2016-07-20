@@ -597,6 +597,7 @@ void Physics2DServer::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("body_get_state","body","state"),&Physics2DServer::body_get_state);
 
 	ObjectTypeDB::bind_method(_MD("body_apply_impulse","body","pos","impulse"),&Physics2DServer::body_apply_impulse);
+	ObjectTypeDB::bind_method(_MD("body_add_force","body","offset","force"),&Physics2DServer::body_add_force);
 	ObjectTypeDB::bind_method(_MD("body_set_axis_velocity","body","axis_velocity"),&Physics2DServer::body_set_axis_velocity);
 
 	ObjectTypeDB::bind_method(_MD("body_add_collision_exception","body","excepted_body"),&Physics2DServer::body_add_collision_exception);
@@ -629,7 +630,7 @@ void Physics2DServer::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("groove_joint_create","groove1_a","groove2_a","anchor_b","body_a","body_b"),&Physics2DServer::groove_joint_create,DEFVAL(RID()),DEFVAL(RID()));
 	ObjectTypeDB::bind_method(_MD("damped_spring_joint_create","anchor_a","anchor_b","body_a","body_b"),&Physics2DServer::damped_spring_joint_create,DEFVAL(RID()));
 
-	ObjectTypeDB::bind_method(_MD("damped_string_joint_set_param","joint","param","value"),&Physics2DServer::damped_string_joint_set_param,DEFVAL(RID()));
+	ObjectTypeDB::bind_method(_MD("damped_string_joint_set_param","joint","param","value"),&Physics2DServer::damped_string_joint_set_param);
 	ObjectTypeDB::bind_method(_MD("damped_string_joint_get_param","joint","param"),&Physics2DServer::damped_string_joint_get_param);
 
 	ObjectTypeDB::bind_method(_MD("joint_get_type","joint"),&Physics2DServer::joint_get_type);
@@ -644,6 +645,14 @@ void Physics2DServer::_bind_methods() {
 //	ObjectTypeDB::bind_method(_MD("step"),&Physics2DServer::step);
 //	ObjectTypeDB::bind_method(_MD("sync"),&Physics2DServer::sync);
 	//ObjectTypeDB::bind_method(_MD("flush_queries"),&Physics2DServer::flush_queries);
+
+	BIND_CONSTANT( SPACE_PARAM_CONTACT_RECYCLE_RADIUS );
+	BIND_CONSTANT( SPACE_PARAM_CONTACT_MAX_SEPARATION );
+	BIND_CONSTANT( SPACE_PARAM_BODY_MAX_ALLOWED_PENETRATION );
+	BIND_CONSTANT( SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_TRESHOLD );
+	BIND_CONSTANT( SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_TRESHOLD );
+	BIND_CONSTANT( SPACE_PARAM_BODY_TIME_TO_SLEEP );
+	BIND_CONSTANT( SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS );
 
 	BIND_CONSTANT( SHAPE_LINE );
 	BIND_CONSTANT( SHAPE_SEGMENT );
@@ -677,6 +686,7 @@ void Physics2DServer::_bind_methods() {
 	BIND_CONSTANT( BODY_PARAM_BOUNCE );
 	BIND_CONSTANT( BODY_PARAM_FRICTION );
 	BIND_CONSTANT( BODY_PARAM_MASS );
+	BIND_CONSTANT( BODY_PARAM_INERTIA );
 	BIND_CONSTANT( BODY_PARAM_GRAVITY_SCALE );
 	BIND_CONSTANT( BODY_PARAM_LINEAR_DAMP);
 	BIND_CONSTANT( BODY_PARAM_ANGULAR_DAMP);

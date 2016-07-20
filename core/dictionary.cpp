@@ -110,6 +110,16 @@ bool Dictionary::has(const Variant& p_key) const {
 
 	return _p->variant_map.has(p_key);
 }
+
+bool Dictionary::has_all(const Array& p_keys) const {
+	for (int i=0;i<p_keys.size();i++) {
+		if( !has(p_keys[i]) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void Dictionary::erase(const Variant& p_key) {
 	_copy_on_write();
 	_p->variant_map.erase(p_key);
@@ -189,6 +199,18 @@ Array Dictionary::keys() const {
 
 }
 
+Array Dictionary::values() const {
+
+	Array varr;
+	varr.resize(size());
+	const Variant *key=NULL;
+	int i=0;
+	while((key=next(key))){
+		varr[i++] = _p->variant_map[*key];
+	}
+	return varr;
+}
+
 const Variant* Dictionary::next(const Variant* p_key) const {
 
 	return _p->variant_map.next(p_key);
@@ -240,5 +262,3 @@ Dictionary::~Dictionary() {
 
 	_unref();
 }
-
-

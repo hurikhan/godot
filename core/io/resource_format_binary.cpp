@@ -378,7 +378,7 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant& r_v)  {
 				} break;
 				case OBJECT_INTERNAL_RESOURCE: {
 					uint32_t index=f->get_32();
-					String path = res_path+"::"+itos(index);					
+					String path = res_path+"::"+itos(index);
 					RES res = ResourceLoader::load(path);
 					if (res.is_null()) {
 						WARN_PRINT(String("Couldn't load resource: "+path).utf8().get_data());
@@ -1105,13 +1105,8 @@ void ResourceFormatLoaderBinary::get_recognized_extensions_for_type(const String
 
 	for(List<String>::Element *E=extensions.front();E;E=E->next()) {
 		String ext = E->get().to_lower();
-		if (ext=="res")
-			continue;
-//		p_extensions->push_back("x"+ext);
 		p_extensions->push_back(ext);
 	}
-
-	p_extensions->push_back("res");
 
 }
 void ResourceFormatLoaderBinary::get_recognized_extensions(List<String> *p_extensions) const{
@@ -1122,12 +1117,9 @@ void ResourceFormatLoaderBinary::get_recognized_extensions(List<String> *p_exten
 
 	for(List<String>::Element *E=extensions.front();E;E=E->next()) {
 		String ext = E->get().to_lower();
-		if (ext=="res")
-			continue;
 		p_extensions->push_back(ext);
 	}
 
-	p_extensions->push_back("res");
 }
 
 bool ResourceFormatLoaderBinary::handles_type(const String& p_type) const{
@@ -2100,7 +2092,7 @@ Error ResourceFormatSaverBinaryInstance::save(const String &p_path,const RES& p_
 					p.value=E->get()->get(F->get().name);
 					if ((F->get().usage&PROPERTY_USAGE_STORE_IF_NONZERO && p.value.is_zero())||(F->get().usage&PROPERTY_USAGE_STORE_IF_NONONE && p.value.is_one()) )
 						continue;
-					p.pi=F->get();										
+					p.pi=F->get();
 
 					rd.properties.push_back(p);
 
@@ -2270,16 +2262,8 @@ bool ResourceFormatSaverBinary::recognize(const RES& p_resource) const {
 
 void ResourceFormatSaverBinary::get_recognized_extensions(const RES& p_resource,List<String> *p_extensions) const {
 
-
-	//here comes the sun, lalalala
 	String base = p_resource->get_base_extension().to_lower();
-	if (base!="res") {
-
-		p_extensions->push_back(base);
-	}
-
-	p_extensions->push_back("res");
-
+	p_extensions->push_back(base);
 
 }
 

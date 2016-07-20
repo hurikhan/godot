@@ -57,7 +57,7 @@ class Spatial : public Node {
 
 	OBJ_TYPE( Spatial, Node );
 	OBJ_CATEGORY("3D");
-	
+
 	enum TransformDirty {
 		DIRTY_NONE=0,
 		DIRTY_VECTORS=1,
@@ -68,7 +68,7 @@ class Spatial : public Node {
 	mutable SelfList<Node> xform_change;
 
 	struct Data {
-	
+
 
 
 		mutable Transform global_transform;
@@ -84,12 +84,12 @@ class Spatial : public Node {
 		bool toplevel_active;
 		bool toplevel;
 		bool inside_world;
-	
+
 		int children_lock;
 		Spatial *parent;
 		List<Spatial*> children;
 		List<Spatial*>::Element *C;
-		
+
 		bool ignore_notification;
 		bool notify_local_transform;
 
@@ -110,7 +110,8 @@ class Spatial : public Node {
 	void _notify_dirty();
 	void _propagate_transform_changed(Spatial *p_origin);
 
-	void _set_rotation_deg(const Vector3& p_deg);
+	// Deprecated, should be removed in a future version.
+	void _set_rotation_deg(const Vector3& p_euler_deg);
 	Vector3 _get_rotation_deg() const;
 
 	void _propagate_visibility_changed();
@@ -130,7 +131,7 @@ protected:
 public:
 
 	enum {
-	
+
 		NOTIFICATION_TRANSFORM_CHANGED=SceneTree::NOTIFICATION_TRANSFORM_CHANGED,
 		NOTIFICATION_ENTER_WORLD=41,
 		NOTIFICATION_EXIT_WORLD=42,
@@ -144,16 +145,18 @@ public:
 	Ref<World> get_world() const;
 
 	void set_translation(const Vector3& p_translation);
-	void set_rotation(const Vector3& p_euler);
+	void set_rotation(const Vector3& p_euler_rad);
+	void set_rotation_deg(const Vector3& p_euler_deg);
 	void set_scale(const Vector3& p_scale);
 
 	Vector3 get_translation() const;
 	Vector3 get_rotation() const;
+	Vector3 get_rotation_deg() const;
 	Vector3 get_scale() const;
 
 	void set_transform(const Transform& p_transform);
 	void set_global_transform(const Transform& p_transform);
-	
+
 	Transform get_transform() const;
 	Transform get_global_transform() const;
 
@@ -198,7 +201,7 @@ public:
 	Transform get_import_transform() const;
 #endif
 
-	Spatial();	
+	Spatial();
 	~Spatial();
 
 };

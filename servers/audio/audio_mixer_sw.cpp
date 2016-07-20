@@ -75,7 +75,7 @@ void AudioMixerSW::do_resample(const Depth* p_src, int32_t *p_dst, ResamplerStat
 				for(int i=0;i<(is_stereo?2:1);i++) {
 
 
-					int16_t nibble,signed_nibble,diff,step;
+					int16_t nibble,diff,step;
 
 					p_state->ima_adpcm[i].last_nibble++;
 					const uint8_t *src_ptr=p_state->ima_adpcm[i].ptr;
@@ -91,10 +91,6 @@ void AudioMixerSW::do_resample(const Depth* p_src, int32_t *p_dst, ResamplerStat
 						p_state->ima_adpcm[i].step_index=0;
 					if (p_state->ima_adpcm[i].step_index>88)
 						p_state->ima_adpcm[i].step_index=88;
-
-					/*
-					signed_nibble = (nibble&7) * ((nibble&8)?-1:1);
-					diff = (2 * signed_nibble + 1) * step / 4; */
 
 					diff = step >> 3 ;
 					if (nibble & 1)
@@ -339,7 +335,7 @@ void AudioMixerSW::mix_channel(Channel& c) {
 			c.mix.old_chorus_vol[i]=c.mix.chorus_vol[i];
 		}
 
-		c.first_mix=false;		
+		c.first_mix=false;
 	}
 
 
@@ -734,7 +730,7 @@ int AudioMixerSW::_get_channel(ChannelID p_channel) const {
 	if (channels[idx].check!=check) {
 		return -1;
 	}
-	if (!channels[idx].active) {	
+	if (!channels[idx].active) {
 		return -1;
 	}
 
@@ -918,7 +914,7 @@ void AudioMixerSW::channel_set_filter(ChannelID p_channel, FilterType p_type, fl
 
 	if (type_changed) {
 		//type changed reset filter
-		c.filter.old_coefs=c.filter.coefs;	
+		c.filter.old_coefs=c.filter.coefs;
 		c.mix.filter_l.ha[0]=0;
 		c.mix.filter_l.ha[1]=0;
 		c.mix.filter_l.hb[0]=0;

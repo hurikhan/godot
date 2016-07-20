@@ -1,3 +1,31 @@
+/*************************************************************************/
+/*  baked_light_editor_plugin.cpp                                        */
+/*************************************************************************/
+/*                       This file is part of:                           */
+/*                           GODOT ENGINE                                */
+/*                    http://www.godotengine.org                         */
+/*************************************************************************/
+/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
+/*                                                                       */
+/* Permission is hereby granted, free of charge, to any person obtaining */
+/* a copy of this software and associated documentation files (the       */
+/* "Software"), to deal in the Software without restriction, including   */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* distribute, sublicense, and/or sell copies of the Software, and to    */
+/* permit persons to whom the Software is furnished to do so, subject to */
+/* the following conditions:                                             */
+/*                                                                       */
+/* The above copyright notice and this permission notice shall be        */
+/* included in all copies or substantial portions of the Software.       */
+/*                                                                       */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
+/*************************************************************************/
 #include "baked_light_editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/3d/mesh_instance.h"
@@ -131,7 +159,7 @@ void BakedLightEditor::_notification(int p_option) {
 				last_rays_time=rays_snap;
 
 				bake_info->set_text("rays/s: "+itos(rays_sec));
-				update_timeout=1;				
+				update_timeout=1;
 				print_line("MSUPDATE: "+itos(OS::get_singleton()->get_ticks_msec()-t));
 				t=OS::get_singleton()->get_ticks_msec();
 				node->get_baked_light()->set_octree(octree_texture);
@@ -179,7 +207,7 @@ void BakedLightEditor::_bake_pressed() {
 
 	ERR_FAIL_COND(!node);
 	if (node->get_baked_light().is_null()) {
-		err_dialog->set_text("BakedLightInstance does not contain a BakedLight resource.");
+		err_dialog->set_text(TTR("BakedLightInstance does not contain a BakedLight resource."));
 		err_dialog->popup_centered_minsize();
 		button_bake->set_pressed(false);
 		return;
@@ -264,7 +292,7 @@ BakedLightEditor::BakedLightEditor() {
 
 	bake_hbox = memnew( HBoxContainer );
 	button_bake = memnew( ToolButton );
-	button_bake->set_text("Bake!");
+	button_bake->set_text(TTR("Bake!"));
 	button_bake->set_toggle_mode(true);
 	button_reset = memnew( Button );
 	button_make_lightmaps = memnew( Button );
@@ -289,7 +317,7 @@ BakedLightEditor::BakedLightEditor() {
 	button_reset->connect("pressed",this,"_clear_pressed");
 	button_make_lightmaps->connect("pressed",this,"_bake_lightmaps");
 	button_reset->hide();
-	button_reset->set_tooltip("Reset the lightmap octree baking process (start over).");
+	button_reset->set_tooltip(TTR("Reset the lightmap octree baking process (start over)."));
 
 
 	update_timeout=0;

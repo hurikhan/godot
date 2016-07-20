@@ -104,6 +104,10 @@ class OS_Windows : public OS {
 	HINSTANCE	hInstance;		// Holds The Instance Of The Application
 	HWND hWnd;
 
+	uint32_t move_timer_id;
+
+	HCURSOR hCursor;
+
 	Size2 window_rect;
 	VideoMode video_mode;
 
@@ -138,27 +142,27 @@ class OS_Windows : public OS {
 	void _touch_event(bool p_pressed, int p_x, int p_y, int idx);
 
 	// functions used by main to initialize/deintialize the OS
-protected:	
+protected:
 	virtual int get_video_driver_count() const;
 	virtual const char * get_video_driver_name(int p_driver) const;
-	
+
 	virtual VideoMode get_default_video_mode() const;
-	
+
 	virtual int get_audio_driver_count() const;
 	virtual const char * get_audio_driver_name(int p_driver) const;
-	
+
 	virtual void initialize_core();
 	virtual void initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver);
-	
-	virtual void set_main_loop( MainLoop * p_main_loop );    
+
+	virtual void set_main_loop( MainLoop * p_main_loop );
 	virtual void delete_main_loop();
-	
+
 	virtual void finalize();
 	virtual void finalize_core();
-	
+
 	void process_events();
 	void process_key_events();
-	
+
 	struct ProcessInfo {
 
 		STARTUPINFO si;
@@ -170,6 +174,7 @@ protected:
 		HMONITOR hMonitor;
 		HDC hdcMonitor;
 		Rect2 rect;
+		int dpi;
 
 
 	};
@@ -179,6 +184,7 @@ protected:
 	Vector<MonitorInfo> monitor_info;
 	bool maximized;
 	bool minimized;
+	bool borderless;
 
 	static BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor,  LPARAM dwData);
 
@@ -200,7 +206,7 @@ public:
 	virtual Point2 get_mouse_pos() const;
 	virtual int get_mouse_button_state() const;
 	virtual void set_window_title(const String& p_title);
-	
+
 	virtual void set_video_mode(const VideoMode& p_video_mode,int p_screen=0);
 	virtual VideoMode get_video_mode(int p_screen=0) const;
 	virtual void get_fullscreen_mode_list(List<VideoMode> *p_list,int p_screen=0) const;
@@ -210,6 +216,8 @@ public:
 	virtual void set_current_screen(int p_screen);
 	virtual Point2 get_screen_position(int p_screen=0) const;
 	virtual Size2 get_screen_size(int p_screen=0) const;
+	virtual int get_screen_dpi(int p_screen=0) const;
+
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2& p_position);
 	virtual Size2 get_window_size() const;
@@ -223,10 +231,13 @@ public:
 	virtual void set_window_maximized(bool p_enabled);
 	virtual bool is_window_maximized() const;
 
+	virtual void set_borderless_window(int p_borderless);
+	virtual bool get_borderless_window();
+
 	virtual MainLoop *get_main_loop() const;
 
 	virtual String get_name();
-	
+
 	virtual Date get_date(bool utc) const;
 	virtual Time get_time(bool utc) const;
 	virtual TimeZoneInfo get_time_zone_info() const;
@@ -236,12 +247,13 @@ public:
 	virtual bool can_draw() const;
 	virtual Error set_cwd(const String& p_cwd);
 
-	virtual void delay_usec(uint32_t p_usec) const; 
+	virtual void delay_usec(uint32_t p_usec) const;
 	virtual uint64_t get_ticks_usec() const;
 
 	virtual Error execute(const String& p_path, const List<String>& p_arguments,bool p_blocking,ProcessID *r_child_id=NULL,String* r_pipe=NULL,int *r_exitcode=NULL);
 	virtual Error kill(const ProcessID& p_pid);
-	
+	virtual int get_process_ID() const;
+
 	virtual bool has_environment(const String& p_var) const;
 	virtual String get_environment(const String& p_var) const;
 
@@ -254,6 +266,7 @@ public:
 	virtual String get_executable_path() const;
 
 	virtual String get_locale() const;
+	virtual LatinKeyboardVariant get_latin_keyboard_variant() const; 
 
 	virtual void move_window_to_foreground();
 	virtual String get_data_dir() const;
@@ -273,7 +286,10 @@ public:
 	virtual bool is_joy_known(int p_device);
 	virtual String get_joy_guid(int p_device) const;
 
-	OS_Windows(HINSTANCE _hInstance);	
+	virtual void set_use_vsync(bool p_enable);
+	virtual bool is_vsnc_enabled() const;
+
+	OS_Windows(HINSTANCE _hInstance);
 	~OS_Windows();
 
 };

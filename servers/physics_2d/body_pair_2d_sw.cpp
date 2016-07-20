@@ -77,7 +77,7 @@ void BodyPair2DSW::_contact_added_callback(const Vector2& p_point_A,const Vector
 			contact.acc_normal_impulse=c.acc_normal_impulse;
 			contact.acc_tangent_impulse=c.acc_tangent_impulse;
 			contact.acc_bias_impulse=c.acc_bias_impulse;
-			new_index=i;			
+			new_index=i;
 			break;
 		}
 	}
@@ -259,10 +259,10 @@ bool BodyPair2DSW::setup(float p_step) {
 
 	if (A->get_continuous_collision_detection_mode()==Physics2DServer::CCD_MODE_CAST_SHAPE) {
 		motion_A=A->get_motion();
-	} 
+	}
 	if (B->get_continuous_collision_detection_mode()==Physics2DServer::CCD_MODE_CAST_SHAPE) {
 		motion_B=B->get_motion();
-	} 
+	}
 	//faster to set than to check..
 
 	//bool prev_collided=collided;
@@ -298,19 +298,17 @@ bool BodyPair2DSW::setup(float p_step) {
 		if (A->is_using_one_way_collision()) {
 			Vector2 direction = A->get_one_way_collision_direction();
 			bool valid=false;
-			for(int i=0;i<contact_count;i++) {
-				Contact& c = contacts[i];
+			if (B->get_linear_velocity().dot(direction)>=0){
+				for(int i=0;i<contact_count;i++) {
+					Contact& c = contacts[i];
+					if (!c.reused)
+						continue;
+					if (c.normal.dot(direction)<0)
+						continue;
 
-				if (c.normal.dot(direction)<0)
-					continue;
-				if (B->get_linear_velocity().dot(direction)<0)
-					continue;
-
-				if (!c.reused) {
-					continue;
+					valid=true;
+					break;
 				}
-
-				valid=true;
 			}
 
 			if (!valid) {
@@ -323,20 +321,17 @@ bool BodyPair2DSW::setup(float p_step) {
 		if (B->is_using_one_way_collision()) {
 			Vector2 direction = B->get_one_way_collision_direction();
 			bool valid=false;
-			for(int i=0;i<contact_count;i++) {
+			if (A->get_linear_velocity().dot(direction)>=0){
+				for(int i=0;i<contact_count;i++) {
+					Contact& c = contacts[i];
+					if (!c.reused)
+						continue;
+					if (c.normal.dot(direction)<0)
+						continue;
 
-				Contact& c = contacts[i];
-
-				if (c.normal.dot(direction)<0)
-					continue;
-				if (A->get_linear_velocity().dot(direction)<0)
-					continue;
-
-				if (!c.reused) {
-					continue;
+					valid=true;
+					break;
 				}
-
-				valid=true;
 			}
 			if (!valid) {
 				collided=false;

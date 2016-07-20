@@ -72,11 +72,14 @@ void ColorPicker::_notification(int p_what) {
 			_update_color();
 		}
 
-		case NOTIFICATION_VISIBILITY_CHANGED: {
-			c_text->call_deferred("grab_focus");
-			c_text->call_deferred("select");
-		} break;
+
 	}
+}
+
+void ColorPicker::set_focus_on_line_edit() {
+
+	c_text->grab_focus();
+	c_text->select();
 }
 
 void ColorPicker::_update_controls() {
@@ -137,14 +140,13 @@ void ColorPicker::_value_changed(double) {
 	if (updating)
 		return;
 
-	for(int i=0;i<3;i++) {
+	for(int i=0;i<4;i++) {
 		color.components[i] = scroll[i]->get_val()/(raw_mode_enabled?1.0:255.0);
 	}
-	color.components[3] = scroll[3]->get_val()/255.0;
 
 	set_color(color);
 
-	c_text->set_text(color.to_html(edit_alpha && color.a<1));
+	_update_text_value();
 
 	emit_signal("color_changed",color);
 
@@ -171,22 +173,16 @@ void ColorPicker::_update_color() {
 	for(int i=0;i<4;i++) {
 		scroll[i]->set_max(255);
 		scroll[i]->set_step(0.01);
-		if (raw_mode_enabled && i != 3)
+		if (raw_mode_enabled) {
+			if (i == 3)
+				scroll[i]->set_max(1);
 			scroll[i]->set_val(color.components[i]);
-		else
-			scroll[i]->set_val(color.components[i]*255);
+		} else {
+			scroll[i]->set_val(color.components[i] * 255);
+		}
 	}
 
-	if (text_is_constructor) {
-		String t = "Color("+String::num(color.r)+","+String::num(color.g)+","+String::num(color.b);
-		if (edit_alpha && color.a<1)
-			t+=(","+String::num(color.a)+")") ;
-		else
-			t+=")";
-		c_text->set_text(t);
-	} else {
-		c_text->set_text(color.to_html(edit_alpha && color.a<1));
-	}
+	_update_text_value();
 
 	sample->update();
 	updating=false;
@@ -246,7 +242,7 @@ void ColorPicker::set_raw_mode(bool p_enabled) {
 	raw_mode_enabled=p_enabled;
 	if (btn_mode->is_pressed()!=p_enabled)
 		btn_mode->set_pressed(p_enabled);
-	
+
 	if (!is_inside_tree())
 		return;
 
@@ -259,6 +255,20 @@ bool ColorPicker::is_raw_mode() const {
 	return raw_mode_enabled;
 }
 
+
+void ColorPicker::_update_text_value() {
+	if (text_is_constructor) {
+		String t = "Color("+String::num(color.r)+","+String::num(color.g)+","+String::num(color.b);
+		if (edit_alpha && color.a<1)
+			t+=(","+String::num(color.a)+")") ;
+		else
+			t+=")";
+		c_text->set_text(t);
+	} else {
+		c_text->set_text(color.to_html(edit_alpha && color.a<1));
+	}
+}
+
 void ColorPicker::_sample_draw() {
 	sample->draw_rect(Rect2(Point2(),Size2(256,20)),color);
 }
@@ -268,12 +278,12 @@ void ColorPicker::_hsv_draw(int p_wich,Control* c)
 	if (!c)
 		return;
 	if (p_wich==0) {
-		int x=c->get_size().x*s;
-		int y=c->get_size().y-c->get_size().y*v;
+		int x = CLAMP(c->get_size().x * s, 0, c->get_size().x);
+		int y = CLAMP(c->get_size().y-c->get_size().y * v, 0, c->get_size().y);
 		Color col = color;
 		col.a=1;
 		c->draw_line(Point2(x,0),Point2(x,c->get_size().y),col.inverted());
-		c->draw_line(Point2(0,y),Point2(c->get_size().x,y),col.inverted());
+		c->draw_line(Point2(0, y),Point2(c->get_size().x, y),col.inverted());
 		c->draw_line(Point2(x,y),Point2(x,y),Color(1,1,1),2);
 	} else if (p_wich==1) {
 		int y=c->get_size().y-c->get_size().y*h;
@@ -322,7 +332,7 @@ void ColorPicker::_w_input(const InputEvent &ev) {
 		if (bev.pressed) {
 			changing_color = true;
 			h=1-((float)bev.y)/256.0;
-			
+
 		} else {
 			changing_color = false;
 		}
@@ -361,7 +371,10 @@ void ColorPicker::_preset_input(const InputEvent &ev) {
 		emit_signal("color_changed", color);
 	} else if (ev.type == InputEvent::MOUSE_MOTION) {
 		const InputEventMouse &mev = ev.mouse_motion;
-		int index = mev.x/(preset->get_size().x/presets.size());
+		int index = mev.x * presets.size();
+		if( preset->get_size().x != 0 ) {
+			index /= preset->get_size().x;
+		}
 		if (index<0 || index >= presets.size())
 			return;
 		preset->set_tooltip("Color: #"+presets[index].to_html(presets[index].a<1)+"\n"
@@ -502,7 +515,7 @@ ColorPicker::ColorPicker() :
 	args.push_back(1);
 	args.push_back(c);
 	c->connect("draw",this,"_hsv_draw",args);
-	
+
 	hb_edit->add_child(uv_edit);
 	hb_edit->add_child(memnew( VSeparator ));
 	hb_edit->add_child(w_edit);
@@ -543,7 +556,7 @@ ColorPicker::ColorPicker() :
 	}
 
 	HBoxContainer *hhb = memnew( HBoxContainer );
-	
+
 	btn_mode = memnew( CheckButton );
 	btn_mode->set_text("RAW Mode");
 	btn_mode->connect("toggled", this, "set_raw_mode");
@@ -570,7 +583,7 @@ ColorPicker::ColorPicker() :
 	uv_material->set_shader(s_uv);
 
 	w_material.instance();
-	
+
 	Ref<Shader> s_w = get_shader("w_editor");
 	w_material->set_shader(s_w);
 
@@ -625,6 +638,7 @@ void ColorPickerButton::pressed() {
 	popup->set_pos(get_global_pos()-Size2(0,ms.height));
 	popup->set_size(ms);
 	popup->popup();
+	picker->set_focus_on_line_edit();
 
 
 }
@@ -661,10 +675,15 @@ bool ColorPickerButton::is_editing_alpha() const{
 
 }
 
+ColorPicker *ColorPickerButton::get_picker() {
+	return picker;
+}
+
 void ColorPickerButton::_bind_methods(){
 
 	ObjectTypeDB::bind_method(_MD("set_color","color"),&ColorPickerButton::set_color);
 	ObjectTypeDB::bind_method(_MD("get_color"),&ColorPickerButton::get_color);
+	ObjectTypeDB::bind_method(_MD("get_picker:ColorPicker"),&ColorPickerButton::get_picker);
 	ObjectTypeDB::bind_method(_MD("set_edit_alpha","show"),&ColorPickerButton::set_edit_alpha);
 	ObjectTypeDB::bind_method(_MD("is_editing_alpha"),&ColorPickerButton::is_editing_alpha);
 	ObjectTypeDB::bind_method(_MD("_color_changed"),&ColorPickerButton::_color_changed);
@@ -684,4 +703,3 @@ ColorPickerButton::ColorPickerButton() {
 	picker->connect("color_changed",this,"_color_changed");
 	add_child(popup);
 }
-

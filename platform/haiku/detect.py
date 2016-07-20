@@ -23,7 +23,8 @@ def get_opts():
 
 def get_flags():
 	return [
-		('builtin_zlib', 'no')
+		('builtin_zlib', 'no'),
+		('glew', 'yes'),
 	]
 
 def configure(env):
@@ -37,8 +38,8 @@ def configure(env):
 
 	env.Append(CPPPATH = ['#platform/haiku'])
 
-	env["CC"] = "gcc"
-	env["CXX"] = "g++"
+	env["CC"] = "gcc-x86"
+	env["CXX"] = "g++-x86"
 
 	if (env["target"]=="release"):
 		if (env["debug_release"]=="yes"):
@@ -52,9 +53,9 @@ def configure(env):
 
 	#env.Append(CCFLAGS=['-DFREETYPE_ENABLED'])
 	env.Append(CPPFLAGS = ['-DPTHREAD_NO_RENAME']) # TODO: enable when we have pthread_setname_np
-	env.Append(CPPFLAGS = ['-DGLEW_ENABLED', '-DOPENGL_ENABLED', '-DMEDIA_KIT_ENABLED'])
+	env.Append(CPPFLAGS = ['-DOPENGL_ENABLED', '-DMEDIA_KIT_ENABLED'])
 	env.Append(CPPFLAGS = ['-DUNIX_ENABLED', '-DGLES2_ENABLED', '-DGLES_OVER_GL'])
-	env.Append(LIBS = ['be', 'game', 'media', 'network', 'bnetapi', 'z', 'GL', 'GLEW'])
+	env.Append(LIBS = ['be', 'game', 'media', 'network', 'bnetapi', 'z', 'GL'])
 
 	import methods
 	env.Append(BUILDERS = {'GLSL120' : env.Builder(action = methods.build_legacygl_headers, suffix = 'glsl.h',src_suffix = '.glsl')})

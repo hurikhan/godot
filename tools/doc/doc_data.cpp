@@ -61,6 +61,27 @@ void DocData::merge_from(const DocData& p_data) {
 					continue;
 				if (cf.methods[j].arguments.size()!=m.arguments.size())
 					continue;
+				// since polymorphic functions are allowed we need to check the type of
+				// the arguments so we make sure they are different.
+				int arg_count = cf.methods[j].arguments.size();
+				Vector<bool> arg_used;
+				arg_used.resize(arg_count);
+				for (int l = 0; l < arg_count; ++l) arg_used[l] = false;
+				// also there is no guarantee that argument ordering will match, so we
+				// have to check one by one so we make sure we have an exact match
+				for (int k = 0; k < arg_count; ++k) {
+					for (int l = 0; l < arg_count; ++l)
+						if (cf.methods[j].arguments[k].type == m.arguments[l].type && !arg_used[l]) {
+							arg_used[l] = true;
+							break;
+						}
+				}
+				bool not_the_same = false;
+				for (int l = 0; l < arg_count; ++l)
+					if (!arg_used[l]) // at least one of the arguments was different
+						not_the_same = true;
+				if (not_the_same)
+					continue;
 
 				const MethodDoc &mf = cf.methods[j];
 
@@ -267,6 +288,7 @@ void DocData::generate(bool p_basic_types) {
 							case Variant::INT_ARRAY:
 							case Variant::REAL_ARRAY:
 							case Variant::STRING_ARRAY:	//25
+							case Variant::VECTOR2_ARRAY:
 							case Variant::VECTOR3_ARRAY:
 							case Variant::COLOR_ARRAY:
 								default_arg_text=Variant::get_type_name(default_arg.get_type())+"("+default_arg_text+")";
@@ -417,6 +439,12 @@ void DocData::generate(bool p_basic_types) {
 		classes.pop_front();
 	}
 
+
+	{
+		//so it can be documented that it does not exist
+		class_list["Variant"]=ClassDoc();
+		class_list["Variant"].name="Variant";
+	}
 
 	if (!p_basic_types)
 		return;
@@ -912,13 +940,15 @@ Error DocData::save(const String& p_path) {
 		_write_string(f,0,header);
 		_write_string(f,1,"<brief_description>");
 		if (c.brief_description!="")
-			_write_string(f,1,c.brief_description.xml_escape());
+			_write_string(f,2,c.brief_description.xml_escape());
 		_write_string(f,1,"</brief_description>");
 		_write_string(f,1,"<description>");
 		if (c.description!="")
-			_write_string(f,1,c.description.xml_escape());
+			_write_string(f,2,c.description.xml_escape());
 		_write_string(f,1,"</description>");
 		_write_string(f,1,"<methods>");
+
+		c.methods.sort();
 
 		for(int i=0;i<c.methods.size();i++) {
 
@@ -950,7 +980,7 @@ Error DocData::save(const String& p_path) {
 
 			_write_string(f,3,"<description>");
 			if (m.description!="")
-				_write_string(f,3,m.description.xml_escape());
+				_write_string(f,4,m.description.xml_escape());
 			_write_string(f,3,"</description>");
 
 			_write_string(f,2,"</method>");
@@ -962,11 +992,15 @@ Error DocData::save(const String& p_path) {
 		if (c.properties.size()) {
 			_write_string(f,1,"<members>");
 
+			c.properties.sort();
+
 			for(int i=0;i<c.properties.size();i++) {
 
 
 				PropertyDoc &p=c.properties[i];
 				_write_string(f,2,"<member name=\""+p.name+"\" type=\""+p.type+"\">");
+				if (p.description!="")
+					_write_string(f,3,p.description.xml_escape());
 				_write_string(f,2,"</member>");
 
 			}
@@ -974,6 +1008,8 @@ Error DocData::save(const String& p_path) {
 		}
 
 		if (c.signals.size()) {
+
+			c.signals.sort();
 
 			_write_string(f,1,"<signals>");
 			for(int i=0;i<c.signals.size();i++) {
@@ -990,7 +1026,7 @@ Error DocData::save(const String& p_path) {
 
 				_write_string(f,3,"<description>");
 				if (m.description!="")
-					_write_string(f,3,m.description.xml_escape());
+					_write_string(f,4,m.description.xml_escape());
 				_write_string(f,3,"</description>");
 
 				_write_string(f,2,"</signal>");
@@ -1000,6 +1036,7 @@ Error DocData::save(const String& p_path) {
 		}
 
 		_write_string(f,1,"<constants>");
+
 
 		for(int i=0;i<c.constants.size();i++) {
 
@@ -1013,6 +1050,9 @@ Error DocData::save(const String& p_path) {
 		_write_string(f,1,"</constants>");
 
 		if (c.theme_properties.size()) {
+
+			c.theme_properties.sort();
+
 			_write_string(f,1,"<theme_items>");
 			for(int i=0;i<c.theme_properties.size();i++) {
 

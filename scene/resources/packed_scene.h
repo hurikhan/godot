@@ -66,7 +66,7 @@ class SceneState : public Reference {
 		};
 
 		Vector<Property> properties;
-		Vector<int> groups;		
+		Vector<int> groups;
 
 	};
 
@@ -196,6 +196,7 @@ class PackedScene : public Resource {
 
 protected:
 
+	virtual bool editor_can_reload_from_file() { return false; } // this is handled by editor better
 	static void _bind_methods();
 public:
 
