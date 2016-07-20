@@ -29,10 +29,6 @@
 #ifndef CONTEXT_GL_WAYLAND_H
 #define CONTEXT_GL_WAYLAND_H
 
-/**
-	@author Mario Schlack <m4r10.5ch14ck@gmail.com>
-*/
-
 #ifdef WAYLAND_ENABLED
 #if defined(OPENGL_ENABLED) || defined(LEGACYGL_ENABLED)
 

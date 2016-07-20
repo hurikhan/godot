@@ -52,10 +52,6 @@
 #include <wayland-cursor.h>
 #include <xkbcommon/xkbcommon.h>
 
-/*
-	@author Mario Schlack <m4r10.5ch14ck@gmail.com>
-*/
-
 #define WL_BUTTON_LEFT 0x110
 #define WL_BUTTON_RIGHT 0x111
 #define WL_BUTTON_MIDDLE 0x112
