@@ -783,6 +783,9 @@ void RichTextLabel::_update_scroll() {
 
 void RichTextLabel::_notification(int p_what) {
 
+#ifndef NO_THREADS
+	mutex->lock();
+#endif
 	switch (p_what) {
 
 		case NOTIFICATION_RESIZED: {
@@ -860,6 +863,9 @@ void RichTextLabel::_notification(int p_what) {
 			}
 		}
 	}
+#ifndef NO_THREADS
+	mutex->unlock();
+#endif
 }
 
 void RichTextLabel::_find_click(ItemFrame *p_frame, const Point2i &p_click, Item **r_click_item, int *r_click_char, bool *r_outside) {
@@ -1302,6 +1308,10 @@ void RichTextLabel::_validate_line_caches(ItemFrame *p_frame) {
 
 	Ref<Font> base_font = get_font("normal_font");
 
+//#ifndef NO_THREADS
+//	mutex->lock();
+//#endif
+
 	for (int i = p_frame->first_invalid_line; i < p_frame->lines.size(); i++) {
 
 		int y = 0;
@@ -1318,6 +1328,10 @@ void RichTextLabel::_validate_line_caches(ItemFrame *p_frame) {
 		total_height = p_frame->lines[p_frame->lines.size() - 1].height_accum_cache + get_stylebox("normal")->get_minimum_size().height;
 
 	main->first_invalid_line = p_frame->lines.size();
+
+//#ifndef NO_THREADS
+//	mutex->unlock();
+//#endif
 
 	updating_scroll = true;
 	vscroll->set_max(total_height);
@@ -1459,32 +1473,91 @@ void RichTextLabel::add_newline() {
 
 bool RichTextLabel::remove_line(const int p_line) {
 
-	if (p_line >= current_frame->lines.size() || p_line < 0)
-		return false;
+	int line = p_line - 1;
 
-	int i = 0;
-	while (i < current->subitems.size() && current->subitems[i]->line < p_line) {
-		i++;
+	Vector<Item *> to_be_removed;
+	Vector<Item *> to_be_decreased;
+	//printf("1.subitems.size(): %d\n", main->subitems.size());
+
+	//printf("----------------------------------\n");
+	
+	//for(int i=0; i < main->subitems.size(); i++)
+	//	printf("subitems[%d].line: %d .type: %d\n", i, main->subitems[i]->line, main->subitems[i]->type);
+
+#ifndef NO_THREADS
+	mutex->lock();
+#endif
+
+	// Find the subitems entries for the line which will be removed
+	for (List<Item *>::Element *E = main->subitems.front(); E; E = E->next()) {
+
+		int item_line = E->get()->line;
+
+		if (item_line < line)
+			continue;
+		else if (item_line == line)
+	 		to_be_removed.push_back(E->get());
+		else if (item_line > line)
+	 		to_be_decreased.push_back(E->get());
 	}
 
-	bool was_newline = false;
-	while (i < current->subitems.size()) {
-		was_newline = current->subitems[i]->type == ITEM_NEWLINE;
-		_remove_item(current->subitems[i], current->subitems[i]->line, p_line);
-		if (was_newline)
-			break;
+	// Remove the found subitems entries
+	for (int i = 0; i < to_be_removed.size(); i++) {
+		Item *item = to_be_removed[i];
+		main->subitems.erase(item);
+		memdelete(item);
 	}
 
-	if (!was_newline) {
-		current_frame->lines.remove(p_line);
+	// Decrement the following subitems->line entries by 1
+	for (int i = 0; i < to_be_decreased.size(); i++) {
+		to_be_decreased[i]->line -= 1;
 	}
 
-	if (p_line == 0 && current->subitems.size() > 0)
+	// Remove the line
+	main->lines.remove(line);
+
+	if (p_line == 0 && main->subitems.size() > 0)
 		main->lines.write[0].from = main;
 
 	main->first_invalid_line = 0;
 
+	//printf("2.subitems.size(): %d\n", main->subitems.size());
+	//printf("lines.size(): %d\n", main->lines.size());
+
+#ifndef NO_THREADS
+	mutex->unlock();
+#endif
+
 	return true;
+
+
+ 	// if (p_line >= current_frame->lines.size() || p_line < 0)
+ 	// 	return false;
+ 
+ 	// int i = 0;
+ 	// while (i < current->subitems.size() && current->subitems[i]->line < p_line) {
+ 	// 	i++;
+ 	// }
+ 
+ 	// bool was_newline = false;
+ 	// while (i < current->subitems.size()) {
+ 	// 	was_newline = current->subitems[i]->type == ITEM_NEWLINE;
+ 	// 	_remove_item(current->subitems[i], current->subitems[i]->line, p_line);
+ 	// 	if (was_newline)
+ 	// 		break;
+	// 	i++;
+ 	// }
+ 
+ 	// if (!was_newline) {
+ 	// 	current_frame->lines.remove(p_line);
+ 	// }
+ 
+ 	// if (p_line == 0 && current->subitems.size() > 0)
+ 	// 	main->lines.write[0].from = main;
+ 
+ 	// main->first_invalid_line = 0;
+ 
+ 	// return true;
 }
 
 void RichTextLabel::push_font(const Ref<Font> &p_font) {
@@ -2360,8 +2433,15 @@ RichTextLabel::RichTextLabel() {
 
 	fixed_width = -1;
 	set_clip_contents(true);
+
+#ifndef NO_THREADS
+	mutex = Mutex::create();
+#endif
 }
 
 RichTextLabel::~RichTextLabel() {
 	memdelete(main);
+#ifndef NO_THREADS
+	memdelete(mutex);
+#endif
 }
