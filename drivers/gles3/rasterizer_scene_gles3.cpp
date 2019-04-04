@@ -4830,8 +4830,11 @@ void RasterizerSceneGLES3::set_scene_pass(uint64_t p_pass) {
 }
 
 bool RasterizerSceneGLES3::free(RID p_rid) {
-
-	if (light_instance_owner.owns(p_rid)) {
+	if (environment_owner.owns(p_rid)) {
+		Environment *env = environment_owner.get(p_rid);
+		environment_owner.free(p_rid);
+		memdelete(env);
+	} else if (light_instance_owner.owns(p_rid)) {
 
 		LightInstance *light_instance = light_instance_owner.getptr(p_rid);
 
